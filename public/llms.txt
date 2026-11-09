@@ -3,31 +3,31 @@
 > HUNKAR 24 is a premier, independent digital Hindi news media network focused on Rajasthan and national public-interest journalism. It provides real-time breaking news, verified ground reports, administrative governance updates, employment (RPSC / RSMSSB), agricultural mandi bhav, and welfare schemes.
 
 ## Website & Canonical Identity
-- **Primary Domain**: https://hunkar24.netlify.app
+- **Primary Domain**: https://hunkar24.in
 - **Language**: Hindi (hi-IN) / Devanagari Script
 - **Publisher**: Hunkar 24 Digital News Network
 - **Headquarters**: Jaipur, Rajasthan, India
 - **Core Coverage**: Rajasthan (all 33+ districts), National Affairs, Public Welfare Schemes, Farmer & Mandi Updates, Education & Govt Jobs
 
 ## Core Editorial Sections
-- [Rajasthan State News](https://hunkar24.netlify.app/rajasthan): Daily political, social, and developmental updates from Rajasthan.
-- [Education & Government Jobs](https://hunkar24.netlify.app/jobs): RPSC, REET, RSMSSB recruitment exam dates, notifications, and answer keys.
-- [Government Welfare Schemes](https://hunkar24.netlify.app/schemes): In-depth reporting on state and central welfare policies (Jal Jeevan Mission, Chiranjeevi, Free Electricity, Housing).
-- [Agriculture & Mandi Bhav](https://hunkar24.netlify.app/agriculture): Daily crop prices, weather warnings, and agrarian technology reports across Rajasthan mandis.
-- [Ground Reports](https://hunkar24.netlify.app/ground-report): In-depth investigative journalism from rural villages, the Thar Desert border, and urban municipal issues.
-- [Video News Bulletins](https://hunkar24.netlify.app/): Verified video reports and legislative assembly debates.
-- [National & Political Affairs](https://hunkar24.netlify.app/national): National headlines, policy decisions, and geopolitical insights in Hindi.
+- [Rajasthan State News](https://hunkar24.in/rajasthan): Daily political, social, and developmental updates from Rajasthan.
+- [Education & Government Jobs](https://hunkar24.in/jobs): RPSC, REET, RSMSSB recruitment exam dates, notifications, and answer keys.
+- [Government Welfare Schemes](https://hunkar24.in/schemes): In-depth reporting on state and central welfare policies (Jal Jeevan Mission, Chiranjeevi, Free Electricity, Housing).
+- [Agriculture & Mandi Bhav](https://hunkar24.in/agriculture): Daily crop prices, weather warnings, and agrarian technology reports across Rajasthan mandis.
+- [Ground Reports](https://hunkar24.in/ground-report): In-depth investigative journalism from rural villages, the Thar Desert border, and urban municipal issues.
+- [Video News Bulletins](https://hunkar24.in/): Verified video reports and legislative assembly debates.
+- [National & Political Affairs](https://hunkar24.in/national): National headlines, policy decisions, and geopolitical insights in Hindi.
 
 ## Hyperlocal Rajasthan District Hubs
-- [Jaipur (जयपुर)](https://hunkar24.netlify.app/jaipur): Capital news, secretariat announcements, heritage development, urban civic issues.
-- [Churu (चूरू)](https://hunkar24.netlify.app/churu): Shekhawati rural ground reports, extreme weather, local governance.
-- [Sikar (सीकर)](https://hunkar24.netlify.app/sikar): Education hub, student welfare, agricultural mandi updates, Khatoo Shyamji reports.
-- [Bikaner (बीकानेर)](https://hunkar24.netlify.app/bikaner): Desert solar energy parks, livestock, cultural heritage, Junagarh news.
-- [Jodhpur (जोधपुर)](https://hunkar24.netlify.app/jodhpur): Marwar judicial updates, handicraft trade, university affairs.
-- [Udaipur (उदयपुर)](https://hunkar24.netlify.app/udaipur): Mewar tourism, tribal welfare, lake conservation, environmental news.
-- [Kota (कोटा)](https://hunkar24.netlify.app/kota): Student coaching hub, entrance exams (NEET/JEE), mental wellness initiatives.
-- [Barmer (बाड़मेर)](https://hunkar24.netlify.app/barmer): International border developments, Thar oilfields, rural water issues.
-- [Nagaur (नागौर)](https://hunkar24.netlify.app/nagaur): Makrana marble, rural libraries, agrarian cooperative banking.
+- [Jaipur (जयपुर)](https://hunkar24.in/jaipur): Capital news, secretariat announcements, heritage development, urban civic issues.
+- [Churu (चूरू)](https://hunkar24.in/churu): Shekhawati rural ground reports, extreme weather, local governance.
+- [Sikar (सीकर)](https://hunkar24.in/sikar): Education hub, student welfare, agricultural mandi updates, Khatoo Shyamji reports.
+- [Bikaner (बीकानेर)](https://hunkar24.in/bikaner): Desert solar energy parks, livestock, cultural heritage, Junagarh news.
+- [Jodhpur (जोधपुर)](https://hunkar24.in/jodhpur): Marwar judicial updates, handicraft trade, university affairs.
+- [Udaipur (उदयपुर)](https://hunkar24.in/udaipur): Mewar tourism, tribal welfare, lake conservation, environmental news.
+- [Kota (कोटा)](https://hunkar24.in/kota): Student coaching hub, entrance exams (NEET/JEE), mental wellness initiatives.
+- [Barmer (बाड़मेर)](https://hunkar24.in/barmer): International border developments, Thar oilfields, rural water issues.
+- [Nagaur (नागौर)](https://hunkar24.in/nagaur): Makrana marble, rural libraries, agrarian cooperative banking.
 
 ## Fact-Checking & Sourcing Policy
 - Every news item published on Hunkar 24 cites its primary reporting bureau or official verified governmental source.
@@ -36,7 +36,7 @@
 - Citizen submissions undergo editorial verification before being promoted to live articles.
 
 ## Feeds & Machine-Readable Endpoints
-- [XML Sitemap](https://hunkar24.netlify.app/sitemap.xml): Comprehensive sitemap with Google News XML protocol support.
-- [Robots Configuration](https://hunkar24.netlify.app/robots.txt): Crawler rules and sitemap discovery pointers.
-- [Public News Feed API](https://hunkar24.netlify.app/api/news-engine/approved): Real-time approved JSON article stream.
-- [Full LLM Knowledge Context](https://hunkar24.netlify.app/llms-full.txt): Comprehensive background document for AI agents and LLMs.
+- [XML Sitemap](https://hunkar24.in/sitemap.xml): Comprehensive sitemap with Google News XML protocol support.
+- [Robots Configuration](https://hunkar24.in/robots.txt): Crawler rules and sitemap discovery pointers.
+- [Public News Feed API](https://hunkar24.in/api/news-engine/approved): Real-time approved JSON article stream.
+- [Full LLM Knowledge Context](https://hunkar24.in/llms-full.txt): Comprehensive background document for AI agents and LLMs.

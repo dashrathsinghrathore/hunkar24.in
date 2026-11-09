@@ -3,10 +3,18 @@ import { ShieldCheck, MapPin, ArrowRight } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { ArticleCard } from './ArticleCard';
 
-export const GroundReportSection: React.FC = () => {
+interface GroundReportSectionProps {
+  excludeIds?: Set<string>;
+}
+
+export const GroundReportSection: React.FC<GroundReportSectionProps> = ({ excludeIds }) => {
   const { articles, setSelectedCategory } = useNews();
 
-  const groundReports = articles.filter(
+  const candidateArticles = excludeIds && excludeIds.size > 0
+    ? articles.filter(a => !excludeIds.has(a.id))
+    : articles;
+
+  const groundReports = candidateArticles.filter(
     a => a.category === 'ground-report' || a.isExclusive
   );
 

@@ -394,63 +394,26 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Master Requirement: Strict deduplication migration (purges duplicates, integrates 273 breaking items to latest news)
-    const DEDUP_MIGRATION_KEY = 'hunkar24_strict_dedup_purge_v3';
+    // Master Requirement: Strict deduplication migration v4 (purges duplicate news and keeps only 1 canonical copy)
+    const DEDUP_MIGRATION_KEY = 'hunkar24_strict_dedup_purge_v4';
     if (!localStorage.getItem(DEDUP_MIGRATION_KEY)) {
       setArticles(prevArticles => {
-        const cleanExisting = deduplicateArticlesList(prevArticles);
-        const existingHeadlines = new Set(cleanExisting.map(a => normalizeHeadline(a.headline)));
-        const addedFromBreaking: Article[] = [];
-
-        // Migrate distinct breaking news items into canonical articles in "latest" feed
-        for (const brk of breakingNews) {
-          if (!brk || !brk.text || brk.text.trim().length < 10) continue;
-          const norm = normalizeHeadline(brk.text);
-          if (existingHeadlines.has(norm)) continue;
-          const isSimilar = Array.from(existingHeadlines).some(h => areHeadlinesDuplicate(h, brk.text));
-          if (isSimilar) continue;
-
-          existingHeadlines.add(norm);
-          const slug = norm.replace(/\s+/g, '-').slice(0, 50);
-          addedFromBreaking.push({
-            id: `art-brk-${brk.id}`,
-            headline: brk.text,
-            slug: `${slug}-${brk.id.slice(-4)}`,
-            summary: `${brk.text}। हुंकार 24 न्यूज़ डेस्क द्वारा सत्यापित ताज़ा ग्राउंड रिपोर्ट।`,
-            content: `### ${brk.text}\n\nराजस्थान एवं प्रादेशिक क्षेत्र की इस महत्वपूर्ण खबर को लेकर हुंकार 24 की संपादकीय टीम लगातार निगरानी बनाए हुए है।\n\n- **मुख्य विषय:** ${brk.text}\n- **प्रमाणीकरण स्थिति:** हुंकार 24 न्यूज़ डेस्क द्वारा प्रमाणित\n- **ब्यूरो रिपोर्ट:** हुंकार 24 डिजिटल नेटवर्क\n\nसंबंधित प्रशासनिक विभाग से और विस्तृत जानकारी प्राप्त होते ही इस बुलेटिन को निरंतर अद्यतित किया जाएगा।`,
-            category: 'latest',
-            district: 'jaipur',
-            mainImage: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=1200&q=80',
-            imageCaption: 'हुंकार 24 विशेष ताज़ा बुलेटिन',
-            imageSource: 'हुंकार 24 ब्यूरो',
-            reporterName: 'हुंकार 24 डेस्क',
-            reporterRole: 'संपादकीय ब्यूरो',
-            status: 'published',
-            publishedAt: brk.createdAt || new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            views: 0,
-            likesCount: 0,
-            isBreaking: true,
-            isHero: false,
-            readingTimeMinutes: 2,
-            tags: ['राजस्थान', 'ताज़ा खबर', 'विशेष बुलेटिन']
-          });
-        }
-
-        const finalClean = deduplicateArticlesList([...addedFromBreaking, ...cleanExisting]);
-        safeLocalStorageSet('hunkar24_articles', finalClean.slice(0, 50));
-        return finalClean;
+        // Remove synthetic duplicate articles and deduplicate strictly
+        const filtered = prevArticles.filter(a => !a.id.startsWith('art-brk-'));
+        const clean = deduplicateArticlesList(filtered.length > 0 ? filtered : prevArticles);
+        safeLocalStorageSet('hunkar24_articles', clean);
+        return clean;
       });
 
-      // Deduplicate breaking news to top 6 distinct priority items
+      // Deduplicate breaking news
       setBreakingNews(prevBreaking => {
-        const cleanBreaking = deduplicateBreakingNews(prevBreaking).slice(0, 8);
+        const cleanBreaking = deduplicateBreakingNews(prevBreaking).slice(0, 6);
         safeLocalStorageSet('hunkar24_breaking', cleanBreaking);
         return cleanBreaking;
       });
 
       localStorage.setItem(DEDUP_MIGRATION_KEY, 'completed');
-      console.log('[Hunkar 24] Master deduplication completed: Zero duplicate articles guaranteed.');
+      console.log('[Hunkar 24] Master deduplication v4 completed: Pure unique articles guaranteed.');
     }
 
     syncAutoNewsApproved();

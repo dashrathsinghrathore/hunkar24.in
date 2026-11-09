@@ -98,8 +98,8 @@ export const WebsiteSettings: React.FC = () => {
               onChange={e => setPrimaryDomain(e.target.value)}
               className="w-full sm:w-80 px-3 py-2 border rounded-lg bg-white dark:bg-stone-800 font-mono text-red-700 dark:text-red-400 font-bold"
             >
-              <option value="https://hunkar24.netlify.app">https://hunkar24.netlify.app (अनुशंसित - अभी लाइव)</option>
-              <option value="https://hunkar24.in">https://hunkar24.in (सत्यापन के बाद)</option>
+              <option value="https://hunkar24.in">https://hunkar24.in (अनुशंसित - अभी लाइव)</option>
+              <option value="https://hunkar24.in/">https://hunkar24.in/</option>
             </select>
           </div>
         </div>

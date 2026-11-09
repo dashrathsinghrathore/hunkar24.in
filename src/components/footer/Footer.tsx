@@ -53,11 +53,11 @@ export const Footer: React.FC<FooterProps> = ({ onSelectPolicy }) => {
               </span>
               <div className="flex items-center gap-2">
                 <a
-                  href={SITE_CONFIG.social.whatsappChannel}
+                  href={SITE_CONFIG.social.whatsappGroup}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 rounded-lg bg-stone-900 hover:bg-emerald-600 text-stone-300 hover:text-white transition-colors"
-                  title="व्हाट्सऐप चैनल"
+                  className="p-2 rounded-lg bg-emerald-900/60 hover:bg-emerald-600 text-emerald-300 hover:text-white transition-colors"
+                  title="हुंकार 24 व्हाट्सऐप ग्रुप से जुड़ें"
                 >
                   <MessageCircle className="w-4 h-4" />
                 </a>
@@ -65,8 +65,8 @@ export const Footer: React.FC<FooterProps> = ({ onSelectPolicy }) => {
                   href={SITE_CONFIG.social.telegram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 rounded-lg bg-stone-900 hover:bg-sky-500 text-stone-300 hover:text-white transition-colors"
-                  title="टेलीग्राम"
+                  className="p-2 rounded-lg bg-sky-900/60 hover:bg-sky-500 text-sky-300 hover:text-white transition-colors"
+                  title="टेलीग्राम चैनल (@HUNKAR24)"
                 >
                   <Send className="w-4 h-4" />
                 </a>
@@ -208,7 +208,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectPolicy }) => {
           {/* Col 4: Contact & Newsroom */}
           <div className="space-y-3 text-xs text-stone-400">
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-red-700/60 pb-1.5 inline-block">
-              न्यूज़रूम संपर्क
+              न्यूज़रूम एवं सहायता संपर्क
             </h3>
             
             <div className="flex items-start gap-2">
@@ -216,12 +216,50 @@ export const Footer: React.FC<FooterProps> = ({ onSelectPolicy }) => {
               <span>{SITE_CONFIG.contact.officeAddress}</span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4 text-red-500 shrink-0" />
-              <span>फोन: {SITE_CONFIG.contact.phone}</span>
+            {/* Only WhatsApp Mobile Number */}
+            <a
+              href="https://wa.me/917726084809"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2.5 p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-700/60 hover:bg-emerald-900/80 transition-colors group"
+            >
+              <div className="p-1.5 rounded-md bg-emerald-600 text-white shrink-0">
+                <MessageCircle className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] text-emerald-400 block font-bold tracking-wide">
+                  मोबाइल (Only WhatsApp):
+                </span>
+                <span className="font-mono font-black text-sm text-white group-hover:text-emerald-300">
+                  7726084809
+                </span>
+              </div>
+            </a>
+
+            {/* Official Community Channels */}
+            <div className="grid grid-cols-1 gap-2 pt-1">
+              <a
+                href="https://chat.whatsapp.com/FCPFV5r3eruEvFMS9yy2Fa?s=cl&p=a&iam=2"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-center transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>व्हाट्सऐप ग्रुप से जुड़ें</span>
+              </a>
+
+              <a
+                href="https://t.me/HUNKAR24"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 py-2 px-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg text-center transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                <span>टेलीग्राम चैनल (@HUNKAR24)</span>
+              </a>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pt-1 text-stone-300">
               <Mail className="w-4 h-4 text-red-500 shrink-0" />
               <span>ईमेल: {SITE_CONFIG.contact.email}</span>
             </div>
@@ -229,13 +267,13 @@ export const Footer: React.FC<FooterProps> = ({ onSelectPolicy }) => {
             <div className="pt-2 flex flex-col gap-2">
               <button
                 onClick={() => setIsSubmitNewsOpen(true)}
-                className="w-full py-1.5 px-3 bg-red-700 hover:bg-red-800 text-white font-bold rounded-lg text-center"
+                className="w-full py-1.5 px-3 bg-red-700 hover:bg-red-800 text-white font-bold rounded-lg text-center cursor-pointer transition-colors"
               >
                 खबर भेजें (जन-रिपोर्टर)
               </button>
               <button
                 onClick={() => setIsPromotionModalOpen(true)}
-                className="w-full py-1.5 px-3 border border-amber-600 text-amber-400 hover:bg-amber-950 font-bold rounded-lg text-center"
+                className="w-full py-1.5 px-3 border border-amber-600 text-amber-400 hover:bg-amber-950 font-bold rounded-lg text-center cursor-pointer transition-colors"
               >
                 विज्ञापन के लिए संपर्क करें
               </button>

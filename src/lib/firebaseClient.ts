@@ -20,7 +20,7 @@ import {
 import { Article, BreakingNewsItem } from '../types';
 
 export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDvSh0pBO6rxxlkjnQ9K4OCu9qGZSIcn1E",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "hunkar24.firebaseapp.com",
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://hunkar24-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "hunkar24",
@@ -30,29 +30,33 @@ export const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-QQKTFVD6SQ"
 };
 
-let appInstance: FirebaseApp;
-try {
-  appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-} catch (err) {
-  console.warn('[Firebase] App initialization notice:', err);
-  appInstance = initializeApp(firebaseConfig, 'hunkar24-primary');
-}
-
-export const firebaseApp = appInstance;
-export const firebaseDb: Database = getDatabase(firebaseApp);
-
 export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey &&
   firebaseConfig.databaseURL &&
   !firebaseConfig.databaseURL.includes('your-project')
 );
 
+let appInstance: FirebaseApp | null = null;
+let dbInstance: Database | null = null;
+
+if (isFirebaseConfigured) {
+  try {
+    appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    dbInstance = getDatabase(appInstance);
+  } catch (err) {
+    console.warn('[Firebase] App initialization notice:', err);
+  }
+}
+
+export const firebaseApp = appInstance;
+export const firebaseDb = dbInstance;
+
 // Optional Analytics initialization (browser only)
-if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
+if (typeof window !== 'undefined' && firebaseConfig.measurementId && firebaseApp) {
   import('firebase/analytics')
     .then(({ getAnalytics, isSupported }) => {
       isSupported().then(yes => {
-        if (yes) getAnalytics(firebaseApp);
+        if (yes && firebaseApp) getAnalytics(firebaseApp);
       }).catch(() => {});
     })
     .catch(() => {});
@@ -62,7 +66,7 @@ if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
  * Save or publish an article in Firebase Realtime Database
  */
 export async function saveArticleToFirebase(article: Article): Promise<boolean> {
-  if (!isFirebaseConfigured) return false;
+  if (!isFirebaseConfigured || !firebaseDb) return false;
   try {
     const articleRef = ref(firebaseDb, `articles/${article.id}`);
     await set(articleRef, {
@@ -80,7 +84,7 @@ export async function saveArticleToFirebase(article: Article): Promise<boolean> 
  * Update an existing article in Firebase Realtime Database
  */
 export async function updateArticleInFirebase(id: string, updates: Partial<Article>): Promise<boolean> {
-  if (!isFirebaseConfigured) return false;
+  if (!isFirebaseConfigured || !firebaseDb) return false;
   try {
     const articleRef = ref(firebaseDb, `articles/${id}`);
     await update(articleRef, {
@@ -98,7 +102,7 @@ export async function updateArticleInFirebase(id: string, updates: Partial<Artic
  * Delete an article from Firebase Realtime Database
  */
 export async function deleteArticleFromFirebase(id: string): Promise<boolean> {
-  if (!isFirebaseConfigured) return false;
+  if (!isFirebaseConfigured || !firebaseDb) return false;
   try {
     const articleRef = ref(firebaseDb, `articles/${id}`);
     await remove(articleRef);
@@ -113,7 +117,7 @@ export async function deleteArticleFromFirebase(id: string): Promise<boolean> {
  * Save breaking news item in Firebase Realtime Database
  */
 export async function saveBreakingNewsToFirebase(item: BreakingNewsItem): Promise<boolean> {
-  if (!isFirebaseConfigured) return false;
+  if (!isFirebaseConfigured || !firebaseDb) return false;
   try {
     const newsRef = ref(firebaseDb, `breaking_news/${item.id}`);
     await set(newsRef, item);
@@ -128,7 +132,7 @@ export async function saveBreakingNewsToFirebase(item: BreakingNewsItem): Promis
  * Delete breaking news item from Firebase Realtime Database
  */
 export async function deleteBreakingNewsFromFirebase(id: string): Promise<boolean> {
-  if (!isFirebaseConfigured) return false;
+  if (!isFirebaseConfigured || !firebaseDb) return false;
   try {
     const newsRef = ref(firebaseDb, `breaking_news/${id}`);
     await remove(newsRef);
@@ -143,7 +147,7 @@ export async function deleteBreakingNewsFromFirebase(id: string): Promise<boolea
  * Real-time listener for articles. Automatically fires callback when any device writes.
  */
 export function subscribeToFirebaseArticles(callback: (articles: Article[]) => void): () => void {
-  if (!isFirebaseConfigured) return () => {};
+  if (!isFirebaseConfigured || !firebaseDb) return () => {};
 
   const articlesRef = ref(firebaseDb, 'articles');
   const unsubscribe = onValue(
@@ -174,7 +178,7 @@ export function subscribeToFirebaseArticles(callback: (articles: Article[]) => v
  * Real-time listener for breaking news
  */
 export function subscribeToFirebaseBreakingNews(callback: (items: BreakingNewsItem[]) => void): () => void {
-  if (!isFirebaseConfigured) return () => {};
+  if (!isFirebaseConfigured || !firebaseDb) return () => {};
 
   const breakingRef = ref(firebaseDb, 'breaking_news');
   const unsubscribe = onValue(
@@ -204,7 +208,7 @@ export function subscribeToFirebaseBreakingNews(callback: (items: BreakingNewsIt
  * Populate initial articles into Firebase Realtime Database if empty
  */
 export async function seedFirebaseIfEmpty(initialArticles: Article[], initialBreaking: BreakingNewsItem[]): Promise<void> {
-  if (!isFirebaseConfigured) return;
+  if (!isFirebaseConfigured || !firebaseDb) return;
   try {
     const articlesRef = ref(firebaseDb, 'articles');
     const snapshot = await get(articlesRef);

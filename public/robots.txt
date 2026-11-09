@@ -17,6 +17,6 @@ User-agent: Google-Extended
 Allow: /
 
 # Sitemap & LLMs Knowledge Base
-Sitemap: https://hunkar24.netlify.app/sitemap.xml
+Sitemap: https://hunkar24.in/sitemap.xml
 # LLM Manifest
-# https://hunkar24.netlify.app/llms.txt
+# https://hunkar24.in/llms.txt

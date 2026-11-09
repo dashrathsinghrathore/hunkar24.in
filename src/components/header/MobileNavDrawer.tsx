@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Search, Shield, PenSquare, Megaphone, MapPin, ChevronRight, MessageCircle } from 'lucide-react';
+import { X, Search, Shield, PenSquare, Megaphone, MapPin, ChevronRight, MessageCircle, Send } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
 import { useNews } from '../../context/NewsContext';
 import { RAJASTHAN_DISTRICTS, SITE_CONFIG } from '../../config/siteConfig';
@@ -166,19 +166,40 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
             <span>नागरिक पत्रकारिता — खबर भेजें</span>
           </button>
 
-          <div className="flex items-center justify-between text-xs text-stone-500 pt-1">
+          <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
             <a
-              href={SITE_CONFIG.social.whatsappChannel}
+              href="https://chat.whatsapp.com/FCPFV5r3eruEvFMS9yy2Fa?s=cl&p=a&iam=2"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-emerald-600 font-semibold"
+              className="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded font-bold"
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              <span>व्हाट्सऐप चैनल</span>
+              <span>व्हाट्सऐप ग्रुप</span>
+            </a>
+            <a
+              href="https://t.me/HUNKAR24"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 rounded font-bold"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>टेलीग्राम</span>
+            </a>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-stone-500 pt-1">
+            <a
+              href="https://wa.me/917726084809"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-emerald-600 font-bold"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>Only WhatsApp: 7726084809</span>
             </a>
             <button
               onClick={toggleTheme}
-              className="font-medium hover:underline text-stone-600 dark:text-stone-300"
+              className="font-medium hover:underline text-stone-600 dark:text-stone-300 cursor-pointer"
             >
               {theme === 'dark' ? 'लाइट मोड' : 'डार्क मोड'}
             </button>

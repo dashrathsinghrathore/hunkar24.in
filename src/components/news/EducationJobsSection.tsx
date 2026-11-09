@@ -13,10 +13,18 @@ interface JobAlert {
   status: 'आवेदन शुरू' | 'विज्ञप्ति जारी' | 'परिणाम घोषित';
 }
 
-export const EducationJobsSection: React.FC = () => {
+interface EducationJobsSectionProps {
+  excludeIds?: Set<string>;
+}
+
+export const EducationJobsSection: React.FC<EducationJobsSectionProps> = ({ excludeIds }) => {
   const { articles, setSelectedCategory } = useNews();
 
-  const educationArticles = articles.filter(
+  const candidateArticles = excludeIds && excludeIds.size > 0
+    ? articles.filter(a => !excludeIds.has(a.id))
+    : articles;
+
+  const educationArticles = candidateArticles.filter(
     a => a.category === 'education' || a.category === 'jobs' || a.category === 'schemes'
   );
 

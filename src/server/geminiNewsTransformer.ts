@@ -8,20 +8,17 @@
 
 import { GoogleGenAI } from '@google/genai';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAap_KNJgrPK_bEM58keecc9fYBfxklVGA';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 let aiInstance: GoogleGenAI | null = null;
-try {
-  aiInstance = new GoogleGenAI({
-    apiKey: GEMINI_API_KEY,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build'
-      }
-    }
-  });
-} catch (err) {
-  console.warn('[GeminiTransformer] Initialization notice:', err);
+if (GEMINI_API_KEY) {
+  try {
+    aiInstance = new GoogleGenAI({
+      apiKey: GEMINI_API_KEY,
+    });
+  } catch (err) {
+    console.warn('[GeminiTransformer] Initialization notice:', err);
+  }
 }
 
 export interface TransformedHindiArticle {

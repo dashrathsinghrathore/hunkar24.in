@@ -18,7 +18,8 @@ import {
   MessageCircle,
   ThumbsUp,
   ExternalLink,
-  BookOpen
+  BookOpen,
+  Send
 } from 'lucide-react';
 import { Article } from '../../types';
 import { useNews } from '../../context/NewsContext';
@@ -115,6 +116,11 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
   const shareWhatsApp = () => {
     const text = `*${cleanTitle}*\n\n${cleanDesc.slice(0, 100)}...\n\nपूरी खबर हुंकार 24 पर पढ़ें:\n${shareUrl}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const shareTelegram = () => {
+    const text = `*${cleanTitle}*\n\n${cleanDesc.slice(0, 100)}...\n\nपूरी खबर हुंकार 24 पर पढ़ें:`;
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const shareFacebook = () => {
@@ -260,14 +266,21 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
           <div className="flex items-center gap-1.5">
             <button
               onClick={shareWhatsApp}
-              className="p-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
+              className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer"
               title="व्हाट्सऐप पर शेयर करें"
             >
               <MessageCircle className="w-4 h-4" />
             </button>
             <button
+              onClick={shareTelegram}
+              className="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 hover:bg-sky-100 transition-colors cursor-pointer"
+              title="टेलीग्राम पर शेयर करें"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+            <button
               onClick={shareFacebook}
-              className="p-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer"
+              className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition-colors cursor-pointer"
               title="फेसबुक पर शेयर करें"
             >
               <Share2 className="w-4 h-4" />

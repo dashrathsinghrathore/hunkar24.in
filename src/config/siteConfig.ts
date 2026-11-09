@@ -17,9 +17,9 @@ export const SITE_CONFIG = {
   brandTaglineEn: 'The Resounding Voice of Rajasthan',
   
   // Domains
-  currentSiteUrl: 'https://hunkar24.netlify.app',
+  currentSiteUrl: 'https://hunkar24.in',
   futureCustomDomain: 'https://hunkar24.in',
-  primarySiteUrl: import.meta.env.VITE_SITE_URL || 'https://hunkar24.netlify.app',
+  primarySiteUrl: import.meta.env.VITE_SITE_URL || 'https://hunkar24.in',
   
   // Official Supplied Logo
   // Local high-speed fallback asset + remote verified direct image URL
@@ -29,8 +29,10 @@ export const SITE_CONFIG = {
 
   // Contact Details
   contact: {
-    phone: '+91 94140 12345',
-    whatsapp: '+91 94140 12345',
+    phone: '+91 77260 84809 (Only WhatsApp)',
+    whatsapp: '7726084809',
+    whatsappDisplay: '+91 77260 84809',
+    whatsappChatUrl: 'https://wa.me/917726084809',
     email: 'news@hunkar24.in',
     officeAddress: 'हुंकार 24 मीडिया भवन, सिविल लाइन्स, जयपुर, राजस्थान - 302006',
     grievanceEmail: 'grievance@hunkar24.in',
@@ -39,9 +41,10 @@ export const SITE_CONFIG = {
 
   // Official Social Media Channels
   social: {
-    whatsappChannel: 'https://whatsapp.com/channel/0029VaHunkar24',
-    whatsappDirect: 'https://wa.me/919414012345?text=%E0%A4%A8%E0%A4%AE%E0%A4%B8%E0%A5%8D%E0%A4%A4%E0%A5%87%20%E0%A4%B9%E0%A5%81%E0%A4%82%E0%A4%95%E0%A4%BE%E0%A4%B0%2024%2C%20%E0%A4%AE%E0%A5%81%E0%A4%9D%E0%A5%87%20%E0%A4%96%E0%A4%AC%E0%A4%B0%20%E0%A4%AD%E0%A5%87%E0%A4%9C%E0%A4%A8%E0%A5%80%20%E0%A4%B9%E0%A5%88',
-    telegram: 'https://t.me/hunkar24news',
+    whatsappChannel: 'https://chat.whatsapp.com/FCPFV5r3eruEvFMS9yy2Fa?s=cl&p=a&iam=2',
+    whatsappGroup: 'https://chat.whatsapp.com/FCPFV5r3eruEvFMS9yy2Fa?s=cl&p=a&iam=2',
+    whatsappDirect: 'https://wa.me/917726084809',
+    telegram: 'https://t.me/HUNKAR24',
     youtube: 'https://youtube.com/@hunkar24news',
     instagram: 'https://instagram.com/hunkar24news',
     facebook: 'https://facebook.com/hunkar24news',

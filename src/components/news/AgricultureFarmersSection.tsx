@@ -22,14 +22,22 @@ import {
   MandiRecord
 } from '../../data/mandiData';
 
-export const AgricultureFarmersSection: React.FC = () => {
+interface AgricultureFarmersSectionProps {
+  excludeIds?: Set<string>;
+}
+
+export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps> = ({ excludeIds }) => {
   const { articles, setSelectedCategory, setActiveArticle, incrementArticleViews } = useNews();
   const [selectedCommodity, setSelectedCommodity] = useState<string>('all');
   const [selectedMandi, setSelectedMandi] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
-  // Filter agriculture, farmer and rural articles
-  const agriArticles = articles.filter(
+  // Filter agriculture, farmer and rural articles, excluding stories shown in previous sections
+  const candidateArticles = excludeIds && excludeIds.size > 0
+    ? articles.filter(a => !excludeIds.has(a.id))
+    : articles;
+
+  const agriArticles = candidateArticles.filter(
     a => a.category === 'agriculture' || a.tags?.some(t => ['किसान', 'कृषि', 'मंडी भाव', 'ग्रामीण', 'कुसुम योजना'].includes(t))
   );
 

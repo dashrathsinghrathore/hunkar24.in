@@ -57,6 +57,17 @@ export const TopUtilityBar: React.FC = () => {
             <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             <span>जयपुर 28°C धूप</span>
           </div>
+          <span className="text-stone-600 hidden md:inline" aria-hidden="true">·</span>
+          <a
+            href="https://wa.me/917726084809"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden md:flex items-center gap-1 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/60"
+            title="हुंकार 24 व्हाट्सऐप सहायता"
+          >
+            <MessageCircle className="w-3 h-3 text-emerald-400" />
+            <span>Only WhatsApp: 7726084809</span>
+          </a>
         </div>
 
         {/* Right: Language switch, Accessibility, Social Links & CTAs */}

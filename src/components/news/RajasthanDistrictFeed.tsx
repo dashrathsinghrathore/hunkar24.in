@@ -4,7 +4,11 @@ import { useNews } from '../../context/NewsContext';
 import { ArticleCard } from './ArticleCard';
 import { RAJASTHAN_DISTRICTS } from '../../config/siteConfig';
 
-export const RajasthanDistrictFeed: React.FC = () => {
+interface RajasthanDistrictFeedProps {
+  excludeIds?: Set<string>;
+}
+
+export const RajasthanDistrictFeed: React.FC<RajasthanDistrictFeedProps> = ({ excludeIds }) => {
   const {
     articles,
     selectedDistrict,
@@ -26,8 +30,12 @@ export const RajasthanDistrictFeed: React.FC = () => {
     { id: 'churu', nameHi: 'चूरू' }
   ];
 
-  // Filter articles by district
-  const districtArticles = articles.filter(a => {
+  // Filter articles by district, excluding stories already shown in earlier sections
+  const candidateArticles = excludeIds && excludeIds.size > 0
+    ? articles.filter(a => !excludeIds.has(a.id))
+    : articles;
+
+  const districtArticles = candidateArticles.filter(a => {
     if (selectedDistrict === 'all') return true;
     return a.district?.toLowerCase() === selectedDistrict.toLowerCase();
   });

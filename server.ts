@@ -182,7 +182,7 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://hunkar24.netlify.app/sitemap.xml
+Sitemap: https://hunkar24.in/sitemap.xml
 `;
   res.setHeader('Content-Type', 'text/plain');
   res.send(robots);
@@ -210,7 +210,7 @@ app.get('/llms-full.txt', (req: Request, res: Response) => {
 // XML Sitemap
 app.get('/sitemap.xml', (req: Request, res: Response) => {
   const approved = newsEngineStore.getApprovedArticles();
-  const baseUrl = 'https://hunkar24.netlify.app';
+  const baseUrl = 'https://hunkar24.in';
   const now = new Date().toISOString().split('T')[0];
 
   const staticRoutes = [
@@ -274,7 +274,7 @@ app.get('/sitemap.xml', (req: Request, res: Response) => {
 // RSS 2.0 News Feed for Google News & Aggregators
 app.get(['/feed.xml', '/rss.xml'], (req: Request, res: Response) => {
   const approved = newsEngineStore.getApprovedArticles();
-  const baseUrl = 'https://hunkar24.netlify.app';
+  const baseUrl = 'https://hunkar24.in';
   const now = new Date().toUTCString();
 
   let rss = `<?xml version="1.0" encoding="UTF-8"?>
