@@ -85,8 +85,9 @@ Rules:
 - Generate a natural, punchy Hindi headline (under 20 words).
 - If English, translate faithfully into clear Hindi. Do not change facts or invent quotes.
 - Generate an original, concise Hindi summary (60-90 words).
+- Generate a detailed, professional Hindi news article content (250-400 words) with clear headings and bullet points.
 - Extract 4-6 relevant Hindi tags.
-- Suggest a category from: rajasthan, national, international, politics, crime, education, jobs, schemes, business, agriculture, tech, sports, entertainment, weather, ground-report.
+- Suggest a category strictly from: rajasthan, national, international, politics, education, jobs, schemes, business, agriculture, tech, sports, entertainment, weather.
 
 Article Title: ${raw.title}
 Article Body/Snippet: ${raw.description || raw.content}
@@ -97,6 +98,7 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
 {
   "titleHindi": "...",
   "summaryHindi": "...",
+  "contentHindi": "...",
   "category": "...",
   "district": "...",
   "seoTitle": "...",
@@ -119,7 +121,7 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
         canonicalUrl: cleanCanonicalUrl(raw.url),
         titleHindi: parsed.titleHindi || raw.title,
         summaryHindi: parsed.summaryHindi || raw.description || raw.title,
-        contentHindi: `${parsed.summaryHindi || raw.description}\n\n[मूल स्रोत: ${raw.sourceName}]`,
+        contentHindi: parsed.contentHindi || `${parsed.summaryHindi || raw.description}\n\n[मूल स्रोत: ${raw.sourceName}]`,
         originalTitle: raw.title,
         originalLanguage: isEnglish ? 'en' : 'hi',
         category: parsed.category || raw.categorySuggestion || (detectedDistrict ? 'rajasthan' : 'national'),

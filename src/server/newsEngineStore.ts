@@ -12,7 +12,7 @@ import {
   fetchFromMediastack,
   fetchFromCustomProvider
 } from './newsProviders';
-import { deduplicateArticles, ProcessedArticle } from './deduplicationEngine';
+import { deduplicateArticles, ProcessedArticle, calculateTitleSimilarity } from './deduplicationEngine';
 import { processArticleWithAI } from './aiNewsEngine';
 
 export type PublishingMode = 'manual' | 'auto_safe' | 'paused' | 'emergency_stop';
@@ -336,10 +336,10 @@ class NewsEngineStore {
       let newlyApproved = 0;
 
       for (const group of deduplicatedGroups.slice(0, 20)) {
-        // Prevent duplicate re-import of existing canonical URLs
+        // Prevent duplicate re-import of existing canonical URLs and high title similarity stories
         const alreadyExists =
-          this.pendingArticles.some(p => p.canonicalUrl === group.primary.url) ||
-          this.approvedArticles.some(a => a.canonicalUrl === group.primary.url);
+          this.pendingArticles.some(p => p.canonicalUrl === group.primary.url || calculateTitleSimilarity(p.titleHindi, group.primary.title) >= 0.65) ||
+          this.approvedArticles.some(a => a.canonicalUrl === group.primary.url || calculateTitleSimilarity(a.titleHindi, group.primary.title) >= 0.65);
 
         if (alreadyExists) continue;
 

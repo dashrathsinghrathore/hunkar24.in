@@ -620,9 +620,66 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    // 4. Autonomous Background News Engine (Netlify & Server)
+    // Ensures news is constantly, automatically harvested, transformed via Gemini AI,
+    // and broadcasted to both viewers and admin live without manual intervention.
+    const AUTONOMOUS_FETCH_INTERVAL_MS = 20 * 60 * 1000; // Every 20 minutes
+    const LAST_FETCH_STORAGE_KEY = 'hunkar24_last_autonomous_fetch';
+
+    const triggerAutonomousNewsCycle = async () => {
+      try {
+        const lastFetchStr = localStorage.getItem(LAST_FETCH_STORAGE_KEY);
+        const lastFetchTime = lastFetchStr ? parseInt(lastFetchStr, 10) : 0;
+        const now = Date.now();
+
+        // Throttle: don't re-trigger if already run within last 12 minutes
+        if (now - lastFetchTime < 12 * 60 * 1000) {
+          return;
+        }
+
+        localStorage.setItem(LAST_FETCH_STORAGE_KEY, now.toString());
+
+        // Call the serverless trigger endpoint (Netlify Functions or Express)
+        const res = await safeFetchJson('/api/auto-news-trigger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (res.success && res.data?.approvedArticles && Array.isArray(res.data.approvedArticles)) {
+          const fresh = res.data.approvedArticles;
+          if (fresh.length > 0) {
+            setArticles(prev => {
+              const map = new Map<string, Article>();
+              for (const a of fresh) map.set(a.id, a);
+              for (const a of prev) {
+                if (!map.has(a.id)) map.set(a.id, a);
+              }
+              const merged = Array.from(map.values());
+              merged.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+              return merged;
+            });
+          }
+        }
+      } catch (err: any) {
+        console.warn('[AutonomousNewsEngine] Notice:', err.message);
+      }
+    };
+
+    // Initial silent background check 3 seconds after load (non-blocking)
+    const initialTimer = setTimeout(() => {
+      triggerAutonomousNewsCycle();
+    }, 3000);
+
+    // Continuous heartbeat every 20 minutes while user/admin is on site
+    const intervalTimer = setInterval(() => {
+      triggerAutonomousNewsCycle();
+    }, AUTONOMOUS_FETCH_INTERVAL_MS);
+
     return () => {
       unsubArticles();
       unsubBreaking();
+      clearTimeout(initialTimer);
+      clearInterval(intervalTimer);
     };
   }, []);
 

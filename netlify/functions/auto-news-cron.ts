@@ -148,7 +148,7 @@ Source: ${sourceName}
 Respond ONLY with valid JSON.`;
 
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Gemini timeout')), 6000)
+        setTimeout(() => reject(new Error('Gemini timeout')), 12000)
       );
 
       const res = await Promise.race([
@@ -431,41 +431,105 @@ export const handler = async (event: any) => {
 
   console.log(`[Netlify Auto-News Cron] Collected ${rawArticles.length} raw articles from all sources.`);
 
-  // 9. Existing check to avoid duplicate stories
+  // 9. Comprehensive Deduplication Engine
   const existingHeadlines = new Set<string>();
+  const existingArticlesList: Array<{ headline: string; slug: string }> = [];
+
+  function normalizeTitle(t: string): string {
+    return t
+      .toLowerCase()
+      .replace(/\s+-\s+[^-]+$/, '')
+      .replace(/[^\w\u0900-\u097F]+/g, ' ')
+      .trim();
+  }
+
+  function isDuplicate(headline: string, slug: string): boolean {
+    const norm = normalizeTitle(headline);
+    if (!norm) return true;
+    if (existingHeadlines.has(norm) || existingHeadlines.has(slug)) return true;
+
+    const normWords = new Set(norm.split(/\s+/).filter(w => w.length > 2));
+    if (normWords.size >= 3) {
+      for (const item of existingArticlesList) {
+        const itemNorm = normalizeTitle(item.headline);
+        if (itemNorm === norm || item.slug === slug) return true;
+        const itemWords = new Set(itemNorm.split(/\s+/).filter(w => w.length > 2));
+        let matchCount = 0;
+        for (const w of normWords) {
+          if (itemWords.has(w)) matchCount++;
+        }
+        const similarity = (2 * matchCount) / (normWords.size + itemWords.size);
+        if (similarity >= 0.70) return true;
+      }
+    }
+    return false;
+  }
+
+  // Populate existing from Firebase Realtime Database
   if (FIREBASE_RTDB_URL) {
     try {
-      const res = await fetch(`${FIREBASE_RTDB_URL}/articles.json?shallow=true`);
+      const res = await fetch(`${FIREBASE_RTDB_URL}/articles.json?limitToLast=150`);
       if (res.ok) {
-        const existingKeys = await res.json();
-        if (existingKeys) {
-          Object.keys(existingKeys).forEach(k => existingHeadlines.add(k));
+        const data = await res.json();
+        if (data && typeof data === 'object') {
+          for (const item of Object.values(data) as any[]) {
+            if (item?.headline) {
+              existingHeadlines.add(normalizeTitle(item.headline));
+              existingArticlesList.push({ headline: item.headline, slug: item.slug || '' });
+            }
+            if (item?.slug) existingHeadlines.add(item.slug.toLowerCase().trim());
+          }
         }
       }
-    } catch {
-      // ignore
+    } catch (e: any) {
+      console.warn('[Netlify Cron] Firebase existing check notice:', e.message);
     }
   }
 
+  // Populate existing from Supabase & protect free tier quota
   let supabaseClient: any = null;
   if (SUPABASE_URL && SUPABASE_KEY && SUPABASE_URL.startsWith('https://')) {
     try {
       supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-      const { data: existing } = await supabaseClient.from('articles').select('slug, headline').limit(100);
+      const { data: existing } = await supabaseClient
+        .from('articles')
+        .select('slug, headline')
+        .order('published_at', { ascending: false })
+        .limit(150);
+
       if (existing) {
         existing.forEach((e: any) => {
-          if (e.headline) existingHeadlines.add(e.headline.trim());
-          if (e.slug) existingHeadlines.add(e.slug);
+          if (e.headline) {
+            existingHeadlines.add(normalizeTitle(e.headline));
+            existingArticlesList.push({ headline: e.headline, slug: e.slug || '' });
+          }
+          if (e.slug) existingHeadlines.add(e.slug.toLowerCase().trim());
         });
       }
-    } catch {
-      // ignore
+
+      // Supabase Free Tier Protection: Auto-prune oldest articles if count > 800
+      const { count } = await supabaseClient.from('articles').select('id', { count: 'exact', head: true });
+      if (count && count > 800) {
+        console.log(`[Supabase Quota Guard] Total articles ${count} exceeds safe threshold. Auto-pruning oldest 50...`);
+        const { data: oldest } = await supabaseClient
+          .from('articles')
+          .select('id')
+          .order('published_at', { ascending: true })
+          .limit(50);
+        if (oldest && oldest.length > 0) {
+          const oldIds = oldest.map((o: any) => o.id);
+          await supabaseClient.from('articles').delete().in('id', oldIds);
+        }
+      }
+    } catch (e: any) {
+      console.warn('[Netlify Cron] Supabase check notice:', e.message);
     }
   }
 
+  const publishedArticles: any[] = [];
   let publishedCount = 0;
 
-  // Process and Transform with Gemini AI
+  // Process and Transform every unique news item with Gemini AI
   for (let i = 0; i < rawArticles.length; i++) {
     const raw = rawArticles[i];
     const cleanRawTitle = raw.title.replace(/\s+-\s+[^-]+$/, '').trim();
@@ -476,21 +540,21 @@ export const handler = async (event: any) => {
       .replace(/[^\w\u0900-\u097F]+/g, '-')
       .slice(0, 50);
 
-    if (existingHeadlines.has(cleanRawTitle) || existingHeadlines.has(baseSlug)) {
+    // Skip if title or slug already exists in Firebase/Supabase
+    if (isDuplicate(cleanRawTitle, baseSlug)) {
       continue;
     }
 
-    // Transform using Gemini 2.5 Flash for top stories, editorial engine for bulk
-    const aiArticle = (publishedCount < 4)
-      ? await transformNewsWithGemini(cleanRawTitle, raw.description, raw.sourceName)
-      : fallbackJournalisticCopy(cleanRawTitle, raw.description, raw.sourceName);
+    // Transform EVERY news item with Gemini 2.5 Flash for high journalistic quality
+    const aiArticle = await transformNewsWithGemini(cleanRawTitle, raw.description, raw.sourceName);
 
     const slug = aiArticle.headline
       .toLowerCase()
       .replace(/[^\w\u0900-\u097F]+/g, '-')
       .slice(0, 60);
 
-    if (existingHeadlines.has(aiArticle.headline) || existingHeadlines.has(slug)) {
+    // Verify AI-generated headline doesn't duplicate
+    if (isDuplicate(aiArticle.headline, slug)) {
       continue;
     }
 
@@ -513,7 +577,7 @@ export const handler = async (event: any) => {
       imageSource: raw.sourceName,
       reporterName: `हुंकार 24 AI डेस्क (${raw.sourceName})`,
       reporterRole: 'स्वचालित समाचार नेटवर्क',
-      status: 'published',
+      status: 'published' as const,
       isBreaking: aiArticle.isBreaking,
       isHero: false,
       isExclusive: aiArticle.category === 'agriculture',
@@ -555,10 +619,10 @@ export const handler = async (event: any) => {
       }
     }
 
-    // B. Push to Supabase if configured
+    // B. Push to Supabase with upsert (Zero duplicate key violations, zero crashes)
     if (supabaseClient) {
       try {
-        await supabaseClient.from('articles').insert([{
+        await supabaseClient.from('articles').upsert([{
           id: articlePayload.id,
           headline: articlePayload.headline,
           slug: articlePayload.slug,
@@ -580,34 +644,36 @@ export const handler = async (event: any) => {
           reading_time_minutes: articlePayload.readingTimeMinutes,
           tags: articlePayload.tags,
           published_at: articlePayload.publishedAt
-        }]);
+        }], { onConflict: 'slug' });
 
         if (aiArticle.isBreaking) {
-          await supabaseClient.from('breaking_news').insert([{
+          await supabaseClient.from('breaking_news').upsert([{
             id: `brk-${artId.slice(-6)}`,
             text: aiArticle.headline,
             link_url: `/news/${articlePayload.slug}`,
             link_article_id: artId,
             priority: 1,
             is_active: true
-          }]);
+          }], { onConflict: 'id' });
         }
-      } catch {
-        // ignore
+      } catch (err: any) {
+        console.warn('[Netlify Cron] Supabase upsert notice:', err.message);
       }
     }
 
-    existingHeadlines.add(aiArticle.headline);
+    existingHeadlines.add(normalizeTitle(aiArticle.headline));
     existingHeadlines.add(slug);
+    existingArticlesList.push({ headline: aiArticle.headline, slug });
+    publishedArticles.push(articlePayload);
     publishedCount++;
 
-    // Limit to top batch per cron cycle to keep execution speedy
-    if (publishedCount >= 15) {
+    // Safe batch size per invocation to prevent serverless timeout
+    if (publishedCount >= 8) {
       break;
     }
   }
 
-  console.log(`[Netlify Auto-News Cron] Cycle finished. ${publishedCount} new AI-transformed articles published.`);
+  console.log(`[Netlify Auto-News Cron] Cycle finished. ${publishedCount} new Gemini-transformed articles published.`);
 
   return {
     statusCode: 200,
@@ -616,8 +682,9 @@ export const handler = async (event: any) => {
       success: true,
       publishedCount,
       totalFetched: rawArticles.length,
+      approvedArticles: publishedArticles,
       timestamp: new Date().toISOString(),
-      message: `Gemini AI द्वारा ${publishedCount} नए उच्च-गुणवत्ता समाचार सफलतापूर्वक प्रकाशित हुए।`
+      message: `Gemini AI द्वारा ${publishedCount} नए उच्च-गुणवत्ता समाचार सफलतापूर्वक अनुकूलित व लाइव किए गए।`
     })
   };
 };
