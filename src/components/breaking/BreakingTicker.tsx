@@ -37,7 +37,7 @@ export const BreakingTicker: React.FC = () => {
   };
 
   return (
-    <div className="bg-red-950 text-white border-b border-red-800 text-xs sm:text-sm overflow-hidden select-none">
+    <div id="breaking-ticker" className="bg-red-950 text-white border-b border-red-800 text-xs sm:text-sm overflow-hidden select-none">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-2 flex items-center gap-3">
         {/* Urgent Label Badge */}
         <div className="flex items-center gap-1.5 bg-red-600 text-white font-extrabold px-2.5 py-1 rounded text-xs uppercase tracking-wider shrink-0 shadow-xs">

@@ -15,7 +15,9 @@ const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use('/assets', express.static(path.resolve(__dirname, 'public', 'assets')));
 
 // In-memory web push subscriptions storage (Part 18 architecture preparation)
 const webPushSubscriptions: Array<{ endpoint: string; keys: any; subscribedAt: string }> = [];
@@ -638,6 +640,132 @@ app.post('/api/ads/manage', requireAdminAuth, (req: Request, res: Response) => {
   }
 
   res.status(400).json({ success: false, error: 'अमान्य कार्रवाई' });
+});
+
+// ============================================================================
+// ADMIN ARTICLES & MULTI-DEVICE REAL-TIME PERSISTENCE
+// ============================================================================
+const ARTICLES_STORE_FILE = path.resolve(process.cwd(), '.admin-articles.json');
+
+function loadAdminArticles(): any[] {
+  try {
+    if (fs.existsSync(ARTICLES_STORE_FILE)) {
+      const data = fs.readFileSync(ARTICLES_STORE_FILE, 'utf-8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (err: any) {
+    console.warn('[ServerArticles] Error reading store:', err.message);
+  }
+  return [];
+}
+
+function saveAdminArticles(list: any[]): void {
+  try {
+    fs.writeFileSync(ARTICLES_STORE_FILE, JSON.stringify(list, null, 2), 'utf-8');
+  } catch (err: any) {
+    console.error('[ServerArticles] Error saving store:', err.message);
+  }
+}
+
+let persistedAdminArticles: any[] = loadAdminArticles();
+
+// GET /api/articles - All client devices fetch live server articles
+app.get('/api/articles', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    articles: persistedAdminArticles
+  });
+});
+
+// POST /api/articles - Admin publishes or edits an article (immediately saved & broadcasted across all devices)
+app.post('/api/articles', (req: Request, res: Response) => {
+  const article = req.body;
+  if (!article || !article.headline) {
+    return res.status(400).json({ success: false, error: 'Headline is required' });
+  }
+
+  const existingIndex = persistedAdminArticles.findIndex(
+    a => a.id === article.id || (article.slug && a.slug === article.slug)
+  );
+
+  if (existingIndex >= 0) {
+    persistedAdminArticles[existingIndex] = {
+      ...persistedAdminArticles[existingIndex],
+      ...article,
+      updatedAt: new Date().toISOString()
+    };
+  } else {
+    persistedAdminArticles.unshift({
+      ...article,
+      id: article.id || `art-${Date.now()}`,
+      publishedAt: article.publishedAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  if (persistedAdminArticles.length > 100) {
+    persistedAdminArticles = persistedAdminArticles.slice(0, 100);
+  }
+
+  saveAdminArticles(persistedAdminArticles);
+  res.json({
+    success: true,
+    article: existingIndex >= 0 ? persistedAdminArticles[existingIndex] : persistedAdminArticles[0]
+  });
+});
+
+// DELETE /api/articles/:id
+app.delete('/api/articles/:id', requireAdminAuth, (req: Request, res: Response) => {
+  const id = req.params.id;
+  persistedAdminArticles = persistedAdminArticles.filter(a => a.id !== id);
+  saveAdminArticles(persistedAdminArticles);
+  res.json({ success: true, deletedId: id });
+});
+
+// POST /api/upload-image - Supports direct base64 image upload from device/camera
+app.post('/api/upload-image', (req: Request, res: Response) => {
+  try {
+    const { dataUrl, filename } = req.body;
+    if (!dataUrl || typeof dataUrl !== 'string') {
+      return res.status(400).json({ success: false, error: 'Data URL required' });
+    }
+
+    const matches = dataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return res.status(400).json({ success: false, error: 'Invalid base64 data format' });
+    }
+
+    const mimeType = matches[1];
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    let ext = 'jpg';
+    if (mimeType.includes('png')) ext = 'png';
+    else if (mimeType.includes('webp')) ext = 'webp';
+    else if (mimeType.includes('gif')) ext = 'gif';
+
+    const uploadsDir = path.resolve(__dirname, 'public', 'assets', 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const cleanName = filename ? filename.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30) : 'upload';
+    const finalFilename = `${cleanName}-${Date.now()}.${ext}`;
+    const targetPath = path.join(uploadsDir, finalFilename);
+
+    fs.writeFileSync(targetPath, buffer);
+    const publicUrl = `/assets/uploads/${finalFilename}`;
+
+    res.json({
+      success: true,
+      url: publicUrl,
+      filename: finalFilename
+    });
+  } catch (err: any) {
+    console.error('[UploadImage] Error saving upload:', err.message);
+    res.status(500).json({ success: false, error: 'तस्वीर सहेजने में त्रुटि हुई' });
+  }
 });
 
 

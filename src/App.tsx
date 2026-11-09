@@ -19,6 +19,7 @@ import { NewsArticleView } from './components/news/NewsArticleView';
 import { AdBanner } from './components/ads/AdBanner';
 import { NewsletterSubscribe } from './components/news/NewsletterSubscribe';
 import { Footer } from './components/footer/Footer';
+import { MobileBottomNav } from './components/navigation/MobileBottomNav';
 
 // Modals
 import { SubmitNewsModal } from './components/publicSubmission/SubmitNewsModal';
@@ -319,7 +320,7 @@ const NewsAppContent: React.FC = () => {
 
   // Public News Portal View — STRICTLY ZERO ADMIN BUTTONS OR LINKS
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 transition-colors">
+    <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 transition-colors pb-16 sm:pb-0">
       {/* 1. Top Utility Ribbon */}
       <TopUtilityBar />
 
@@ -513,6 +514,9 @@ const NewsAppContent: React.FC = () => {
 
       {/* 7. Comprehensive Public Footer — No admin link visible */}
       <Footer onSelectPolicy={policy => setActivePolicy(policy)} />
+
+      {/* 8. Mobile Bottom Sticky Navigation Strip */}
+      <MobileBottomNav />
 
       {/* Global Public Modals */}
       <SubmitNewsModal />

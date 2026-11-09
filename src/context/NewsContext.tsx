@@ -606,6 +606,46 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // Multi-Device Server Live Sync (Ensures newly published news appears instantly on all devices)
+  useEffect(() => {
+    let isMounted = true;
+    const syncServerArticles = async () => {
+      try {
+        const res = await safeFetchJson('/api/articles');
+        if (isMounted && res.success && Array.isArray(res.data?.articles) && res.data.articles.length > 0) {
+          const serverArts = res.data.articles as Article[];
+          setArticles(prev => {
+            const map = new Map<string, Article>();
+            // Server articles take precedence
+            for (const a of serverArts) {
+              map.set(a.id, a);
+            }
+            // Existing local articles
+            for (const a of prev) {
+              if (!map.has(a.id)) {
+                map.set(a.id, a);
+              }
+            }
+            const merged = Array.from(map.values());
+            return deduplicateArticlesList(merged);
+          });
+        }
+      } catch (err: any) {
+        console.warn('[ServerSync] Articles sync notice:', err?.message);
+      }
+    };
+
+    // Immediate sync on component mount
+    syncServerArticles();
+    // Poll every 12 seconds so admin submissions are live across different phones and laptops
+    const serverSyncInterval = setInterval(syncServerArticles, 12000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(serverSyncInterval);
+    };
+  }, []);
+
   // Firebase Realtime Database Connection & Live Sync
   useEffect(() => {
     if (!isFirebaseConfigured) return;
@@ -897,16 +937,38 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Push to Firebase Realtime Database (Instant multi-device sync)
     saveArticleToFirebase(newArticle);
 
+    // Persist to Server Disk for instant multi-device live sync
+    safeFetchJson('/api/articles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newArticle)
+    }).catch(err => console.warn('[AddArticle] Server sync warning:', err));
+
     logAction('लेख प्रकाशित', 'News Management', `नया समाचार प्रकाशित: ${data.headline}`);
     return newArticle;
   };
 
   const updateArticle = (id: string, updates: Partial<Article>) => {
+    let updatedObj: Article | null = null;
     setArticles(prev =>
-      prev.map(art => (art.id === id ? { ...art, ...updates, updatedAt: new Date().toISOString() } : art))
+      prev.map(art => {
+        if (art.id === id) {
+          updatedObj = { ...art, ...updates, updatedAt: new Date().toISOString() };
+          return updatedObj;
+        }
+        return art;
+      })
     );
     if (activeArticle && activeArticle.id === id) {
       setActiveArticle(prev => (prev ? { ...prev, ...updates } : null));
+    }
+
+    if (updatedObj) {
+      safeFetchJson('/api/articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedObj)
+      }).catch(err => console.warn('[UpdateArticle] Server sync warning:', err));
     }
 
     // Push to Supabase Real-Time
@@ -954,6 +1016,11 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (activeArticle?.id === id) {
       setActiveArticle(null);
     }
+
+    // Delete on Server Disk
+    safeFetchJson(`/api/articles/${id}`, {
+      method: 'DELETE'
+    }).catch(err => console.warn('[DeleteArticle] Server sync warning:', err));
 
     // Delete in Supabase Real-Time
     if (supabase) {

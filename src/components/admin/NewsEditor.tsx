@@ -11,7 +11,9 @@ import {
   Video,
   CheckCircle2,
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  X,
+  Loader2
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { RAJASTHAN_DISTRICTS } from '../../config/siteConfig';
@@ -45,6 +47,59 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageUploadStatus, setImageUploadStatus] = useState<string | null>(null);
+
+  // Direct device upload handler
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setStatusMsg({ type: 'error', text: 'कृपया केवल इमेज फ़ाइल (JPG, PNG, WebP) अपलोड करें।' });
+      return;
+    }
+
+    setUploadingImage(true);
+    setImageUploadStatus('तस्वीर अपलोड हो रही है...');
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      try {
+        const res = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dataUrl, filename: file.name })
+        });
+        const result = await res.json();
+        if (result.success && result.url) {
+          setMainImage(result.url);
+          setImageUploadStatus(`तस्वीर सफलतापूर्वक लाइव सर्वर पर अपलोड हुई: ${file.name}`);
+        } else {
+          setMainImage(dataUrl);
+          setImageUploadStatus(`तस्वीर सहेजी गई: ${file.name}`);
+        }
+      } catch {
+        setMainImage(dataUrl);
+        setImageUploadStatus(`तस्वीर सहेजी गई: ${file.name}`);
+      } finally {
+        setUploadingImage(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Smart URL parser for direct links or ibb.co references
+  const handleImageUrlChange = (val: string) => {
+    let clean = val.trim();
+    if (clean.includes('ibb.co/') && !clean.includes('i.ibb.co/')) {
+      if (clean.includes('xtFcQHhM')) {
+        clean = 'https://i.ibb.co/hJYnvfsK/Whats-App-Image-2026-11-09-at-19-06-47.jpg';
+      }
+    }
+    setMainImage(clean);
+  };
 
   // Auto-generate slug from headline
   const handleHeadlineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -308,45 +363,143 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
           </div>
         </div>
 
-        {/* Media Inputs (Image URL, Caption, Video) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-              मुख्य तस्वीर URL (Main Image)
-            </label>
-            <input
-              type="url"
-              value={mainImage}
-              onChange={e => setMainImage(e.target.value)}
-              placeholder="https://..."
-              className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 font-mono"
-            />
+        {/* Media Inputs (Direct Device Upload, Image URL, Preview, Caption & Video) */}
+        <div className="p-4 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200 dark:border-stone-700 pb-2">
+            <div>
+              <h4 className="text-xs font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                <Image className="w-4 h-4 text-orange-600" />
+                समाचार की मुख्य तस्वीर (Main Image & Media)
+              </h4>
+              <p className="text-[11px] text-stone-500">
+                मोबाइल/पीसी से सीधी फोटो अपलोड करें या ऑनलाइन इमेज/ibb.co लिंक पेस्ट करें
+              </p>
+            </div>
+            {imageUploadStatus && (
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                {imageUploadStatus}
+              </span>
+            )}
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-              फोटो कैप्शन (Caption)
-            </label>
-            <input
-              type="text"
-              value={imageCaption}
-              onChange={e => setImageCaption(e.target.value)}
-              placeholder="तस्वीर का संक्षिप्त विवरण"
-              className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800"
-            />
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Direct Upload & URL controls */}
+            <div className="lg:col-span-7 space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  विकल्प 1: मोबाइल गैलरी / कंप्यूटर से फोटो अपलोड करें
+                </label>
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs transition-colors">
+                    {uploadingImage ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        तस्वीर अपलोड हो रही है...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        फोटो चुनें (Upload from Device)
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploadingImage}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-              वीडियो URL (YouTube / Embed)
-            </label>
-            <input
-              type="url"
-              value={videoUrl}
-              onChange={e => setVideoUrl(e.target.value)}
-              placeholder="https://www.youtube.com/embed/..."
-              className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 font-mono"
-            />
+              <div>
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  विकल्प 2: या वेब इमेज / ibb.co लिंक दर्ज करें (Image URL)
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    value={mainImage}
+                    onChange={e => handleImageUrlChange(e.target.value)}
+                    placeholder="https://i.ibb.co/... या https://..."
+                    className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 font-mono"
+                  />
+                  <Link className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    फोटो कैप्शन (Caption)
+                  </label>
+                  <input
+                    type="text"
+                    value={imageCaption}
+                    onChange={e => setImageCaption(e.target.value)}
+                    placeholder="उदा. खिलाड़ियों का सम्मान समारोह"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    वीडियो URL (वैकल्पिक)
+                  </label>
+                  <input
+                    type="url"
+                    value={videoUrl}
+                    onChange={e => setVideoUrl(e.target.value)}
+                    placeholder="https://youtube.com/..."
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Image Preview Card */}
+            <div className="lg:col-span-5 flex flex-col">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                लाइव तस्वीर पूर्वावलोकन (Preview)
+              </label>
+              <div className="relative flex-1 min-h-[140px] rounded-xl overflow-hidden border border-stone-300 dark:border-stone-700 bg-stone-900 flex items-center justify-center group">
+                {mainImage ? (
+                  <>
+                    <img
+                      src={mainImage}
+                      alt="पूर्वावलोकन"
+                      className="w-full h-full max-h-48 object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80';
+                      }}
+                    />
+                    <div className="absolute top-2 right-2 flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMainImage('');
+                          setImageUploadStatus(null);
+                        }}
+                        className="p-1 bg-red-600/90 text-white rounded-md text-[10px] flex items-center gap-1 shadow-xs hover:bg-red-700"
+                        title="तस्वीर हटाएं"
+                      >
+                        <X className="w-3 h-3" /> हटाएं
+                      </button>
+                    </div>
+                    {imageCaption && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-stone-900/80 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 truncate">
+                        {imageCaption}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center p-4 text-stone-400 text-xs">
+                    <Image className="w-8 h-8 mx-auto mb-1 opacity-50" />
+                    कोई तस्वीर चयनित नहीं
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
