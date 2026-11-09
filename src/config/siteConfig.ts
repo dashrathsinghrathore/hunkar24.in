@@ -80,7 +80,7 @@ export const RAJASTHAN_DISTRICTS: DistrictInfo[] = [
 ];
 
 export const DEFAULT_CATEGORIES = [
-  { id: 'all', nameHi: 'होम', nameEn: 'Home', slug: 'home', order: 1, isVisible: true },
+  { id: 'all', nameHi: 'होम', nameEn: 'Home', slug: 'all', order: 1, isVisible: true },
   { id: 'latest', nameHi: 'ताज़ा खबरें', nameEn: 'Latest News', slug: 'latest', order: 2, isVisible: true },
   { id: 'rajasthan', nameHi: 'राजस्थान', nameEn: 'Rajasthan', slug: 'rajasthan', order: 3, isVisible: true },
   { id: 'national', nameHi: 'देश', nameEn: 'National', slug: 'national', order: 4, isVisible: true },

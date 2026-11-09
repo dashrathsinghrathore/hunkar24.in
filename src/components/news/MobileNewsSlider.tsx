@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Pause, Play, Clock, Sparkles } from 'lucide-
 import { useNews } from '../../context/NewsContext';
 import { Article } from '../../types';
 import { SafeImage } from '../common/SafeImage';
+import { deduplicateArticlesList } from '../../utils/deduplication';
 
 export const MobileNewsSlider: React.FC = () => {
   const { articles, setActiveArticle, incrementArticleViews } = useNews();
@@ -12,8 +13,8 @@ export const MobileNewsSlider: React.FC = () => {
   const touchEndX = useRef<number | null>(null);
   const autoPlayTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Take top 8 latest verified articles
-  const sliderArticles: Article[] = articles.slice(0, 8);
+  // Take top 10 unique verified articles with zero duplicate stories
+  const sliderArticles: Article[] = deduplicateArticlesList(articles).slice(0, 10);
 
   const totalSlides = sliderArticles.length;
 

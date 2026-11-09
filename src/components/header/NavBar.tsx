@@ -20,9 +20,11 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenMobileMenu }) => {
   const [isDistrictMenuOpen, setIsDistrictMenuOpen] = useState(false);
 
   const handleCategoryClick = (slug: string) => {
-    setSelectedCategory(slug);
+    const target = (slug === 'home' || slug === 'all') ? 'all' : slug;
+    setSelectedCategory(target);
     setActiveArticle(null);
     setIsDistrictMenuOpen(false);
+    window.history.pushState(null, '', target === 'all' ? '/' : `/${target}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

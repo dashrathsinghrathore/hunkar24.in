@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { AlertCircle, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
+import { deduplicateBreakingNews, areHeadlinesDuplicate } from '../../utils/deduplication';
 
 export const BreakingTicker: React.FC = () => {
   const { breakingNews, articles, setActiveArticle } = useNews();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  const activeItems = breakingNews.filter(item => item.isActive);
+  // Strict deduplication of active breaking items, limited to top 8 distinct stories
+  const activeItems = deduplicateBreakingNews(breakingNews.filter(item => item.isActive)).slice(0, 8);
 
   if (activeItems.length === 0) return null;
 
@@ -22,12 +24,15 @@ export const BreakingTicker: React.FC = () => {
   };
 
   const handleClickItem = () => {
-    if (currentItem.linkArticleId) {
-      const art = articles.find(a => a.id === currentItem.linkArticleId);
-      if (art) {
-        setActiveArticle(art);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+    // 1. First attempt to match by linkArticleId
+    let art = currentItem.linkArticleId ? articles.find(a => a.id === currentItem.linkArticleId) : null;
+    // 2. If not matched by ID, match by headline similarity
+    if (!art) {
+      art = articles.find(a => areHeadlinesDuplicate(a.headline, currentItem.text)) || null;
+    }
+    if (art) {
+      setActiveArticle(art);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 

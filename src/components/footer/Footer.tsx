@@ -202,29 +202,6 @@ export const Footer: React.FC<FooterProps> = ({ onSelectPolicy }) => {
                   <span>शिकायत निवारण अधिकारी (Grievance)</span>
                 </button>
               </li>
-              <li className="pt-2 border-t border-stone-800 flex items-center gap-3 text-[11px]">
-                <a
-                  href="/sitemap.xml"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-amber-400 flex items-center gap-1 text-stone-400"
-                  title="गूगल व सर्च इंजन साइटमैप"
-                >
-                  <FileText className="w-3 h-3 text-amber-500" />
-                  <span>साइटमैप (Sitemap)</span>
-                </a>
-                <span className="text-stone-600">·</span>
-                <a
-                  href="/llms.txt"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-amber-400 flex items-center gap-1 text-stone-400"
-                  title="AI मॉडल सर्च मैनिफेस्ट"
-                >
-                  <ExternalLink className="w-3 h-3 text-amber-500" />
-                  <span>AI Index (llms.txt)</span>
-                </a>
-              </li>
             </ul>
           </div>
 
@@ -266,17 +243,10 @@ export const Footer: React.FC<FooterProps> = ({ onSelectPolicy }) => {
           </div>
         </div>
 
-        {/* Bottom Bar: Copyright & Domain Information */}
+        {/* Bottom Bar: Copyright Information */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
           <div>
             © {new Date().getFullYear()} <strong className="text-stone-300">HUNKAR 24 (हुंकार 24)</strong>. सर्वाधिकार सुरक्षित।
-          </div>
-
-          {/* Centralized Domain Information */}
-          <div className="flex items-center gap-2 text-[11px] bg-stone-900 px-3 py-1 rounded-full border border-stone-800">
-            <span>लाइव डिजिटल न्यूज़: <strong className="text-stone-300">{SITE_CONFIG.currentSiteUrl.replace('https://', '')}</strong></span>
-            <span>·</span>
-            <span className="text-amber-400">हुंकार 24 — निष्पक्ष पत्रकारिता</span>
           </div>
         </div>
       </div>

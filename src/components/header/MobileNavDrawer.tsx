@@ -32,8 +32,10 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
   if (!isOpen) return null;
 
   const handleCategoryClick = (slug: string) => {
-    setSelectedCategory(slug);
+    const target = (slug === 'home' || slug === 'all') ? 'all' : slug;
+    setSelectedCategory(target);
     setActiveArticle(null);
+    window.history.pushState(null, '', target === 'all' ? '/' : `/${target}`);
     onClose();
   };
 
@@ -41,6 +43,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
     setSelectedDistrict(districtId);
     setSelectedCategory('rajasthan');
     setActiveArticle(null);
+    window.history.pushState(null, '', '/rajasthan');
     onClose();
   };
 
@@ -56,7 +59,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
       <div className="relative w-4/5 max-w-xs bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 h-full shadow-2xl flex flex-col z-10 overflow-hidden">
         {/* Header */}
         <div className="p-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between bg-stone-50 dark:bg-stone-950">
-          <BrandLogo variant="mobile" onClick={() => { setActiveArticle(null); onClose(); }} />
+          <BrandLogo variant="mobile" onClick={() => { setSelectedCategory('all'); setActiveArticle(null); window.history.pushState(null, '', '/'); onClose(); }} />
           <button
             onClick={onClose}
             className="p-2 rounded-lg text-stone-500 hover:text-stone-900 dark:hover:text-stone-100"

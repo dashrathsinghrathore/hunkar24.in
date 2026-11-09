@@ -125,7 +125,9 @@ const NewsAppContent: React.FC = () => {
       }
     } else if (path.length > 1) {
       const clean = path.replace('/', '').toLowerCase();
-      if (CATEGORY_NAMES_HI[clean]) {
+      if (clean === 'home' || clean === 'all') {
+        setSelectedCategory('all');
+      } else if (CATEGORY_NAMES_HI[clean]) {
         setSelectedCategory(clean);
       }
     }
@@ -144,13 +146,15 @@ const NewsAppContent: React.FC = () => {
         const slug = path.replace('/news/', '').trim();
         const matched = articles.find(a => a.slug === slug);
         if (matched) setActiveArticle(matched);
-      } else if (path === '/' || path === '') {
+      } else if (path === '/' || path === '' || path === '/home' || path === '/all') {
         setActiveArticle(null);
         setSelectedCategory('all');
       } else {
         setActiveArticle(null);
         const clean = path.replace('/', '').toLowerCase();
-        if (CATEGORY_NAMES_HI[clean]) {
+        if (clean === 'home' || clean === 'all') {
+          setSelectedCategory('all');
+        } else if (CATEGORY_NAMES_HI[clean]) {
           setSelectedCategory(clean);
         }
       }
@@ -273,13 +277,22 @@ const NewsAppContent: React.FC = () => {
 
   // Filtered Articles for Category Feed
   const filteredCategoryArticles = articles.filter(a => {
-    if (selectedCategory === 'all') return true;
+    if (selectedCategory === 'all' || selectedCategory === 'home') return true;
     if (selectedCategory === 'latest') return a.status === 'published';
     const matchCategory = a.category?.toLowerCase() === selectedCategory.toLowerCase();
     const matchDistrict = a.district?.toLowerCase() === selectedCategory.toLowerCase();
     const matchTag = a.tags?.some(t => t.toLowerCase() === selectedCategory.toLowerCase());
     return matchCategory || matchDistrict || matchTag;
   });
+
+  // Calculate non-overlapping articles for homepage feed (Zero repetition guarantee)
+  const heroLeadId = (articles.find(a => a.isHero) || articles[0])?.id;
+  const heroSecondaryIds = new Set(articles.filter(a => a.id !== heroLeadId).slice(0, 2).map(a => a.id));
+  const heroFastIds = new Set(articles.filter(a => a.id !== heroLeadId && !heroSecondaryIds.has(a.id)).slice(0, 4).map(a => a.id));
+  const usedInHero = new Set([heroLeadId, ...heroSecondaryIds, ...heroFastIds].filter(Boolean) as string[]);
+
+  const distinctLatestFeed = articles.filter(a => !usedInHero.has(a.id));
+  const homepageLatestFeed = distinctLatestFeed.length > 0 ? distinctLatestFeed.slice(0, 10) : articles.slice(0, 6);
 
   const categoryTitle = CATEGORY_NAMES_HI[selectedCategory] || selectedCategory.toUpperCase();
 
@@ -304,7 +317,7 @@ const NewsAppContent: React.FC = () => {
       </div>
 
       {/* 5.1 Mobile News Slider (Touch-swipeable, responsive headline slider below top banner) */}
-      {!activeArticle && selectedCategory === 'all' && (
+      {!activeArticle && (selectedCategory === 'all' || selectedCategory === 'home') && (
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 w-full pt-2">
           <MobileNewsSlider />
         </div>
@@ -321,7 +334,7 @@ const NewsAppContent: React.FC = () => {
               window.history.pushState(null, '', selectedCategory === 'all' ? '/' : `/${selectedCategory}`);
             }}
           />
-        ) : selectedCategory !== 'all' ? (
+        ) : (selectedCategory !== 'all' && selectedCategory !== 'home') ? (
           /* Category / District Filtered Feed View */
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-red-700">
@@ -458,7 +471,7 @@ const NewsAppContent: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {articles.slice(2, 7).map(art => (
+                  {homepageLatestFeed.map(art => (
                     <ArticleCard key={art.id} article={art} layout="horizontal" />
                   ))}
                 </div>

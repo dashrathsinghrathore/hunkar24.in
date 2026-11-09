@@ -10,6 +10,7 @@ interface MainHeaderProps {
 
 export const MainHeader: React.FC<MainHeaderProps> = ({ onOpenMobileMenu }) => {
   const {
+    setSelectedCategory,
     selectedDistrict,
     setSelectedDistrict,
     setIsSearchOpen,
@@ -19,7 +20,10 @@ export const MainHeader: React.FC<MainHeaderProps> = ({ onOpenMobileMenu }) => {
   } = useNews();
 
   const handleLogoClick = () => {
+    setSelectedCategory('all');
+    setSelectedDistrict('all');
     setActiveArticle(null);
+    window.history.pushState(null, '', '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
