@@ -153,7 +153,7 @@ export const NewsList: React.FC<NewsListProps> = ({ onEditArticle, onCreateNew }
                 </td>
 
                 <td className="p-3 font-mono font-bold whitespace-nowrap">
-                  {art.views.toLocaleString()}
+                  {(art.views || 0).toLocaleString()}
                 </td>
 
                 <td className="p-3 whitespace-nowrap">

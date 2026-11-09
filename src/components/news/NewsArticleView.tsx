@@ -236,7 +236,7 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
             <span aria-hidden="true">·</span>
             <span className="flex items-center gap-1 font-mono">
               <Eye className="w-3.5 h-3.5" />
-              <span>{article.views.toLocaleString()} पाठक</span>
+              <span>{(article.views || 0).toLocaleString()} पाठक</span>
             </span>
           </div>
         </div>

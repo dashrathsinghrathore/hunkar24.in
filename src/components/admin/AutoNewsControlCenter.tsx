@@ -150,8 +150,6 @@ export const AutoNewsControlCenter: React.FC = () => {
 
   useEffect(() => {
     loadStatus();
-    const interval = setInterval(loadStatus, 30000); // 30s auto-refresh
-    return () => clearInterval(interval);
   }, []);
 
   const showToast = (msg: string) => {

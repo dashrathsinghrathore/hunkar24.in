@@ -45,6 +45,8 @@ import {
   seedFirebaseIfEmpty,
   isFirebaseConfigured
 } from '../lib/firebaseClient';
+import { safeLocalStorageGet, safeLocalStorageSet } from '../utils/storageUtils';
+
 
 export type LanguageCode = 'hi' | 'raj' | 'en';
 
@@ -163,78 +165,53 @@ interface NewsContextType {
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
 
 export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load state from localStorage or use initial seed data
+  // Load state from safe storage or use initial seed data (Capped to prevent quota exceeded)
   const [articles, setArticles] = useState<Article[]>(() => {
-    const saved = localStorage.getItem('hunkar24_articles');
-    return saved ? JSON.parse(saved) : INITIAL_ARTICLES;
+    return safeLocalStorageGet<Article[]>('hunkar24_articles', INITIAL_ARTICLES);
   });
 
   const [breakingNews, setBreakingNews] = useState<BreakingNewsItem[]>(() => {
-    const saved = localStorage.getItem('hunkar24_breaking');
-    return saved ? JSON.parse(saved) : INITIAL_BREAKING_NEWS;
+    return safeLocalStorageGet<BreakingNewsItem[]>('hunkar24_breaking', INITIAL_BREAKING_NEWS);
   });
 
   const [categories, setCategories] = useState<CategoryItem[]>(() => {
-    const saved = localStorage.getItem('hunkar24_categories');
-    return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+    return safeLocalStorageGet<CategoryItem[]>('hunkar24_categories', DEFAULT_CATEGORIES);
   });
 
   const [submissions, setSubmissions] = useState<PublicNewsSubmission[]>(() => {
-    const saved = localStorage.getItem('hunkar24_submissions');
-    return saved ? JSON.parse(saved) : INITIAL_SUBMISSIONS;
+    return safeLocalStorageGet<PublicNewsSubmission[]>('hunkar24_submissions', INITIAL_SUBMISSIONS);
   });
 
   const [advertisements, setAdvertisements] = useState<AdvertisementCampaign[]>(() => {
-    const saved = localStorage.getItem('hunkar24_ads');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Strictly purge all demo, sample, placeholder, default or unapproved ads (Requirement 5)
-          return parsed.filter(
-            (a: any) => a && !a.isDemo && a.id !== 'ad-01' && a.id !== 'ad-02' && a.id !== 'ad-03' && a.createdByAdmin && a.approved
-          );
-        }
-      } catch {
-        // ignore
-      }
+    const saved = safeLocalStorageGet<AdvertisementCampaign[]>('hunkar24_ads', []);
+    if (Array.isArray(saved)) {
+      return saved.filter(
+        (a: any) => a && !a.isDemo && a.id !== 'ad-01' && a.id !== 'ad-02' && a.id !== 'ad-03' && a.createdByAdmin && a.approved
+      );
     }
     return [];
   });
 
   const [promotionRequests, setPromotionRequests] = useState<BusinessPromotionRequest[]>(() => {
-    const saved = localStorage.getItem('hunkar24_promotions');
-    return saved ? JSON.parse(saved) : INITIAL_PROMOTION_REQUESTS;
+    return safeLocalStorageGet<BusinessPromotionRequest[]>('hunkar24_promotions', INITIAL_PROMOTION_REQUESTS);
   });
 
   const [reporters, setReporters] = useState<ReporterProfile[]>(() => {
-    const saved = localStorage.getItem('hunkar24_reporters');
-    return saved ? JSON.parse(saved) : INITIAL_REPORTERS;
+    return safeLocalStorageGet<ReporterProfile[]>('hunkar24_reporters', INITIAL_REPORTERS);
   });
 
-  const [videos, setVideos] = useState<VideoNewsItem[]>(() => {
-    // Purge any stored non-news or legacy videos from localStorage
-    try {
-      localStorage.removeItem('hunkar24_videos');
-    } catch {
-      // ignore
-    }
-    return [];
-  });
+  const [videos, setVideos] = useState<VideoNewsItem[]>([]);
 
   const [galleries, setGalleries] = useState<PhotoGalleryAlbum[]>(() => {
-    const saved = localStorage.getItem('hunkar24_galleries');
-    return saved ? JSON.parse(saved) : INITIAL_GALLERIES;
+    return safeLocalStorageGet<PhotoGalleryAlbum[]>('hunkar24_galleries', INITIAL_GALLERIES);
   });
 
   const [businessListings, setBusinessListings] = useState<BusinessListing[]>(() => {
-    const saved = localStorage.getItem('hunkar24_biz_listings');
-    return saved ? JSON.parse(saved) : INITIAL_BUSINESS_LISTINGS;
+    return safeLocalStorageGet<BusinessListing[]>('hunkar24_biz_listings', INITIAL_BUSINESS_LISTINGS);
   });
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
-    const saved = localStorage.getItem('hunkar24_audit_logs');
-    return saved ? JSON.parse(saved) : [
+    return safeLocalStorageGet<AuditLog[]>('hunkar24_audit_logs', [
       {
         id: 'log-1',
         userName: 'सिस्टम प्रशासक',
@@ -244,7 +221,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         details: 'हुंकार 24 मास्टर न्यूज़ प्लेटफॉर्म लोड किया गया',
         timestamp: new Date().toISOString()
       }
-    ];
+    ]);
   });
 
   // Active filters and views
@@ -252,9 +229,9 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
   const [activeArticle, setActiveArticle] = useState<Article | null>(null);
 
-  // User auth state: Starts null (unauthenticated). Zero personal identity stored or displayed (Requirement 2)
+  // User auth state: Starts null (unauthenticated). Zero personal identity stored or displayed
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(() => {
-    const saved = sessionStorage.getItem('hunkar24_admin_user');
+    const saved = typeof window !== 'undefined' ? sessionStorage.getItem('hunkar24_admin_user') : null;
     if (saved) {
       try {
         const user = JSON.parse(saved);
@@ -277,7 +254,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // UI & Accessibility
   const [language, setLanguage] = useState<LanguageCode>('hi');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    return (localStorage.getItem('hunkar24_theme') as 'light' | 'dark') || 'light';
+    return (safeLocalStorageGet<string>('hunkar24_theme', 'light') as 'light' | 'dark') || 'light';
   });
   const [fontSize, setFontSize] = useState<'normal' | 'large' | 'extra-large'>('normal');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -286,49 +263,45 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isPromotionModalOpen, setIsPromotionModalOpen] = useState<boolean>(false);
   const [isReportIssueOpen, setIsReportIssueOpen] = useState<boolean>(false);
 
-  // Sync to localStorage
+  // Safe sync to storage: strictly cap array length to prevent QuotaExceededError
   useEffect(() => {
-    localStorage.setItem('hunkar24_articles', JSON.stringify(articles));
+    safeLocalStorageSet('hunkar24_articles', articles.slice(0, 30));
   }, [articles]);
 
   useEffect(() => {
-    localStorage.setItem('hunkar24_breaking', JSON.stringify(breakingNews));
+    safeLocalStorageSet('hunkar24_breaking', breakingNews.slice(0, 15));
   }, [breakingNews]);
 
   useEffect(() => {
-    localStorage.setItem('hunkar24_categories', JSON.stringify(categories));
+    safeLocalStorageSet('hunkar24_categories', categories);
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem('hunkar24_submissions', JSON.stringify(submissions));
+    safeLocalStorageSet('hunkar24_submissions', submissions.slice(0, 25));
   }, [submissions]);
 
   useEffect(() => {
-    localStorage.setItem('hunkar24_ads', JSON.stringify(advertisements));
+    safeLocalStorageSet('hunkar24_ads', advertisements);
   }, [advertisements]);
 
   useEffect(() => {
-    localStorage.setItem('hunkar24_promotions', JSON.stringify(promotionRequests));
+    safeLocalStorageSet('hunkar24_promotions', promotionRequests.slice(0, 20));
   }, [promotionRequests]);
 
   useEffect(() => {
-    localStorage.setItem('hunkar24_reporters', JSON.stringify(reporters));
+    safeLocalStorageSet('hunkar24_reporters', reporters);
   }, [reporters]);
 
   useEffect(() => {
-    localStorage.setItem('hunkar24_videos', JSON.stringify(videos));
-  }, [videos]);
-
-  useEffect(() => {
-    localStorage.setItem('hunkar24_galleries', JSON.stringify(galleries));
+    safeLocalStorageSet('hunkar24_galleries', galleries.slice(0, 10));
   }, [galleries]);
 
   useEffect(() => {
-    localStorage.setItem('hunkar24_audit_logs', JSON.stringify(auditLogs));
+    safeLocalStorageSet('hunkar24_audit_logs', auditLogs.slice(0, 25));
   }, [auditLogs]);
 
   useEffect(() => {
-    localStorage.setItem('hunkar24_theme', theme);
+    safeLocalStorageSet('hunkar24_theme', theme);
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
@@ -419,35 +392,9 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     syncAutoNewsApproved();
-    const interval = setInterval(syncAutoNewsApproved, 30000); // Check auto news every 30s
+    // Non-intrusive 5-minute sync without aggressive polling or page reloading
+    const interval = setInterval(syncAutoNewsApproved, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Autonomous 15-30 minute news fetcher (runs seamlessly in background)
-  useEffect(() => {
-    const triggerAutonomousFetch = async () => {
-      const lastFetchKey = 'hunkar24_last_autonomous_fetch';
-      const lastFetch = localStorage.getItem(lastFetchKey);
-      const now = Date.now();
-      const fifteenMinutesMs = 15 * 60 * 1000;
-
-      // If 15 minutes elapsed or never fetched before
-      if (!lastFetch || now - Number(lastFetch) > fifteenMinutesMs) {
-        localStorage.setItem(lastFetchKey, String(now));
-        try {
-          await fetchAutoNewsNow();
-        } catch (err) {
-          console.warn('[AutonomousNewsEngine] Auto-fetch notice:', err);
-        }
-      }
-    };
-
-    // Trigger on app start
-    triggerAutonomousFetch();
-
-    // Check every 3 minutes if 15m window has elapsed
-    const autoCron = setInterval(triggerAutonomousFetch, 3 * 60 * 1000);
-    return () => clearInterval(autoCron);
   }, []);
 
   // Supabase Real-Time Database Connection & Sync
@@ -830,12 +777,12 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     setArticles(prev => [newArticle, ...prev]);
 
-    // Push to Supabase Real-Time so ALL devices update instantly without page reload
+    // Push to Supabase Real-Time with upsert to prevent duplicate insertion
     if (supabase) {
       try {
         supabase
           .from('articles')
-          .insert([{
+          .upsert([{
             id: newArticle.id,
             headline: newArticle.headline,
             slug: newArticle.slug,
@@ -861,12 +808,12 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
             tags: newArticle.tags || [],
             video_url: newArticle.videoUrl,
             published_at: newArticle.publishedAt
-          }])
+          }], { onConflict: 'slug' })
           .then(({ error }) => {
-            if (error) console.warn('[Supabase Realtime] Article insert notice:', error);
+            if (error) console.warn('[Supabase Realtime] Article upsert notice:', error.message);
           });
       } catch (err) {
-        console.warn('[Supabase] Insert error:', err);
+        console.warn('[Supabase] Upsert error:', err);
       }
     }
 
@@ -982,14 +929,14 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         supabase
           .from('breaking_news')
-          .insert([{
+          .upsert([{
             id: item.id,
             text: item.text,
             link_url: item.linkUrl,
             link_article_id: item.linkArticleId,
             priority: item.priority,
             is_active: item.isActive
-          }])
+          }], { onConflict: 'id' })
           .then(({ error }) => {
             if (error) console.warn('[Supabase Realtime] Breaking news insert notice:', error);
           });

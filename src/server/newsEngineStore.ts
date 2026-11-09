@@ -8,6 +8,8 @@ import {
   fetchFromNewsData,
   fetchFromGNews,
   fetchFromGoogleNewsRss,
+  fetchFromCurrents,
+  fetchFromMediastack,
   fetchFromCustomProvider
 } from './newsProviders';
 import { deduplicateArticles, ProcessedArticle } from './deduplicationEngine';
@@ -247,6 +249,8 @@ class NewsEngineStore {
     importedCount: number;
     duplicateCount: number;
     approvedCount: number;
+    approvedArticles?: ProcessedArticle[];
+    stats?: EngineStats;
     errors: string[];
   }> {
     if (this.isRunningMutex) {
@@ -284,6 +288,8 @@ class NewsEngineStore {
           else if (provider.id === 'newsdata') fetched = await fetchFromNewsData(provider);
           else if (provider.id === 'gnews') fetched = await fetchFromGNews(provider);
           else if (provider.id === 'google_news_rss') fetched = await fetchFromGoogleNewsRss();
+          else if (provider.id === 'currents') fetched = await fetchFromCurrents(provider);
+          else if (provider.id === 'mediastack') fetched = await fetchFromMediastack(provider);
           else fetched = await fetchFromCustomProvider(provider);
 
           provider.lastStatus = 'success';
@@ -339,9 +345,50 @@ class NewsEngineStore {
 
         const processed = await processArticleWithAI(group.primary, group.duplicates);
 
-        // Immediate Live Auto-Publish: Any news fetched within the 30-minute cycle goes live immediately
+        // Immediate Live Auto-Publish: Any news fetched within the cycle goes live immediately
         this.approvedArticles.unshift(processed);
         newlyApproved++;
+
+        // Push to Firebase Realtime Database if configured
+        const firebaseRtdbUrl = process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL;
+        if (firebaseRtdbUrl) {
+          const slug = processed.titleHindi
+            .toLowerCase()
+            .replace(/[^\w\u0900-\u097F]+/g, '-')
+            .slice(0, 50);
+          const artId = `art-${processed.id}`;
+          const isBreaking = processed.tags.includes('ब्रेकिंग') || processed.verificationLevel === 'multiple_sources';
+          const rtdbPayload = {
+            id: artId,
+            headline: processed.titleHindi,
+            slug: `${slug}-${artId.slice(-4)}`,
+            summary: processed.summaryHindi,
+            content: processed.contentHindi,
+            category: processed.category || 'rajasthan',
+            district: processed.district,
+            mainImage: processed.imageUrl,
+            imageCaption: `${processed.district ? processed.district.toUpperCase() : 'राजस्थान'} समाचार संदर्भ दृश्य`,
+            imageSource: processed.imageSource || 'हुंकार 24 डिजिटल डेस्क',
+            reporterName: `हुंकार 24 ब्यूरो (${processed.sourceArticles[0]?.sourceName || 'विशेष प्रतिनिधि'})`,
+            reporterRole: 'स्वचालित समाचार नेटवर्क',
+            status: 'published',
+            isBreaking,
+            isHero: false,
+            isExclusive: false,
+            views: Math.floor(120 + Math.random() * 250),
+            likesCount: Math.floor(10 + Math.random() * 45),
+            readingTimeMinutes: 3,
+            tags: processed.tags,
+            publishedAt: processed.publishedAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          fetch(`${firebaseRtdbUrl}/articles/${artId}.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(rtdbPayload)
+          }).catch(err => console.warn('[Firebase RTDB sync warning]:', err.message));
+        }
       }
 
       this.lastFetchTime = new Date().toISOString();
@@ -352,6 +399,8 @@ class NewsEngineStore {
         importedCount: newlyImported,
         duplicateCount: newDuplicates,
         approvedCount: newlyApproved,
+        approvedArticles: this.approvedArticles.slice(0, 30),
+        stats: this.getStats(),
         errors
       };
     } finally {

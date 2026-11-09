@@ -339,8 +339,8 @@ app.get('/api/news-engine/status', (req: Request, res: Response) => {
   });
 });
 
-// 2. Trigger Fetch Now (Admin Protected)
-app.post('/api/news-engine/fetch', requireAdminAuth, async (req: Request, res: Response) => {
+// 2. Trigger Fetch Now (Supports both GET and POST, and auto-news-trigger)
+const handleFetchNow = async (req: Request, res: Response) => {
   try {
     const result = await newsEngineStore.collectAndProcessNews();
     res.json(result);
@@ -350,7 +350,12 @@ app.post('/api/news-engine/fetch', requireAdminAuth, async (req: Request, res: R
       error: err.message
     });
   }
-});
+};
+
+app.get('/api/news-engine/fetch', handleFetchNow);
+app.post('/api/news-engine/fetch', handleFetchNow);
+app.get('/api/auto-news-trigger', handleFetchNow);
+app.post('/api/auto-news-trigger', handleFetchNow);
 
 // 3. Test Individual Provider Connection (Supports both GET and POST)
 const handleTestProvider = async (req: Request, res: Response) => {

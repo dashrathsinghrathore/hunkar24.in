@@ -76,6 +76,28 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     requestCountToday: 0
   },
   {
+    id: 'currents',
+    name: 'Currents API (Hindi & Regional)',
+    type: 'api',
+    apiKey: process.env.CURRENTS_API_KEY || 'WSwpDXRL_luUkRYPZVr-coodFbKfC7ij19cERx5UGMZYy2lF',
+    endpoint: 'https://api.currentsapi.services/v1/latest-news',
+    isEnabled: true,
+    rateLimitPerDay: 600,
+    lastStatus: 'idle',
+    requestCountToday: 0
+  },
+  {
+    id: 'mediastack',
+    name: 'Mediastack API (India & Rajasthan)',
+    type: 'api',
+    apiKey: process.env.MEDIASTACK_API_KEY || '226599a190faa3799ad5bdc110352087',
+    endpoint: 'http://api.mediastack.com/v1/news',
+    isEnabled: true,
+    rateLimitPerDay: 500,
+    lastStatus: 'idle',
+    requestCountToday: 0
+  },
+  {
     id: 'provider_5',
     name: process.env.PROVIDER_5_NAME || 'Additional News API 1 (Custom)',
     type: 'custom',
@@ -398,3 +420,83 @@ export async function fetchFromCustomProvider(config: ProviderConfig): Promise<R
     throw new Error(`Custom provider ${config.name} failure: ${err.message}`);
   }
 }
+
+// ----------------------------------------------------------------------------
+// PROVIDER: Currents API
+// ----------------------------------------------------------------------------
+export async function fetchFromCurrents(config: ProviderConfig): Promise<RawNewsArticle[]> {
+  const apiKey = config.apiKey || process.env.CURRENTS_API_KEY || 'WSwpDXRL_luUkRYPZVr-coodFbKfC7ij19cERx5UGMZYy2lF';
+  if (!apiKey) return [];
+
+  // Try Hindi regional first, then fallback to general India news
+  const url = `https://api.currentsapi.services/v1/latest-news?language=hi&apiKey=${apiKey}`;
+  const res = await fetchWithTimeout(url);
+  if (!res.ok) {
+    throw new Error(`Currents API error ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const results: RawNewsArticle[] = [];
+  const newsList = Array.isArray(data.news) ? data.news : [];
+
+  for (const item of newsList.slice(0, 10)) {
+    if (!item.title) continue;
+    results.push({
+      sourceId: 'currents',
+      sourceName: item.author || 'Currents Hindi',
+      sourceUrl: item.url,
+      originalId: item.id || item.url,
+      title: item.title,
+      description: item.description || '',
+      content: item.description || '',
+      author: item.author || undefined,
+      url: item.url,
+      imageUrl: item.image && item.image !== 'None' ? item.image : undefined,
+      publishedAt: item.published ? new Date(item.published).toISOString() : new Date().toISOString(),
+      language: item.language || 'hi',
+      categorySuggestion: Array.isArray(item.category) ? item.category[0] : undefined
+    });
+  }
+
+  return results;
+}
+
+// ----------------------------------------------------------------------------
+// PROVIDER: Mediastack API
+// ----------------------------------------------------------------------------
+export async function fetchFromMediastack(config: ProviderConfig): Promise<RawNewsArticle[]> {
+  const apiKey = config.apiKey || process.env.MEDIASTACK_API_KEY || '226599a190faa3799ad5bdc110352087';
+  if (!apiKey) return [];
+
+  const url = `http://api.mediastack.com/v1/news?access_key=${apiKey}&countries=in&languages=hi,en&limit=12`;
+  const res = await fetchWithTimeout(url);
+  if (!res.ok) {
+    throw new Error(`Mediastack API error ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const results: RawNewsArticle[] = [];
+  const articles = Array.isArray(data.data) ? data.data : [];
+
+  for (const item of articles) {
+    if (!item.title) continue;
+    results.push({
+      sourceId: 'mediastack',
+      sourceName: item.source || 'Mediastack Desk',
+      sourceUrl: item.url,
+      originalId: item.url,
+      title: item.title,
+      description: item.description || '',
+      content: item.description || '',
+      author: item.author || undefined,
+      url: item.url,
+      imageUrl: item.image || undefined,
+      publishedAt: item.published_at ? new Date(item.published_at).toISOString() : new Date().toISOString(),
+      language: item.language || 'hi',
+      categorySuggestion: item.category || undefined
+    });
+  }
+
+  return results;
+}
+

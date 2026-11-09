@@ -130,7 +130,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1 font-mono">
                 <Eye className="w-3.5 h-3.5" />
-                <span>{article.views.toLocaleString()}</span>
+                <span>{(article.views || 0).toLocaleString()}</span>
               </span>
               <button
                 onClick={handleWhatsAppShare}
@@ -210,7 +210,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           <div className="flex items-center gap-2.5">
             <span className="flex items-center gap-1 font-mono text-[11px]">
               <Eye className="w-3 h-3" />
-              <span>{article.views.toLocaleString()}</span>
+              <span>{(article.views || 0).toLocaleString()}</span>
             </span>
             <button
               onClick={handleWhatsAppShare}

@@ -80,7 +80,7 @@ export const HeroSection: React.FC = () => {
                   <span aria-hidden="true">·</span>
                   <span className="flex items-center gap-1 font-mono">
                     <Eye className="w-3.5 h-3.5" />
-                    <span>{leadStory.views.toLocaleString()} पाठक</span>
+                    <span>{(leadStory.views || 0).toLocaleString()} पाठक</span>
                   </span>
                 </div>
 

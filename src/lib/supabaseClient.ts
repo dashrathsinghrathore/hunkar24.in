@@ -1,12 +1,13 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { safeLocalStorageGet, safeLocalStorageSet, safeLocalStorageRemove } from '../utils/storageUtils';
 
-// Retrieve credentials from environment or saved localStorage configuration
+// Retrieve credentials from environment or saved configuration
 function getCredentials() {
   const envUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
   const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
-  const localUrl = (typeof window !== 'undefined' ? localStorage.getItem('hunkar24_supabase_url') || '' : '').trim();
-  const localKey = (typeof window !== 'undefined' ? localStorage.getItem('hunkar24_supabase_anon_key') || '' : '').trim();
+  const localUrl = (typeof window !== 'undefined' ? safeLocalStorageGet('hunkar24_supabase_url', '') : '').trim();
+  const localKey = (typeof window !== 'undefined' ? safeLocalStorageGet('hunkar24_supabase_anon_key', '') : '').trim();
 
   const url = localUrl || envUrl;
   const anonKey = localKey || envKey;
@@ -88,8 +89,8 @@ export async function saveSupabaseCredentials(url: string, anonKey: string): Pro
       // If table doesn't exist yet, schema migration is needed, but credentials are valid!
     }
 
-    localStorage.setItem('hunkar24_supabase_url', cleanUrl);
-    localStorage.setItem('hunkar24_supabase_anon_key', cleanKey);
+    safeLocalStorageSet('hunkar24_supabase_url', cleanUrl);
+    safeLocalStorageSet('hunkar24_supabase_anon_key', cleanKey);
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message || 'Supabase से कनेक्ट करने में त्रुटि' };
@@ -97,6 +98,6 @@ export async function saveSupabaseCredentials(url: string, anonKey: string): Pro
 }
 
 export function clearSupabaseCredentials(): void {
-  localStorage.removeItem('hunkar24_supabase_url');
-  localStorage.removeItem('hunkar24_supabase_anon_key');
+  safeLocalStorageRemove('hunkar24_supabase_url');
+  safeLocalStorageRemove('hunkar24_supabase_anon_key');
 }

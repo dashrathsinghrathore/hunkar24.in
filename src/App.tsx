@@ -258,18 +258,14 @@ const NewsAppContent: React.FC = () => {
         {adminTab === 'supabase_guide' && <SupabaseSetupGuide />}
         {adminTab === 'settings' && <WebsiteSettings />}
         {adminTab === 'audit' && <ActivityLogsView />}
-        {['users', 'listings', 'payments', 'analytics', 'seo', 'social', 'notifications', 'security'].includes(adminTab) && (
-          <div className="space-y-6">
-            {adminTab === 'seo' && <WebsiteSettings />}
-            {adminTab === 'security' && <SupabaseSetupGuide />}
-            {adminTab === 'payments' && <AdManager />}
-            {adminTab === 'analytics' && <DashboardHome onNavigate={setAdminTab} />}
-            {adminTab === 'users' && <ReporterManager />}
-            {adminTab === 'listings' && <PromotionRequestsManager />}
-            {adminTab === 'social' && <WebsiteSettings />}
-            {adminTab === 'notifications' && <BreakingNewsManager />}
-          </div>
-        )}
+        {adminTab === 'users' && <ReporterManager />}
+        {adminTab === 'listings' && <PromotionRequestsManager />}
+        {adminTab === 'payments' && <AdManager />}
+        {adminTab === 'analytics' && <DashboardHome onNavigate={setAdminTab} />}
+        {adminTab === 'seo' && <WebsiteSettings />}
+        {adminTab === 'social' && <WebsiteSettings />}
+        {adminTab === 'notifications' && <BreakingNewsManager />}
+        {adminTab === 'security' && <SupabaseSetupGuide />}
       </AdminLayout>
     );
   }

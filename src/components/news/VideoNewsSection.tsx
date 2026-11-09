@@ -61,7 +61,7 @@ export const VideoNewsSection: React.FC = () => {
               <div className="flex items-center justify-between text-xs text-stone-400 pt-2 border-t border-stone-700/50">
                 <span className="flex items-center gap-1 font-mono">
                   <Eye className="w-3.5 h-3.5" />
-                  <span>{item.views.toLocaleString()}</span>
+                  <span>{(item.views || 0).toLocaleString()}</span>
                 </span>
                 <span className="text-red-400 font-bold hover:underline">
                   वीडियो देखें →

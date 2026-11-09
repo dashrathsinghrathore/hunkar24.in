@@ -28,9 +28,8 @@ export const SupabaseSetupGuide: React.FC = () => {
 
     const res = await saveSupabaseCredentials(customUrl, customAnonKey);
     if (res.success) {
-      setConnectMsg({ type: 'success', text: 'सफलतापूर्वक Supabase रियल-टाइम डेटाबेस से कनेक्ट हो गया! पेज रिफ्रेश होने पर नए डेटाबेस से सिंक होगा।' });
+      setConnectMsg({ type: 'success', text: 'सफलतापूर्वक Supabase रियल-टाइम डेटाबेस से कनेक्ट हो गया! डेटाबेस सक्रिय है।' });
       setStatus(getSupabaseConfigStatus());
-      setTimeout(() => window.location.reload(), 1500);
     } else {
       setConnectMsg({ type: 'error', text: res.error || 'कनेक्शन विफल रहा' });
     }
@@ -41,7 +40,6 @@ export const SupabaseSetupGuide: React.FC = () => {
     clearSupabaseCredentials();
     setStatus(getSupabaseConfigStatus());
     setConnectMsg({ type: 'success', text: 'स्थानीय डेटाबेस मोड पर रीसेट कर दिया गया।' });
-    setTimeout(() => window.location.reload(), 1200);
   };
 
   const handleCopySchema = () => {

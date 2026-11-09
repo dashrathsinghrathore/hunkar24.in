@@ -10,7 +10,12 @@
 
 [[redirects]]
   from = "/api/auto-news-trigger"
-  to = "/.netlify/functions/auto-news-cron"
+  to = "/.netlify/functions/auto-news-trigger"
+  status = 200
+
+[[redirects]]
+  from = "/api/news-engine/fetch"
+  to = "/.netlify/functions/news-engine-fetch"
   status = 200
 
 [[redirects]]

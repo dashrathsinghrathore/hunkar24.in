@@ -36,9 +36,9 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
   const draftCount = articles.filter(a => a.status === 'draft').length;
   const pendingSubmissions = submissions.filter(s => s.status === 'pending');
   const activeAdsCount = advertisements.filter(a => a.status === 'active').length;
-  const totalViews = articles.reduce((sum, a) => sum + a.views, 0);
+  const totalViews = articles.reduce((sum, a) => sum + (a.views || 0), 0);
 
-  const topArticles = [...articles].sort((a, b) => b.views - a.views).slice(0, 4);
+  const topArticles = [...articles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 4);
 
   return (
     <div className="space-y-6">
@@ -175,7 +175,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
 
                 <div className="text-right shrink-0">
                   <span className="text-xs font-mono font-bold text-stone-800 dark:text-stone-200 block">
-                    {art.views.toLocaleString()}
+                    {(art.views || 0).toLocaleString()}
                   </span>
                   <span className="text-[10px] text-stone-400">पाठक</span>
                 </div>

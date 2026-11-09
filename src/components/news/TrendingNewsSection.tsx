@@ -7,8 +7,8 @@ export const TrendingNewsSection: React.FC = () => {
   const { articles, setActiveArticle, incrementArticleViews } = useNews();
   const [filterPeriod, setFilterPeriod] = useState<'today' | 'week'>('today');
 
-  // Sort by views
-  const trendingArticles = [...articles].sort((a, b) => b.views - a.views).slice(0, 5);
+  // Sort by views safely
+  const trendingArticles = [...articles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
 
   const handleOpen = (article: Article) => {
     incrementArticleViews(article.id);
@@ -66,7 +66,7 @@ export const TrendingNewsSection: React.FC = () => {
                 <span>·</span>
                 <span className="flex items-center gap-1 font-mono">
                   <Eye className="w-3 h-3" />
-                  <span>{article.views.toLocaleString()}</span>
+                  <span>{(article.views || 0).toLocaleString()}</span>
                 </span>
               </div>
               <h4 className="text-xs font-bold text-stone-900 dark:text-stone-100 group-hover:text-red-700 dark:group-hover:text-red-400 font-newspaper-headline leading-snug line-clamp-2">
