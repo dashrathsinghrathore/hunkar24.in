@@ -8,8 +8,8 @@ import { SafeImage } from '../common/SafeImage';
 export const HeroSection: React.FC = () => {
   const { articles, setActiveArticle, incrementArticleViews } = useNews();
 
-  // Find lead hero story or fallback to first article
-  const leadStory = articles.find(a => a.isHero) || articles[0];
+  // Prioritize top featured story (Katar Kabaddi Championship) or lead hero
+  const leadStory = articles.find(a => a.id === 'art-katar-kabaddi-2026') || articles.find(a => a.isHero) || articles[0];
   const secondaryStories = articles.filter(a => a.id !== leadStory?.id).slice(0, 2);
   const fastUpdates = articles.filter(a => a.id !== leadStory?.id && !secondaryStories.some(s => s.id === a.id)).slice(0, 4);
 

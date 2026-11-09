@@ -174,18 +174,51 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load state from safe storage or use initial seed data with strict deduplication
   const [articles, setArticles] = useState<Article[]>(() => {
     const raw = safeLocalStorageGet<Article[]>('hunkar24_articles', INITIAL_ARTICLES);
-    const list = Array.isArray(raw) && raw.length > 0 ? raw : INITIAL_ARTICLES;
-    // Reset any legacy artificial counts so everything starts at 0 for real counting
-    const hasLegacyCounts = list.some(a => (a.views && a.views > 1000) || (a.likesCount && a.likesCount > 100));
-    const sanitized = hasLegacyCounts
-      ? list.map(a => ({ ...a, views: 0, likesCount: 0 }))
-      : list;
+    const storedList = Array.isArray(raw) && raw.length > 0 ? raw : [];
+
+    // Ensure all articles from INITIAL_ARTICLES (including Katar Kabaddi) are ALWAYS present
+    const map = new Map<string, Article>();
+    for (const a of INITIAL_ARTICLES) {
+      map.set(a.id, a);
+    }
+    for (const a of storedList) {
+      const existing = map.get(a.id);
+      map.set(a.id, existing ? { ...existing, ...a } : a);
+    }
+    // Make sure Katar Kabaddi article is explicitly present and active
+    const katarArt = INITIAL_ARTICLES.find(a => a.id === 'art-katar-kabaddi-2026');
+    if (katarArt) {
+      map.set(katarArt.id, katarArt);
+    }
+
+    const list = Array.from(map.values());
+    const sanitized = list.map(a => ({
+      ...a,
+      views: (a.views && a.views > 500) ? 0 : (a.views || 0),
+      likesCount: (a.likesCount && a.likesCount > 50) ? 0 : (a.likesCount || 0)
+    }));
+    sanitized.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
     return deduplicateArticlesList(sanitized);
   });
 
   const [breakingNews, setBreakingNews] = useState<BreakingNewsItem[]>(() => {
     const raw = safeLocalStorageGet<BreakingNewsItem[]>('hunkar24_breaking', INITIAL_BREAKING_NEWS);
-    return deduplicateBreakingNews(raw);
+    const storedBreaking = Array.isArray(raw) && raw.length > 0 ? raw : [];
+    const bMap = new Map<string, BreakingNewsItem>();
+    for (const b of INITIAL_BREAKING_NEWS) {
+      bMap.set(b.id, b);
+    }
+    for (const b of storedBreaking) {
+      bMap.set(b.id, b);
+    }
+    // Ensure Katar Kabaddi breaking is active and present
+    const katarBrk = INITIAL_BREAKING_NEWS.find(b => b.id === 'brk-katar-kabaddi-1');
+    if (katarBrk) {
+      bMap.set(katarBrk.id, katarBrk);
+    }
+    const mergedB = Array.from(bMap.values());
+    mergedB.sort((a, b) => (a.priority || 99) - (b.priority || 99));
+    return deduplicateBreakingNews(mergedB);
   });
 
   const [categories, setCategories] = useState<CategoryItem[]>(() => {

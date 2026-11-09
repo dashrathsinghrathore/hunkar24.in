@@ -50,6 +50,7 @@ import { ActivityLogsView } from './components/admin/ActivityLogsView';
 import { AutoNewsControlCenter } from './components/admin/AutoNewsControlCenter';
 import { AdminPortalLogin } from './components/admin/AdminPortalLogin';
 import { Article } from './types';
+import { INITIAL_ARTICLES } from './data/mockData';
 import { ArrowLeft, RefreshCw, Layers } from 'lucide-react';
 
 const CATEGORY_NAMES_HI: Record<string, string> = {
@@ -111,20 +112,45 @@ const NewsAppContent: React.FC = () => {
   // Category Feed Pagination
   const [visibleCount, setVisibleCount] = useState<number>(9);
 
-  // Initial URL parsing
+  // Helper to extract clean slug from pathname (handles trailing slashes, encoding & query params)
+  const getSlugFromPath = (path: string): string | null => {
+    const clean = path.split('?')[0].split('#')[0].replace(/\/+$/, '');
+    if (clean.startsWith('/news/')) {
+      const rawSlug = clean.substring('/news/'.length).trim();
+      return decodeURIComponent(rawSlug);
+    }
+    return null;
+  };
+
+  // Resilient article finder across dynamic state and initial catalog
+  const findArticleBySlug = (slug: string): Article | undefined => {
+    const clean = slug.toLowerCase().trim();
+    return (
+      articles.find(a => a.slug.toLowerCase() === clean || a.id.toLowerCase() === clean) ||
+      INITIAL_ARTICLES.find(a => a.slug.toLowerCase() === clean || a.id.toLowerCase() === clean) ||
+      articles.find(a => clean.includes(a.slug.toLowerCase()) || a.slug.toLowerCase().includes(clean)) ||
+      INITIAL_ARTICLES.find(a => clean.includes(a.slug.toLowerCase()) || a.slug.toLowerCase().includes(clean))
+    );
+  };
+
+  // URL parsing & deep-linking synchronization
   useEffect(() => {
     if (checkIsAdminRequested()) {
       setIsAdminView(true);
       return;
     }
-    const path = window.location.pathname;
-    if (path.startsWith('/news/')) {
-      const slug = path.replace('/news/', '').trim();
-      const matched = articles.find(a => a.slug === slug);
+
+    const requestedSlug = getSlugFromPath(window.location.pathname);
+    if (requestedSlug) {
+      const matched = findArticleBySlug(requestedSlug);
       if (matched) {
         setActiveArticle(matched);
+        return;
       }
-    } else if (path.length > 1) {
+    }
+
+    const path = window.location.pathname;
+    if (path.length > 1 && !path.startsWith('/news/')) {
       const clean = path.replace('/', '').toLowerCase();
       if (clean === 'home' || clean === 'all') {
         setSelectedCategory('all');
@@ -132,7 +158,7 @@ const NewsAppContent: React.FC = () => {
         setSelectedCategory(clean);
       }
     }
-  }, []);
+  }, [articles]);
 
   // Listen for browser navigation (popstate & hashchange)
   useEffect(() => {
@@ -142,12 +168,18 @@ const NewsAppContent: React.FC = () => {
         return;
       }
       setIsAdminView(false);
+
       const path = window.location.pathname;
-      if (path.startsWith('/news/')) {
-        const slug = path.replace('/news/', '').trim();
-        const matched = articles.find(a => a.slug === slug);
-        if (matched) setActiveArticle(matched);
-      } else if (path === '/' || path === '' || path === '/home' || path === '/all') {
+      const requestedSlug = getSlugFromPath(path);
+      if (requestedSlug) {
+        const matched = findArticleBySlug(requestedSlug);
+        if (matched) {
+          setActiveArticle(matched);
+          return;
+        }
+      }
+
+      if (path === '/' || path === '' || path === '/home' || path === '/all') {
         setActiveArticle(null);
         setSelectedCategory('all');
       } else {
@@ -169,7 +201,7 @@ const NewsAppContent: React.FC = () => {
     };
   }, [articles]);
 
-  // Sync URL history state
+  // Sync URL history state without wiping out valid deep-link news URLs
   useEffect(() => {
     if (isAdminView) {
       if (window.location.pathname !== '/admin') {
@@ -186,7 +218,10 @@ const NewsAppContent: React.FC = () => {
         window.history.pushState(null, '', target);
       }
     } else {
-      if (window.location.pathname !== '/') {
+      // Never wipe out a /news/ URL if article is still resolving
+      const currentPath = window.location.pathname;
+      const isNewsPath = currentPath.startsWith('/news/');
+      if (!isNewsPath && currentPath !== '/') {
         window.history.pushState(null, '', '/');
       }
     }
