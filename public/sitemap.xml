@@ -155,6 +155,21 @@
 
   <!-- High-Priority News Articles with Google News XML Tags -->
   <url>
+    <loc>https://hunkar24.in/news/katar-chhoti-kabaddi-national-gold-silver-medal-churu</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <news:news>
+      <news:publication>
+        <news:name>हुंकार 24 (HUNKAR 24)</news:name>
+        <news:language>hi</news:language>
+      </news:publication>
+      <news:publication_date>2026-11-09T08:00:00Z</news:publication_date>
+      <news:title>🏆 कबड्डी में कातर छोटी के बेटों का जलवा, नेशनल प्रतियोगिता में गोल्ड और सिल्वर जीतकर बढ़ाया गांव का मान</news:title>
+    </news:news>
+  </url>
+
+  <url>
     <loc>https://hunkar24.in/news/rajasthan-jal-jeevan-mission-5000-villages-drinking-water-sanction</loc>
     <lastmod>2026-11-07</lastmod>
     <changefreq>daily</changefreq>

@@ -212,23 +212,49 @@ export async function seedFirebaseIfEmpty(initialArticles: Article[], initialBre
   try {
     const articlesRef = ref(firebaseDb, 'articles');
     const snapshot = await get(articlesRef);
-    if (!snapshot.exists() || Object.keys(snapshot.val() || {}).length === 0) {
+    const existingVal = snapshot.val() || {};
+
+    if (!snapshot.exists() || Object.keys(existingVal).length === 0) {
       console.log('[Firebase RTDB] Seeding initial articles to Realtime Database...');
       const seedMap: Record<string, Article> = {};
       for (const a of initialArticles) {
-        seedMap[a.id] = a;
+        seedMap[a.id] = {
+          ...a,
+          views: a.views || 0,
+          likesCount: a.likesCount || 0
+        };
       }
       await set(articlesRef, seedMap);
+    } else {
+      // Ensure the important featured articles (like Katar Kabaddi) exist in RTDB
+      for (const a of initialArticles) {
+        if (!existingVal[a.id]) {
+          console.log(`[Firebase RTDB] Syncing featured article ${a.id} to Realtime Database...`);
+          await set(ref(firebaseDb, `articles/${a.id}`), {
+            ...a,
+            views: 0,
+            likesCount: 0
+          });
+        }
+      }
     }
 
     const breakingRef = ref(firebaseDb, 'breaking_news');
     const breakingSnap = await get(breakingRef);
-    if (!breakingSnap.exists() || Object.keys(breakingSnap.val() || {}).length === 0) {
+    const existingBreaking = breakingSnap.val() || {};
+
+    if (!breakingSnap.exists() || Object.keys(existingBreaking).length === 0) {
       const seedBreakingMap: Record<string, BreakingNewsItem> = {};
       for (const b of initialBreaking) {
         seedBreakingMap[b.id] = b;
       }
       await set(breakingRef, seedBreakingMap);
+    } else {
+      for (const b of initialBreaking) {
+        if (!existingBreaking[b.id]) {
+          await set(ref(firebaseDb, `breaking_news/${b.id}`), b);
+        }
+      }
     }
   } catch (err: any) {
     console.warn('[Firebase RTDB] Seeding notice (check security rules):', err.message);

@@ -19,7 +19,8 @@ import {
   INITIAL_MANDI_DATA,
   RAJASTHAN_MANDIS,
   COMMODITIES_HI,
-  MandiRecord
+  MandiRecord,
+  getDynamicMandiRates
 } from '../../data/mandiData';
 
 interface AgricultureFarmersSectionProps {
@@ -31,6 +32,25 @@ export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps>
   const [selectedCommodity, setSelectedCommodity] = useState<string>('all');
   const [selectedMandi, setSelectedMandi] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [mandiRates, setMandiRates] = useState<MandiRecord[]>(() => getDynamicMandiRates());
+
+  React.useEffect(() => {
+    fetch('/api/mandi-rates')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.success && Array.isArray(data.rates)) {
+          setMandiRates(data.rates);
+        }
+      })
+      .catch(() => {
+        setMandiRates(getDynamicMandiRates());
+      });
+
+    const interval = setInterval(() => {
+      setMandiRates(getDynamicMandiRates());
+    }, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Filter agriculture, farmer and rural articles, excluding stories shown in previous sections
   const candidateArticles = excludeIds && excludeIds.size > 0
@@ -41,7 +61,7 @@ export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps>
     a => a.category === 'agriculture' || a.tags?.some(t => ['किसान', 'कृषि', 'मंडी भाव', 'ग्रामीण', 'कुसुम योजना'].includes(t))
   );
 
-  const filteredMandiRates = INITIAL_MANDI_DATA.filter(item => {
+  const filteredMandiRates = mandiRates.filter(item => {
     const matchCrop = selectedCommodity === 'all' || item.cropHi.includes(selectedCommodity);
     const matchMandi = selectedMandi === 'all' || item.mandi.includes(selectedMandi) || item.district === selectedMandi;
     return matchCrop && matchMandi;

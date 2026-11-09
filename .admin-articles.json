@@ -12,14 +12,14 @@
     "mainImage": "/assets/katar-kabaddi-champions.jpg",
     "imageCaption": "कातर छोटी (चूरू) में 52वीं जूनियर नेशनल कबड्डी के पदक विजेता पवन कुमार, करण प्रजापत व जयवीर सिंह का ग्रामीणों द्वारा भव्य अभिनंदन",
     "imageSource": "हुंकार 24 ग्राउंड टीम / कातर छोटी (चूरू)",
-    "reporterId": "rep-01",
-    "reporterName": "हुंकार 24 चूरू डेस्क",
-    "reporterRole": "संपादकीय डेस्क (चूरू)",
+    "reporterId": "rep-dashrath",
+    "reporterName": "दशरथ सिंह",
+    "reporterRole": "संपादक",
     "reporterPhoto": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80",
     "status": "published",
     "publishedAt": "2026-11-09T10:00:00.000Z",
     "updatedAt": "2026-11-09T10:00:00.000Z",
-    "views": 4520,
+    "views": 0,
     "isBreaking": true,
     "isHero": true,
     "isExclusive": true,
@@ -33,6 +33,6 @@
       "सिल्वर मेडल"
     ],
     "readingTimeMinutes": 3,
-    "likesCount": 388
+    "likesCount": 0
   }
 ]

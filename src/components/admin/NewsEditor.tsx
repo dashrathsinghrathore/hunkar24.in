@@ -19,13 +19,19 @@ import { useNews } from '../../context/NewsContext';
 import { RAJASTHAN_DISTRICTS } from '../../config/siteConfig';
 import { Article } from '../../types';
 
+export const ALLOWED_EDITORS = [
+  { id: 'rep-bureau', name: 'हुंकार ब्यूरो', role: 'संपादक' },
+  { id: 'rep-dashrath', name: 'दशरथ सिंह', role: 'संपादक' },
+  { id: 'rep-ashok', name: 'अशोक सिंह', role: 'संपादक' }
+];
+
 interface NewsEditorProps {
   initialArticle?: Article | null;
   onSaved: () => void;
 }
 
 export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved }) => {
-  const { categories, reporters, addArticle, updateArticle, currentUser } = useNews();
+  const { categories, addArticle, updateArticle, currentUser } = useNews();
 
   const [headline, setHeadline] = useState(initialArticle?.headline || '');
   const [slug, setSlug] = useState(initialArticle?.slug || '');
@@ -37,9 +43,9 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
   const [village, setVillage] = useState(initialArticle?.village || '');
   const [mainImage, setMainImage] = useState(initialArticle?.mainImage || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80');
   const [imageCaption, setImageCaption] = useState(initialArticle?.imageCaption || '');
-  const [imageSource, setImageSource] = useState(initialArticle?.imageSource || 'हुंकार 24 ब्यूरो');
+  const [imageSource, setImageSource] = useState(initialArticle?.imageSource || 'हुंकार ब्यूरो');
   const [videoUrl, setVideoUrl] = useState(initialArticle?.videoUrl || '');
-  const [reporterId, setReporterId] = useState(initialArticle?.reporterId || reporters[0]?.id || '');
+  const [reporterId, setReporterId] = useState(initialArticle?.reporterId || 'rep-bureau');
   const [isBreaking, setIsBreaking] = useState(initialArticle?.isBreaking || false);
   const [isHero, setIsHero] = useState(initialArticle?.isHero || false);
   const [isExclusive, setIsExclusive] = useState(initialArticle?.isExclusive || false);
@@ -133,7 +139,7 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
       return;
     }
 
-    const assignedReporter = reporters.find(r => r.id === reporterId) || reporters[0];
+    const assignedEditor = ALLOWED_EDITORS.find(r => r.id === reporterId) || ALLOWED_EDITORS[0];
     const tagsArray = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
 
     if (initialArticle) {
@@ -150,10 +156,10 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
         imageCaption,
         imageSource,
         videoUrl: videoUrl.trim() || undefined,
-        reporterId: assignedReporter?.id,
-        reporterName: assignedReporter ? assignedReporter.name : 'हुंकार न्यूज़ डेस्क',
-        reporterPhoto: assignedReporter?.photoUrl,
-        reporterRole: assignedReporter?.role,
+        reporterId: assignedEditor.id,
+        reporterName: assignedEditor.name,
+        reporterPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+        reporterRole: assignedEditor.role,
         isBreaking,
         isHero,
         isExclusive,
@@ -176,10 +182,10 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
         imageCaption,
         imageSource,
         videoUrl: videoUrl.trim() || undefined,
-        reporterId: assignedReporter?.id,
-        reporterName: assignedReporter ? assignedReporter.name : 'हुंकार न्यूज़ डेस्क',
-        reporterPhoto: assignedReporter?.photoUrl,
-        reporterRole: assignedReporter?.role,
+        reporterId: assignedEditor.id,
+        reporterName: assignedEditor.name,
+        reporterPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+        reporterRole: assignedEditor.role,
         isBreaking,
         isHero,
         isExclusive,
@@ -347,16 +353,16 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
 
           <div>
             <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-              संवाददाता श्रेय (Reporter)
+              संपादक (Editor)
             </label>
             <select
               value={reporterId}
               onChange={e => setReporterId(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800"
+              className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 font-semibold text-stone-900 dark:text-stone-100"
             >
-              {reporters.map(r => (
+              {ALLOWED_EDITORS.map(r => (
                 <option key={r.id} value={r.id}>
-                  {r.name} ({r.assignedDistrict})
+                  {r.name} ({r.role})
                 </option>
               ))}
             </select>

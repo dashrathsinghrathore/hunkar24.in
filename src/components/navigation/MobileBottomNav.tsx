@@ -65,7 +65,7 @@ export const MobileBottomNav: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
-                    हुंकार 24 कनेक्ट (Connect Desk)
+                    कॉन्टेक्ट / संपर्क (Contact Desk)
                   </h3>
                   <p className="text-[11px] text-stone-500">
                     सीधा संपर्क, खबर भेजें व विज्ञापन समाधान
@@ -242,7 +242,7 @@ export const MobileBottomNav: React.FC = () => {
             <div className="p-1 rounded-full bg-orange-600 text-white shadow-xs">
               <PhoneCall className="w-3.5 h-3.5" />
             </div>
-            <span className="text-[10px] font-semibold tracking-tight">कनेक्ट</span>
+            <span className="text-[9px] font-semibold tracking-tight text-center truncate max-w-full px-0.5">कॉन्टेक्ट / संपर्क</span>
           </button>
         </div>
       </nav>

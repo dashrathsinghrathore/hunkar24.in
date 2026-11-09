@@ -174,7 +174,13 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load state from safe storage or use initial seed data with strict deduplication
   const [articles, setArticles] = useState<Article[]>(() => {
     const raw = safeLocalStorageGet<Article[]>('hunkar24_articles', INITIAL_ARTICLES);
-    return deduplicateArticlesList(raw);
+    const list = Array.isArray(raw) && raw.length > 0 ? raw : INITIAL_ARTICLES;
+    // Reset any legacy artificial counts so everything starts at 0 for real counting
+    const hasLegacyCounts = list.some(a => (a.views && a.views > 1000) || (a.likesCount && a.likesCount > 100));
+    const sanitized = hasLegacyCounts
+      ? list.map(a => ({ ...a, views: 0, likesCount: 0 }))
+      : list;
+    return deduplicateArticlesList(sanitized);
   });
 
   const [breakingNews, setBreakingNews] = useState<BreakingNewsItem[]>(() => {
@@ -887,7 +893,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newArticle: Article = {
       ...data,
       id: `art-${Date.now()}`,
-      views: 1,
+      views: 0,
       likesCount: 0,
       publishedAt: now,
       updatedAt: now

@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { newsEngineStore } from './src/server/newsEngineStore';
+import { getDynamicMandiRates } from './src/data/mandiData';
 
 dotenv.config();
 
@@ -211,6 +212,11 @@ app.get('/llms-full.txt', (req: Request, res: Response) => {
 
 // XML Sitemap
 app.get('/sitemap.xml', (req: Request, res: Response) => {
+  const publicSitemap = path.resolve(__dirname, 'public', 'sitemap.xml');
+  if (fs.existsSync(publicSitemap)) {
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    return res.sendFile(publicSitemap);
+  }
   const approved = newsEngineStore.getApprovedArticles();
   const baseUrl = 'https://hunkar24.in';
   const now = new Date().toISOString().split('T')[0];
@@ -825,6 +831,84 @@ app.post('/api/newsletter/subscribe', (req: Request, res: Response) => {
     success: true,
     message: 'हुंकार 24 दैनिक समाचार बुलेटिन की सदस्यता सफलतापूर्वक दर्ज की गई।'
   });
+});
+
+// 11. Live 6-Hour Dynamic Mandi Rates API
+app.get('/api/mandi-rates', (req: Request, res: Response) => {
+  try {
+    const rates = getDynamicMandiRates();
+    res.json({ success: true, rates, fetchedAt: new Date().toISOString() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================================================================
+// OPENGRAPH / SOCIAL BOT CRAWLER SHARE CARD (WhatsApp, Telegram, Facebook, X)
+// Injects rich preview tags dynamically for any shared news link without UI clutter
+// ============================================================================
+const SOCIAL_BOTS_REGEX = /facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|LinkedInBot|Slackbot|Discordbot|SkypeUriPreview|Google-Extended|bingbot|yandex/i;
+
+function getArticleMetadata(slug: string) {
+  const cleanSlug = slug.toLowerCase().trim();
+  const found = persistedAdminArticles.find(
+    a => a.slug === cleanSlug || a.id === cleanSlug || cleanSlug.includes(a.id) || (a.slug && cleanSlug.includes(a.slug))
+  );
+  if (found) {
+    const imgUrl = found.mainImage?.startsWith('http')
+      ? found.mainImage
+      : `https://hunkar24.in${found.mainImage || '/assets/katar-kabaddi-champions.jpg'}`;
+    return {
+      title: `${found.headline} | हुंकार 24`,
+      description: found.summary || found.headline,
+      image: imgUrl,
+      url: `https://hunkar24.in/news/${found.slug || found.id}`,
+      type: 'article'
+    };
+  }
+  return {
+    title: 'HUNKAR 24 – राजस्थान की बुलंद आवाज़ | हुंकार 24 डिजिटल न्यूज़',
+    description: 'राजस्थान एवं देश-विदेश की निष्पक्ष ताज़ा खबरें, ब्रेकिंग न्यूज़, ग्राउंड रिपोर्ट, रोजगार एवं सरकारी योजनाएं। हुंकार 24 - निर्भीक पत्रकारिता का डिजिटल मंच।',
+    image: 'https://i.ibb.co/bMrrmCqP/hunkar24.png',
+    url: 'https://hunkar24.in/',
+    type: 'website'
+  };
+}
+
+// Social crawler interceptor for dynamic rich share cards
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const ua = req.headers['user-agent'] || '';
+  const isSocialCrawler = SOCIAL_BOTS_REGEX.test(ua);
+  const isNewsRoute = req.path.startsWith('/news/');
+
+  if (isSocialCrawler) {
+    const indexPath = isProduction
+      ? path.resolve(__dirname, 'dist', 'index.html')
+      : path.resolve(__dirname, 'index.html');
+
+    if (fs.existsSync(indexPath)) {
+      try {
+        let html = fs.readFileSync(indexPath, 'utf-8');
+        const slug = req.path.replace('/news/', '').trim();
+        const meta = getArticleMetadata(slug);
+
+        html = html.replace(/<title>.*?<\/title>/i, `<title>${meta.title}</title>`);
+        html = html.replace(/<meta property="og:title" content=".*?" \/>/i, `<meta property="og:title" content="${meta.title.replace(/"/g, '&quot;')}" />`);
+        html = html.replace(/<meta property="og:description" content=".*?" \/>/i, `<meta property="og:description" content="${meta.description.replace(/"/g, '&quot;')}" />`);
+        html = html.replace(/<meta property="og:image" content=".*?" \/>/i, `<meta property="og:image" content="${meta.image}" />`);
+        html = html.replace(/<meta property="og:url" content=".*?" \/>/i, `<meta property="og:url" content="${meta.url}" />`);
+        html = html.replace(/<meta name="twitter:title" content=".*?" \/>/i, `<meta name="twitter:title" content="${meta.title.replace(/"/g, '&quot;')}" />`);
+        html = html.replace(/<meta name="twitter:description" content=".*?" \/>/i, `<meta name="twitter:description" content="${meta.description.replace(/"/g, '&quot;')}" />`);
+        html = html.replace(/<meta name="twitter:image" content=".*?" \/>/i, `<meta name="twitter:image" content="${meta.image}" />`);
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(html);
+      } catch {
+        // Fallback to standard handler
+      }
+    }
+  }
+  next();
 });
 
 // ============================================================================
