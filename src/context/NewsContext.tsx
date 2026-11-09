@@ -1082,29 +1082,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logAction('लेख विलोपित', 'News Management', `समाचार हटाया गया: ${target?.headline || id}`);
   };
 
-  const incrementArticleViews = (id: string) => {
-    if (typeof window === 'undefined') return;
-    const sessionKey = `hunkar24_viewed_${id}`;
-    if (sessionStorage.getItem(sessionKey)) {
-      // Already viewed in this browser session — prevents inflated loops
-      return;
-    }
-    sessionStorage.setItem(sessionKey, '1');
-
-    setArticles(prev =>
-      prev.map(art => {
-        if (art.id === id) {
-          const nextViews = (art.views || 0) + 1;
-          updateArticleInFirebase(id, { views: nextViews });
-          return { ...art, views: nextViews };
-        }
-        return art;
-      })
-    );
-
-    if (activeArticle && activeArticle.id === id) {
-      setActiveArticle(prev => (prev ? { ...prev, views: (prev.views || 0) + 1 } : null));
-    }
+  const incrementArticleViews = (_id: string) => {
+    // Views tracking system disabled per editorial policy
   };
 
   const toggleArticleLike = (id: string) => {

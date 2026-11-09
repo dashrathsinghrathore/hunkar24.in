@@ -4,7 +4,6 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Eye,
   Filter,
   CheckCircle,
   Clock,
@@ -113,8 +112,7 @@ export const NewsList: React.FC<NewsListProps> = ({ onEditArticle, onCreateNew }
             <tr className="bg-stone-50 dark:bg-stone-800/80 border-b border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-300 font-bold">
               <th className="p-3">शीर्षक व विवरण</th>
               <th className="p-3">श्रेणी / ज़िला</th>
-              <th className="p-3">संवाददाता</th>
-              <th className="p-3">दृश्य (Views)</th>
+              <th className="p-3">संपादक / ब्यूरो</th>
               <th className="p-3">स्थिति</th>
               <th className="p-3 text-right">कार्यवाहियां</th>
             </tr>
@@ -150,10 +148,6 @@ export const NewsList: React.FC<NewsListProps> = ({ onEditArticle, onCreateNew }
 
                 <td className="p-3 whitespace-nowrap">
                   <span className="font-medium">{art.reporterName}</span>
-                </td>
-
-                <td className="p-3 font-mono font-bold whitespace-nowrap">
-                  {(art.views || 0).toLocaleString()}
                 </td>
 
                 <td className="p-3 whitespace-nowrap">

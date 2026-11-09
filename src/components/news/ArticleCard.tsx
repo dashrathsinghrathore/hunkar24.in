@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Eye, Share2 } from 'lucide-react';
+import { Clock, Share2 } from 'lucide-react';
 import { Article } from '../../types';
 import { useNews } from '../../context/NewsContext';
 import { SITE_CONFIG } from '../../config/siteConfig';
@@ -17,10 +17,9 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   layout = 'standard',
   showSummary = true
 }) => {
-  const { setActiveArticle, incrementArticleViews } = useNews();
+  const { setActiveArticle } = useNews();
 
   const handleOpen = () => {
-    incrementArticleViews(article.id);
     setActiveArticle(article);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -127,11 +126,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
 
           <div className="flex items-center justify-between mt-3 pt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-500 dark:text-stone-400">
             <span className="font-medium truncate max-w-[160px]">{article.reporterName || 'हुंकार 24 ब्यूरो'}</span>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1 font-mono">
-                <Eye className="w-3.5 h-3.5" />
-                <span>{(article.views || 0).toLocaleString()}</span>
-              </span>
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleWhatsAppShare}
                 className="hover:text-emerald-600 transition-colors"
@@ -207,11 +202,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           <span className="truncate max-w-[140px] font-medium text-stone-700 dark:text-stone-300">
             {article.reporterName || 'हुंकार 24 ब्यूरो'}
           </span>
-          <div className="flex items-center gap-2.5">
-            <span className="flex items-center gap-1 font-mono text-[11px]">
-              <Eye className="w-3 h-3" />
-              <span>{(article.views || 0).toLocaleString()}</span>
-            </span>
+          <div className="flex items-center gap-2">
             <button
               onClick={handleWhatsAppShare}
               className="text-stone-400 hover:text-emerald-600 transition-colors"

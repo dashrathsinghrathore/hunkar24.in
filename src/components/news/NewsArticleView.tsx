@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   Calendar,
   Clock,
-  Eye,
   Share2,
   Volume2,
   VolumeX,
@@ -238,11 +237,6 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
             <span className="flex items-center gap-1.5 font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded">
               <Clock className="w-3.5 h-3.5" />
               <span>{readTimeMinutes} मिनट पठन</span>
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="flex items-center gap-1 font-mono">
-              <Eye className="w-3.5 h-3.5" />
-              <span>{(article.views || 0).toLocaleString()} पाठक</span>
             </span>
           </div>
         </div>

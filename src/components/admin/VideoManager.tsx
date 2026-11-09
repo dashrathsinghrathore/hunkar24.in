@@ -114,7 +114,7 @@ export const VideoManager: React.FC = () => {
                 {item.title}
               </h4>
               <div className="flex items-center justify-between text-[11px] text-stone-500 font-mono mt-2 pt-2 border-t border-stone-200 dark:border-stone-700">
-                <span>{(item.views || 0).toLocaleString()} दृश्य</span>
+                <span className="text-[10px] text-stone-400 font-sans">वीडियो बुलेटिन</span>
                 <button
                   type="button"
                   onClick={() => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Newspaper,
-  Eye,
+  Zap,
   Inbox,
   Users,
   Megaphone,
@@ -36,9 +36,9 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
   const draftCount = articles.filter(a => a.status === 'draft').length;
   const pendingSubmissions = submissions.filter(s => s.status === 'pending');
   const activeAdsCount = advertisements.filter(a => a.status === 'active').length;
-  const totalViews = articles.reduce((sum, a) => sum + (a.views || 0), 0);
+  const activeBreakingCount = breakingNews.filter(b => b.isActive).length;
 
-  const topArticles = [...articles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 4);
+  const recentArticles = [...articles].slice(0, 4);
 
   return (
     <div className="space-y-6">
@@ -98,14 +98,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
 
         <div className="p-4 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-xs">
           <div className="flex items-center justify-between text-stone-500 dark:text-stone-400 mb-2">
-            <span className="text-xs font-bold">कुल समाचार दृश्य (Views)</span>
-            <Eye className="w-4 h-4 text-blue-600" />
+            <span className="text-xs font-bold">सक्रिय ब्रेकिंग न्यूज़</span>
+            <Zap className="w-4 h-4 text-amber-500" />
           </div>
           <div className="text-2xl font-black font-mono text-stone-900 dark:text-stone-100">
-            {totalViews.toLocaleString()}
+            {activeBreakingCount}
           </div>
-          <div className="text-[11px] text-emerald-600 font-semibold mt-1">
-            सत्यापित पाठक संख्या
+          <div className="text-[11px] text-amber-600 font-semibold mt-1">
+            लाइव टिकर में प्रसारित
           </div>
         </div>
 
@@ -143,7 +143,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-stone-200 dark:border-stone-800">
             <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-red-600" />
-              <span>शीर्ष लोकप्रिय समाचार (Real Traffic)</span>
+              <span>हालिया मुख्य समाचार (Latest News)</span>
             </h3>
             <button
               onClick={() => onNavigate('news_list')}
@@ -154,7 +154,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
           </div>
 
           <div className="space-y-3">
-            {topArticles.map((art, idx) => (
+            {recentArticles.map((art, idx) => (
               <div
                 key={art.id}
                 className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-stone-100 dark:border-stone-800/80 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
@@ -174,10 +174,12 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
                 </div>
 
                 <div className="text-right shrink-0">
-                  <span className="text-xs font-mono font-bold text-stone-800 dark:text-stone-200 block">
-                    {(art.views || 0).toLocaleString()}
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block">
+                    {art.status === 'published' ? 'प्रकाशित' : 'ड्राफ्ट'}
                   </span>
-                  <span className="text-[10px] text-stone-400">पाठक</span>
+                  <span className="text-[10px] text-stone-400">
+                    {art.readingTimeMinutes || 2} मिनट
+                  </span>
                 </div>
               </div>
             ))}

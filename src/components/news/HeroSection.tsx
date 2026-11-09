@@ -1,12 +1,12 @@
 import React from 'react';
-import { Eye, Clock, ArrowRight, Share2, Sparkles } from 'lucide-react';
+import { Clock, ArrowRight, Share2, Sparkles } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { ArticleCard } from './ArticleCard';
 import { SITE_CONFIG } from '../../config/siteConfig';
 import { SafeImage } from '../common/SafeImage';
 
 export const HeroSection: React.FC = () => {
-  const { articles, setActiveArticle, incrementArticleViews } = useNews();
+  const { articles, setActiveArticle } = useNews();
 
   // Prioritize top featured story (Katar Kabaddi Championship) or lead hero
   const leadStory = articles.find(a => a.id === 'art-katar-kabaddi-2026') || articles.find(a => a.isHero) || articles[0];
@@ -16,7 +16,6 @@ export const HeroSection: React.FC = () => {
   if (!leadStory) return null;
 
   const handleOpenLead = () => {
-    incrementArticleViews(leadStory.id);
     setActiveArticle(leadStory);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -77,11 +76,6 @@ export const HeroSection: React.FC = () => {
                   </span>
                   <span aria-hidden="true">·</span>
                   <span>{leadStory.readingTimeMinutes} मिनट पठन</span>
-                  <span aria-hidden="true">·</span>
-                  <span className="flex items-center gap-1 font-mono">
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>{(leadStory.views || 0).toLocaleString()} पाठक</span>
-                  </span>
                 </div>
 
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-stone-900 dark:text-stone-100 group-hover:text-red-700 dark:group-hover:text-red-400 font-newspaper-headline leading-tight mb-3">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Video, Eye, X } from 'lucide-react';
+import { Play, Video, X } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { VideoNewsItem } from '../../types';
 
@@ -58,11 +58,7 @@ export const VideoNewsSection: React.FC = () => {
                 {item.title}
               </h3>
 
-              <div className="flex items-center justify-between text-xs text-stone-400 pt-2 border-t border-stone-700/50">
-                <span className="flex items-center gap-1 font-mono">
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>{(item.views || 0).toLocaleString()}</span>
-                </span>
+              <div className="flex items-center justify-end text-xs text-stone-400 pt-2 border-t border-stone-700/50">
                 <span className="text-red-400 font-bold hover:underline">
                   वीडियो देखें →
                 </span>
