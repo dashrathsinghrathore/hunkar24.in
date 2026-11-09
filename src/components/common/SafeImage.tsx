@@ -29,7 +29,7 @@ const CATEGORY_FALLBACKS: Record<string, string> = {
   bikaner: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1200&q=80' // Junagarh & desert
 };
 
-const DEFAULT_NEWS_FALLBACK = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80';
+import { getTopicAccurateImage } from '../../utils/newsImageMatcher';
 
 export const SafeImage: React.FC<SafeImageProps> = ({
   src,
@@ -43,18 +43,9 @@ export const SafeImage: React.FC<SafeImageProps> = ({
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Determine fallback image source
-  const getFallback = () => {
-    if (district && CATEGORY_FALLBACKS[district.toLowerCase()]) {
-      return CATEGORY_FALLBACKS[district.toLowerCase()];
-    }
-    if (category && CATEGORY_FALLBACKS[category.toLowerCase()]) {
-      return CATEGORY_FALLBACKS[category.toLowerCase()];
-    }
-    return DEFAULT_NEWS_FALLBACK;
-  };
-
-  const imageSrc = (!src || hasError) ? getFallback() : src;
+  // Compute topic-accurate image
+  const topicVisual = getTopicAccurateImage(alt, category, district, src);
+  const imageSrc = (!src || hasError) ? topicVisual.imageUrl : src;
 
   return (
     <div className={`relative overflow-hidden bg-stone-100 dark:bg-stone-800 ${className}`}>

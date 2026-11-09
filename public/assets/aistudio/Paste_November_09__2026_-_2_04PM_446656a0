@@ -1,0 +1,1570 @@
+# HUNKAR 24 — ULTIMATE MASTER DEVELOPMENT, DATABASE, AUTOMATION & PRODUCTION OPTIMIZATION PROMPT
+
+## PROJECT IDENTITY
+
+**Brand Name:** HUNKAR 24  
+**Hindi Name:** हुंकार 24  
+**Tagline:** राजस्थान की बुलंद आवाज़!  
+**Production Website:** https://hunkar24.in  
+**Primary Audience:** Rajasthan, India  
+**Primary Language:** Hindi  
+**Primary Device:** Mobile phones  
+**Secondary Devices:** Desktop, Laptop, Tablet  
+
+You are acting as a **Principal Software Architect, Senior Full-Stack Developer, Firebase Architect, Database Engineer, News Automation Engineer, UI/UX Designer, Performance Engineer, and Application Security Specialist.**
+
+Your responsibility is to audit, repair, optimize, and upgrade the EXISTING HUNKAR 24 website into a reliable, production-ready digital news platform.
+
+This is an existing project. It is NOT a request to create a new website from scratch.
+
+---
+
+# 1. MOST IMPORTANT DEVELOPMENT RULES
+
+Before changing anything, inspect the entire existing project.
+
+1. Understand the existing folder structure.
+2. Inspect all frontend components and routes.
+3. Inspect all 25 existing Admin Panel pages.
+4. Inspect all existing database integrations.
+5. Inspect Firebase and Supabase configurations, if present.
+6. Inspect the existing News Engine and automation logic.
+7. Inspect the GitHub and Netlify deployment configuration.
+8. Identify all mock data, demo data, hardcoded articles, and localStorage-based database operations.
+9. Identify every API integration and its current status.
+10. Identify all existing bugs and their root causes.
+
+**DO NOT rebuild the project from scratch.**
+
+**DO NOT remove existing working features.**
+
+**DO NOT delete the existing 25 Admin Panel pages.**
+
+**DO NOT replace real functionality with fake buttons or demo functionality.**
+
+Preserve the existing design identity, content, routes, working features, and business logic wherever possible.
+
+Before making major database changes, prepare a migration plan and backup existing important data.
+
+After the audit, implement the corrections directly. Do not stop after merely describing the problems.
+
+If an API, credential, or external service is unavailable, identify the exact missing requirement instead of pretending that the integration works.
+
+---
+
+# 2. PROBLEM ONE — COMPLETE DUPLICATE NEWS ELIMINATION SYSTEM
+
+This is one of the highest-priority problems.
+
+Currently, the same news article sometimes appears four, five, or even ten times on the website.
+
+This must be permanently fixed at the database and application levels.
+
+## Requirements
+
+Create an advanced News Deduplication Engine.
+
+Every incoming article must be checked before it is stored or published.
+
+Use multiple comparison methods:
+
+- Normalized headline comparison.
+- Hindi and English headline normalization.
+- Unicode normalization.
+- Whitespace and punctuation normalization.
+- Removal of unnecessary special characters.
+- Source URL comparison.
+- Canonical URL comparison.
+- News source and publication-time comparison.
+- Semantic similarity comparison.
+- Similarity checking between translated headlines.
+- AI-assisted duplicate detection when appropriate.
+
+For example:
+
+"राजस्थान में किसानों के लिए बड़ी घोषणा"
+
+"किसानों के लिए राजस्थान सरकार की बड़ी घोषणा"
+
+These headlines may refer to the same story. The system should evaluate whether they are actually duplicates rather than treating every differently worded headline as a new story.
+
+## Database-Level Protection
+
+Create appropriate unique identifiers and duplicate-checking logic.
+
+Requirements:
+
+- One original news story should have one canonical record.
+- Multiple sources reporting the same story should be associated with the canonical story instead of generating duplicate articles.
+- Duplicate articles must not be published independently.
+- Concurrent news-fetching jobs must not create duplicates.
+- Database transactions and unique constraints must prevent race conditions.
+- Repeated API calls must be idempotent.
+- Rejected duplicate records should be logged for administration.
+
+If two articles are genuinely different updates to the same developing event, allow them as separate updates only when they contain meaningful new information.
+
+## Existing Duplicate Cleanup
+
+Inspect existing articles and identify duplicates.
+
+Create a safe cleanup migration:
+
+1. Back up the existing article records.
+2. Identify duplicate groups.
+3. Preserve the most complete and reliable article.
+4. Preserve useful images, sources, timestamps, and article details.
+5. Merge useful information where appropriate.
+6. Remove duplicate display records safely.
+7. Recalculate article relationships and category references.
+8. Verify that no valid independent news story was deleted.
+
+Never automatically delete articles merely because their headlines contain similar words.
+
+## Final Result
+
+One news story = One canonical published article.
+
+The same article must not appear repeatedly across the same listing or multiple automatically generated records.
+
+---
+
+# 3. PROBLEM TWO — MOBILE NEWS SLIDER AND COMPLETE NEWS ARCHIVE
+
+The current homepage contains a Latest News scrolling slider below the main banner.
+
+It works on desktop but does not display properly on mobile.
+
+Repair this component completely.
+
+## Mobile Slider Requirements
+
+- Fully responsive on every mobile screen.
+- No horizontal overflow.
+- No clipped headlines.
+- No cut-off text.
+- No hidden buttons.
+- No overlapping elements.
+- Smooth automatic scrolling.
+- Touch swipe support.
+- Manual previous and next navigation.
+- Pause while the user interacts.
+- Accessible controls.
+- Proper Hindi typography.
+- Responsive text sizing.
+- Stable performance on low-end Android phones.
+
+The slider must never block the rest of the homepage.
+
+If automatic animation is disabled by a user's accessibility preferences, the slider must remain usable manually.
+
+## Complete News Archive
+
+Currently, approximately 250–300 articles may exist.
+
+Do not attempt to display all 300 full articles inside one enormous homepage carousel.
+
+Instead, build a complete news archive with category-based navigation.
+
+Every published article must be accessible through:
+
+- Homepage news sections.
+- Individual category pages.
+- Latest News page.
+- Search results.
+- Article detail pages.
+- Relevant related-news sections.
+
+Build category pages for:
+
+1. राजस्थान
+2. भारत
+3. विश्व
+4. शिक्षा
+5. सरकारी नौकरी
+6. किसान समाचार
+7. कृषि एवं मंडी भाव
+8. राजनीति
+9. व्यापार
+10. तकनीक
+11. खेल
+12. मनोरंजन
+13. ग्रामीण समाचार
+14. सरकारी योजनाएँ
+15. मौसम एवं आपदा
+
+Use database-driven pagination or infinite scrolling.
+
+Requirements:
+
+- Load only the required number of articles at a time.
+- Provide Load More or infinite scrolling.
+- Do not load hundreds of full article bodies at once.
+- Use article detail pages or an accessible full-story modal.
+- Every article must show its full content, publication time, category, image, source, and related information when available.
+- Preserve share functionality.
+- Preserve browser back-button behavior.
+- Use proper canonical URLs and SEO metadata.
+
+A user must be able to find every published article without depending on the homepage slider.
+
+---
+
+# 4. PROBLEM THREE — INTELLIGENT DYNAMIC HOMEPAGE NEWS ENGINE
+
+The homepage currently keeps showing the same news for a long time.
+
+Build a dynamic homepage system that automatically updates its content using the latest database records.
+
+## News Rotation
+
+The homepage must continuously prioritize fresh, relevant news.
+
+Requirements:
+
+- Latest verified news should appear first.
+- Important breaking news should receive higher priority.
+- Older stories should gradually move down.
+- Do not show the same article repeatedly in multiple homepage sections.
+- Maintain a reasonable rotation interval.
+- Update the homepage when new published articles arrive.
+- Use database realtime subscriptions where appropriate.
+- Refresh only the affected data components.
+- Never reload the entire website to update news.
+
+Do not change articles so frequently that readers cannot finish reading them.
+
+The main hero story should remain visible long enough for a reader to understand it.
+
+## Editorial Priority System
+
+Build a configurable news-priority engine.
+
+Give higher editorial priority to news relevant to:
+
+**Farmers**
+- Crop prices.
+- Mandi rates.
+- Weather.
+- Rainfall.
+- Irrigation.
+- Seeds.
+- Fertilizers.
+- Crop diseases.
+- Government agricultural schemes.
+- MSP and procurement updates.
+- Agricultural subsidies.
+- Farmer welfare.
+
+**Rajasthan Residents**
+- Rajasthan government announcements.
+- Local district news.
+- Village-level developments.
+- Public services.
+- Electricity and water.
+- Roads and infrastructure.
+- Employment.
+- Public safety.
+- Government schemes.
+- Important administrative decisions.
+
+**Students**
+- Government jobs.
+- Recruitment notifications.
+- Examination dates.
+- Admit cards.
+- Results.
+- Scholarships.
+- Education policy.
+- University announcements.
+- Admission information.
+
+**Rural Communities**
+- Panchayat news.
+- Rural development.
+- Public welfare.
+- Local infrastructure.
+- Government services.
+- Agricultural markets.
+- Community announcements.
+
+## Important Editorial Rule
+
+Do not publish irrelevant national or international entertainment content at the expense of important Rajasthan news.
+
+Use an adjustable relevance score based on:
+
+- Geographic relevance.
+- Audience relevance.
+- Publication freshness.
+- Public importance.
+- Source reliability.
+- Editorial priority.
+
+The Admin Panel must allow administrators to override automatic priorities.
+
+## Homepage Structure
+
+Build a clean hierarchy:
+
+1. Breaking News Bar.
+2. Main Hero News.
+3. Latest News Slider.
+4. Rajasthan News.
+5. Farmer News.
+6. Mandi Rates Preview.
+7. Education and Government Jobs.
+8. District and Village News.
+9. India and World.
+10. Most Popular News.
+11. Video News.
+12. Footer and Important Links.
+
+Only show sections with relevant available content.
+
+Never fill empty sections with fake news or repeated articles.
+
+---
+
+# 5. PROBLEM FOUR — RESET ALL EXISTING LIKES AND VIEWS
+
+Currently, many articles have automatically generated or unrealistic likes and views.
+
+Remove these old artificial counters and begin accurate tracking from zero.
+
+## Migration Requirements
+
+Perform a one-time reset of existing article engagement counts.
+
+- Existing views = 0.
+- Existing likes = 0.
+- Existing artificial popularity values = 0.
+- Existing fake engagement records must not be counted as real engagement.
+
+Before resetting, create a backup.
+
+Do not reset these values again during ordinary deployments or application startup.
+
+The reset must be implemented as a controlled, one-time database migration with a migration identifier or completion flag.
+
+## Real-Time View Tracking
+
+Every published article must have accurate view tracking.
+
+When someone opens an article:
+
+1. Validate the request.
+2. Identify the viewer using an appropriate anonymous session or authenticated user identifier.
+3. Apply a sensible deduplication window.
+4. Record a valid view using a secure backend operation.
+5. Update the article's total view count.
+6. Synchronize the updated count with connected clients.
+
+Prevent automatic view inflation caused by:
+
+- React re-renders.
+- Component remounts.
+- Repeated API calls.
+- Page refresh loops.
+- Bots and automated requests.
+- Multiple duplicate event listeners.
+
+Do not trust client-submitted view counts.
+
+## Real-Time Like System
+
+Implement a proper like/unlike system.
+
+Requirements:
+
+- One active like per article per authenticated user.
+- For anonymous users, use a reasonable device/session mechanism.
+- Prevent repeated clicks from creating multiple likes.
+- Support like removal.
+- Update counters immediately.
+- Synchronize across devices.
+- Store engagement records in the database.
+- Use secure backend validation and transactions.
+
+## Popularity Dashboard
+
+Admin should be able to view:
+
+- Total article views.
+- Total likes.
+- Most viewed articles.
+- Most liked articles.
+- Most popular categories.
+- Daily engagement.
+- Weekly engagement.
+- Monthly engagement.
+
+All statistics must come from actual recorded database events.
+
+Never generate random numbers or fake popularity data.
+
+---
+
+# 6. PROBLEM FIVE — MOBILE-FIRST PREMIUM NEWS WEBSITE
+
+This is the most important design priority.
+
+HUNKAR 24 must be designed primarily for mobile users.
+
+The website should be extremely easy to understand, even for users with limited digital literacy.
+
+The interface should feel more professional than a typical local news website.
+
+It must not look like an unfinished AI-generated template.
+
+## Design Direction
+
+Create a premium Indian digital news experience inspired by the usability and content hierarchy of major professional news platforms.
+
+Do not copy another website's branding, layout, or copyrighted assets.
+
+Use:
+
+- Strong editorial hierarchy.
+- Clean typography.
+- Clear Hindi headlines.
+- Comfortable reading widths.
+- Premium spacing.
+- Consistent visual language.
+- High-quality news imagery.
+- Professional cards.
+- Subtle animations.
+- Fast transitions.
+- Consistent icons.
+- Clear buttons.
+
+## Mobile-First Rules
+
+Design and test mobile first, then desktop.
+
+Required viewport testing:
+
+- 320px.
+- 360px.
+- 375px.
+- 390px.
+- 414px.
+- 430px.
+- Tablet.
+- Laptop.
+- Large desktop.
+
+## Mobile Navigation
+
+Create an easy-to-use mobile navigation system.
+
+Use large, clearly labelled buttons.
+
+Important destinations must be obvious:
+
+- होम
+- ताज़ा खबरें
+- राजस्थान
+- किसान
+- मंडी भाव
+- शिक्षा
+- सरकारी नौकरी
+- अन्य श्रेणियाँ
+
+Use a clear mobile menu or bottom navigation if it improves usability.
+
+Do not overcrowd the screen.
+
+## Accessibility and Simplicity
+
+- Large readable Hindi text.
+- Good contrast.
+- Touch-friendly controls.
+- Clear labels.
+- Minimum practical touch target around 44–48 CSS pixels.
+- No tiny navigation links.
+- No unnecessary pop-ups.
+- Clear loading indicators.
+- Clear error messages.
+- Simple forms.
+- Easy back navigation.
+- Accessible keyboard navigation.
+- Screen-reader-friendly labels.
+- Respect reduced-motion settings.
+
+## Performance
+
+- Lazy-load article images.
+- Use optimized responsive image sizes.
+- Avoid unnecessary animations.
+- Avoid heavy scripts.
+- Avoid loading unused components.
+- Prevent layout shifts.
+- Cache static assets appropriately.
+- Optimize API calls.
+- Use pagination.
+- Avoid downloading all articles on the first page load.
+
+The site must work smoothly on normal mobile internet connections and low-end Android devices.
+
+---
+
+# 7. PROBLEM SIX — REAL-TIME RAJASTHAN MANDI RATE SYSTEM
+
+Create a reliable agricultural mandi-price section.
+
+This feature is especially important for farmers.
+
+The website should display current available market prices for agricultural commodities in Rajasthan.
+
+## Data Requirements
+
+Where available, display:
+
+- Commodity name.
+- Variety.
+- State.
+- District.
+- Mandi name.
+- Minimum price.
+- Maximum price.
+- Modal or prevailing price.
+- Price unit.
+- Market date.
+- Last updated time.
+- Data source.
+
+Support relevant commodities such as:
+
+- गेहूँ
+- सरसों
+- चना
+- मूंग
+- मोठ
+- बाजरा
+- जौ
+- ग्वार
+- जीरा
+- कपास
+- मूंगफली
+- सोयाबीन
+- अन्य उपलब्ध फसलें
+
+Do not assume every commodity is traded in every mandi.
+
+## Data Source
+
+Investigate and integrate an authorized, reliable data provider.
+
+Evaluate official sources such as:
+
+- Agmarknet.
+- Government open-data resources.
+- eNAM, where appropriate.
+- Authorized mandi-price APIs.
+- Other verified market data providers.
+
+Use only sources that permit the intended access and use.
+
+Do not invent API endpoints or pretend an unavailable API is working.
+
+If credentials are needed, document the exact configuration required.
+
+## Automatic Update System
+
+Implement server-side scheduled fetching.
+
+Possible schedule:
+
+- Every 1–3 hours, depending on provider availability and rate limits.
+- At least one scheduled daily refresh.
+- Retry failed requests with exponential backoff.
+- Prevent duplicate market records.
+- Store historical rates.
+- Track source timestamps.
+
+Do not request a new external API call every time a visitor opens the page.
+
+Cache the latest verified data in the database.
+
+## Mandi Dashboard
+
+Build:
+
+- Rajasthan mandi overview.
+- District-wise mandi list.
+- Commodity-wise prices.
+- Search and filters.
+- Highest and lowest available rates.
+- Price comparison.
+- Historical price charts.
+- Last-updated indicator.
+- Source information.
+
+Display a clear notice if data is stale or unavailable.
+
+Never present yesterday's data as today's live price.
+
+---
+
+# 8. PROBLEM SEVEN — FIREBASE INTEGRATION AND REAL-TIME DATABASE
+
+This is a core architectural requirement.
+
+The entire website must use a reliable shared database rather than relying on local browser storage for shared business data.
+
+The user specifically requires Firebase Realtime Database integration across the website and all existing 25 Admin Panel pages.
+
+## Firebase Services
+
+Evaluate and integrate the following:
+
+1. Firebase Realtime Database.
+2. Firebase Authentication.
+3. Firebase Cloud Functions.
+4. Firebase Cloud Messaging.
+5. Firebase Hosting-related configuration only if genuinely needed.
+6. Firebase Security Rules.
+7. Firebase App Check where appropriate.
+
+The existing website is hosted on Netlify. Do not migrate hosting merely because Firebase is being integrated.
+
+Keep the current hosting architecture unless a technically justified change is necessary.
+
+## Single Source of Truth
+
+Firebase Realtime Database should become the canonical live data source for the operational features that are migrated to Firebase.
+
+Do not maintain two competing databases for the same records.
+
+If Supabase is currently used:
+
+1. Audit all Supabase tables and integrations.
+2. Identify which features depend on Supabase.
+3. Prepare a migration and compatibility plan.
+4. Back up the existing data.
+5. Migrate records safely if appropriate.
+6. Update application services and queries.
+7. Verify the data after migration.
+8. Remove obsolete integrations only after successful verification.
+
+Do not blindly delete Supabase tables, credentials, or code.
+
+Do not use simultaneous uncoordinated writes to Supabase and Firebase.
+
+If a temporary migration bridge is necessary, define which system is authoritative and how consistency is maintained.
+
+## Database Structure
+
+Design a clean, scalable Firebase Realtime Database structure.
+
+Suggested structure:
+
+```text
+/
+  articles/
+  articleCategories/
+  breakingNews/
+  latestNews/
+  newsSources/
+  reporters/
+  districts/
+  users/
+  adminUsers/
+  adminRoles/
+  adminPermissions/
+  adminActivityLogs/
+  articleViews/
+  articleLikes/
+  articleStatistics/
+  mandiPrices/
+  mandiHistory/
+  subscriptions/
+  notificationPreferences/
+  notificationTokens/
+  advertisements/
+  promotions/
+  userSubmissions/
+  videos/
+  newsletters/
+  siteSettings/
+  homepageSettings/
+  categorySettings/
+  scheduledJobs/
+  systemHealth/
+  migrationStatus/
+```
+
+Refine the structure according to actual requirements.
+
+Avoid unbounded data nesting.
+
+Use efficient indexes and query patterns.
+
+Paginate large datasets.
+
+## Real-Time Synchronization
+
+All relevant Admin Panel changes must synchronize with Firebase.
+
+Examples:
+
+- Publish article.
+- Edit article.
+- Delete article.
+- Approve submission.
+- Reject submission.
+- Change category.
+- Update breaking news.
+- Manage reporters.
+- Manage advertisements.
+- Update homepage content.
+- Update mandi configuration.
+- Manage users.
+- Update notification settings.
+- Change website settings.
+- Manage videos.
+- Manage newsletter subscribers.
+- Change permissions.
+
+When an authorized admin changes data on one device, other authorized admin devices must receive the updated state automatically.
+
+The same applies to public website components that subscribe to published content.
+
+Use Firebase listeners carefully:
+
+- Subscribe only to relevant paths.
+- Remove listeners when components unmount.
+- Avoid duplicate subscriptions.
+- Avoid full-database listeners.
+- Handle connection interruptions.
+- Handle reconnects.
+- Show meaningful synchronization states.
+- Avoid unnecessary repeated reads.
+
+Do not reload the whole page to synchronize data.
+
+---
+
+# 9. ALL 25 ADMIN PANEL PAGES MUST BE CONNECTED
+
+This is mandatory.
+
+The existing Admin Panel contains approximately 25 pages.
+
+Inspect the actual routes and components.
+
+Do not assume the names of all pages. Discover the real pages from the project.
+
+For every existing Admin Panel page:
+
+1. Identify its displayed data.
+2. Identify every action and button.
+3. Identify current mock or localStorage data.
+4. Identify the corresponding database path.
+5. Implement real database reads.
+6. Implement validated database writes.
+7. Implement real-time synchronization where useful.
+8. Implement loading states.
+9. Implement success states.
+10. Implement error states.
+11. Implement role-based access control.
+12. Test the functionality.
+
+No button should merely display a success message without performing its real action.
+
+No fake dashboard statistics.
+
+No demo records in production.
+
+No local-only admin changes.
+
+## Admin Panel Multi-Device Behavior
+
+If an authorized administrator makes a change from one device, the other authorized admin devices should receive the change automatically.
+
+For example:
+
+Admin A publishes an article from a laptop.
+
+Admin B opens the Admin Panel on a mobile phone.
+
+The published article status should synchronize without requiring a manual page refresh.
+
+Likewise, changes to categories, promotions, settings, submissions, and other shared data should synchronize appropriately.
+
+## Admin Panel Quality
+
+Preserve the existing 25-page information architecture wherever possible.
+
+Improve usability without removing existing functionality.
+
+Add:
+
+- Clear navigation.
+- Search and filters.
+- Confirmation before destructive operations.
+- Activity logs.
+- Error reporting.
+- Loading indicators.
+- Responsive mobile layouts.
+- Secure session management.
+- Permission-aware actions.
+
+---
+
+# 10. FIREBASE AUTHENTICATION AND ADMIN SECURITY
+
+Implement secure authentication.
+
+Requirements:
+
+- Firebase Authentication.
+- Email and password authentication where appropriate.
+- Google sign-in if already configured or approved.
+- Email OTP or phone OTP only when properly configured.
+- Password reset.
+- Secure sign-out.
+- Session persistence.
+- Admin role verification.
+- Role-based permissions.
+
+Do not treat a hidden URL as security.
+
+Do not rely on frontend-only admin checks.
+
+## Security Requirements
+
+- Firebase Security Rules must deny unauthorized access by default.
+- Public users must not be allowed to modify published articles or admin settings.
+- Only authorized roles can perform privileged actions.
+- Use custom claims or a secure trusted authorization system for admin roles.
+- Validate permissions on the backend.
+- Validate input on the server.
+- Prevent unauthorized database writes.
+- Protect against spam and abuse.
+- Apply rate limits where appropriate.
+- Log sensitive administrative operations.
+
+Never expose:
+
+- Firebase Admin SDK private credentials.
+- Service account JSON.
+- Private API keys.
+- Server-side secrets.
+- Supabase service-role keys.
+- Notification server credentials.
+
+Frontend Firebase configuration is not a substitute for database security rules.
+
+---
+
+# 11. FIREBASE PUSH NOTIFICATION SYSTEM
+
+Build a complete Web Push Notification system using Firebase Cloud Messaging.
+
+## User Experience
+
+When a visitor opens the website:
+
+- Do not immediately show an aggressive permission popup.
+- Explain the notification benefit first.
+- Offer a clear "नोटिफिकेशन चालू करें" button.
+- Request browser permission only after the user explicitly chooses it.
+- If permission is denied, keep the website fully usable.
+- Provide a way to manage notification preferences.
+
+## Subscriber Management
+
+Store:
+
+- User or anonymous subscriber identifier.
+- FCM registration token.
+- Device information where appropriate.
+- Subscription timestamp.
+- Notification preferences.
+- Token status.
+- Last successful activity.
+
+A single user may have multiple devices.
+
+Handle token refresh and invalid-token cleanup.
+
+Do not assume one subscriber equals one device.
+
+## Notification Triggers
+
+When a verified article is published, allow the system to send notifications to eligible subscribers.
+
+Possible notification categories:
+
+- Breaking News.
+- Rajasthan News.
+- Farmer News.
+- Mandi Updates.
+- Education.
+- Government Jobs.
+- District News.
+
+Allow subscribers to select their preferred categories.
+
+## Notification Format
+
+Example:
+
+Title: हुंकार 24 | बड़ी खबर
+
+Body: राजस्थान सरकार की नई घोषणा — पूरी खबर पढ़ें।
+
+Click Action: Open the corresponding article URL.
+
+## Backend Requirements
+
+Send push notifications through trusted server-side Firebase Cloud Functions using the Firebase Admin SDK.
+
+Do not send notifications directly from the public browser using privileged credentials.
+
+Requirements:
+
+- Avoid duplicate notifications.
+- Do not notify on every minor article edit.
+- Notify only when the article is actually published or explicitly marked for notification.
+- Track notification delivery attempts.
+- Handle invalid tokens.
+- Respect user preferences.
+- Prevent excessive notifications.
+- Provide admin notification controls.
+
+---
+
+# 12. AUTOMATIC NEWS COLLECTION AND PUBLISHING
+
+Audit the existing News Engine.
+
+The system must work in production, not just in Google AI Studio Preview.
+
+## News Collection
+
+Create a reliable backend news-fetching pipeline.
+
+Possible sources:
+
+- Authorized news APIs.
+- RSS feeds that permit reuse.
+- Official government announcements.
+- Government department updates.
+- Verified public information sources.
+
+Do not depend on browser-side fetching of third-party APIs.
+
+Never expose provider API keys in frontend JavaScript.
+
+Use server-side functions or an appropriate secure backend.
+
+## Processing Pipeline
+
+```text
+Scheduled Trigger
+      ↓
+Fetch Authorized Sources
+      ↓
+Validate Responses
+      ↓
+Normalize Headlines
+      ↓
+Detect Duplicates
+      ↓
+Verify Source and Timestamp
+      ↓
+Classify News
+      ↓
+Assess Editorial Relevance
+      ↓
+Generate Hindi Summary if Needed
+      ↓
+Apply Publication Policy
+      ↓
+Save Canonical Article
+      ↓
+Update Category and Homepage
+      ↓
+Send Eligible Push Notifications
+      ↓
+Record Job Status and Logs
+```
+
+## Publication Safety
+
+Do not automatically publish fabricated, unsupported, or misleading information.
+
+For sensitive or high-impact news, require editorial approval.
+
+Examples:
+
+- Deaths and accidents.
+- Communal incidents.
+- Election claims.
+- Financial announcements.
+- Government recruitment claims.
+- Emergency warnings.
+- Health and public safety announcements.
+
+Preserve source attribution and article timestamps.
+
+Clearly distinguish an original report from an AI-generated summary.
+
+## Automation
+
+Use scheduled server-side jobs.
+
+Make the interval configurable from the Admin Panel.
+
+Example:
+
+- Every 30 minutes.
+- Every 60 minutes.
+- Custom supported interval.
+
+Do not create multiple uncontrolled schedulers.
+
+Prevent overlapping jobs.
+
+Record:
+
+- Job start time.
+- Job completion time.
+- Number of articles fetched.
+- Number of duplicates rejected.
+- Number of articles published.
+- Number of articles awaiting approval.
+- API failures.
+- Last successful run.
+
+The system must remain stable even if one news provider fails.
+
+---
+
+# 13. PREVIEW VS NETLIFY PRODUCTION — CRITICAL DEPLOYMENT FIX
+
+The Google AI Studio Preview currently behaves differently from the deployed website.
+
+The deployed website sometimes continues to show old data and old functionality.
+
+This is a major production defect.
+
+Audit and fix the entire deployment process.
+
+## Environment Configuration
+
+Inspect all environment variables.
+
+Separate:
+
+- Local development configuration.
+- Google AI Studio Preview configuration.
+- Netlify production configuration.
+- Backend secrets.
+- Firebase configuration.
+- News provider credentials.
+- Mandi provider credentials.
+
+Create a clear `.env.example`.
+
+Never commit actual secret values to GitHub.
+
+Verify that production environment variables are configured in Netlify.
+
+Verify that build-time variables are available where required.
+
+## Production Requirements
+
+- Correct production API base URL.
+- Correct Firebase project configuration.
+- Correct database paths.
+- Correct Netlify Functions or backend endpoints.
+- Correct SPA routing and redirects.
+- Correct production build output directory.
+- Correct CORS configuration.
+- Correct HTTPS configuration.
+- Correct authentication redirect domains.
+- Correct service worker configuration for push notifications.
+
+## Mock Data Elimination
+
+The production website must not silently fall back to fake preview data.
+
+Use mock data only in explicitly controlled development mode.
+
+Production should display genuine database data or a clear empty/error state.
+
+## Deployment Verification
+
+After every important change:
+
+1. Run the production build.
+2. Check TypeScript errors.
+3. Check lint errors.
+4. Check missing dependencies.
+5. Check API configuration.
+6. Check Firebase connection.
+7. Check database permissions.
+8. Check Netlify function responses.
+9. Check browser console errors.
+10. Check mobile behavior.
+11. Verify the deployed production URL.
+
+Do not claim production success merely because Google AI Studio Preview works.
+
+---
+
+# 14. REMOVE PAGE RELOAD LOOPS AND LOCALSTORAGE DATABASE DEPENDENCY
+
+The existing website has previously shown unexpected refreshes, blank screens, API failures, and LocalStorage quota errors.
+
+Investigate these issues carefully.
+
+Search the complete project for:
+
+- window.location.reload()
+- location.reload()
+- Automatic navigation loops.
+- Uncontrolled setInterval.
+- Duplicate setTimeout calls.
+- React useEffect dependency loops.
+- Repeated Firebase subscriptions.
+- Repeated API requests.
+- Authentication redirect loops.
+- Error-boundary loops.
+- Uncontrolled state updates.
+- LocalStorage writes of large article arrays.
+
+LocalStorage must not be used as the primary database for articles, likes, views, reporter records, submissions, promotions, or shared admin settings.
+
+Use Firebase for shared persistent application data.
+
+LocalStorage may be used only for small, appropriate client preferences, such as:
+
+- Theme.
+- Minor UI preferences.
+- Temporary non-sensitive state.
+
+Do not store hundreds of article records in LocalStorage.
+
+Handle storage exceptions gracefully.
+
+A failed API call must not cause a complete page reload.
+
+A Firebase disconnect must not crash the entire application.
+
+---
+
+# 15. NEWS SEARCH AND DISCOVERY
+
+Create a fast, usable search experience.
+
+Allow users to search by:
+
+- Headline.
+- Keyword.
+- District.
+- Tehsil.
+- Village.
+- Category.
+- Commodity.
+- Date.
+
+Support Hindi text properly.
+
+Search results should be database-driven and paginated.
+
+Show a clear no-results message.
+
+Do not return duplicate articles in search results.
+
+---
+
+# 16. SEO AND SOCIAL SHARING
+
+Every article should have:
+
+- Unique title.
+- Meta description.
+- Canonical URL.
+- Open Graph image.
+- Open Graph title.
+- Twitter/X card metadata.
+- Article publication date.
+- Article modification date.
+- Structured article metadata where appropriate.
+
+Use server rendering, prerendering, or another technically suitable solution if needed for article discoverability.
+
+Do not assume that client-side React rendering alone guarantees optimal indexing.
+
+Maintain a proper sitemap.
+
+Maintain robots.txt.
+
+Use clean article URLs.
+
+Ensure category pages have useful SEO metadata.
+
+---
+
+# 17. DATABASE PERFORMANCE AND SCALABILITY
+
+Design database reads and writes carefully.
+
+Requirements:
+
+- Efficient data paths.
+- Proper query patterns.
+- Pagination.
+- Caching.
+- Data validation.
+- Controlled listener subscriptions.
+- Transactional counters.
+- Atomic updates.
+- Duplicate protection.
+- Safe deletion policies.
+- Backup strategy.
+- Error logging.
+
+Avoid downloading the complete database to render one page.
+
+Avoid unnecessary real-time listeners.
+
+Avoid creating unbounded data structures.
+
+Create appropriate retention and cleanup policies for logs and temporary data.
+
+Monitor Firebase usage and billing limits.
+
+Do not promise unlimited usage on a free plan.
+
+If a service quota is exceeded, show a controlled error and preserve application stability.
+
+---
+
+# 18. ADMIN ANALYTICS AND SYSTEM HEALTH
+
+Add a real system health dashboard to the existing Admin Panel.
+
+Display:
+
+- Firebase connection status.
+- Authentication status.
+- Latest successful news-fetch time.
+- News automation status.
+- Last mandi data update.
+- Notification service status.
+- Total published articles.
+- Duplicate articles prevented.
+- Pending submissions.
+- Failed jobs.
+- API provider status.
+- Database errors.
+- Recent admin activity.
+
+All values must be obtained from actual system records.
+
+Do not generate fake status indicators.
+
+Add appropriate admin logs for critical changes.
+
+---
+
+# 19. ERROR HANDLING AND USER EXPERIENCE
+
+Every important component must have:
+
+- Loading state.
+- Empty state.
+- Error state.
+- Retry option when appropriate.
+- Successful completion feedback.
+
+Do not show raw technical errors to ordinary visitors.
+
+Provide understandable Hindi messages.
+
+For example:
+
+"अभी खबरें लोड नहीं हो पा रही हैं। कृपया थोड़ी देर बाद पुनः प्रयास करें।"
+
+For admins, provide useful technical error details in the dashboard or logs.
+
+Do not silently swallow important backend errors.
+
+---
+
+# 20. TESTING REQUIREMENTS
+
+Do not finish the task until the following areas have been tested.
+
+## News Tests
+
+- Fetch a new article.
+- Fetch the same article again.
+- Fetch the same story from another source.
+- Verify duplicate detection.
+- Verify category assignment.
+- Verify homepage ordering.
+- Verify article detail page.
+- Verify archive pagination.
+
+## Engagement Tests
+
+- Reset existing counts once.
+- Open an article.
+- Verify the view count.
+- Refresh the page.
+- Verify duplicate view protection.
+- Like an article.
+- Unlike an article.
+- Verify synchronization across devices.
+
+## Firebase Tests
+
+- Admin login.
+- Admin logout.
+- Database read.
+- Authorized database write.
+- Unauthorized database write rejection.
+- Multi-device synchronization.
+- Reconnection after network interruption.
+
+## Admin Tests
+
+Test all 25 existing pages.
+
+Every working button must perform its real operation.
+
+## Notification Tests
+
+- Permission request.
+- Permission denied.
+- Successful subscription.
+- Token refresh.
+- Article publication.
+- Notification preference.
+- Invalid token cleanup.
+- Duplicate notification prevention.
+
+## Mandi Tests
+
+- Data fetching.
+- Data validation.
+- Timestamp validation.
+- Historical storage.
+- Duplicate market record prevention.
+- Failed API response.
+- Stale data display.
+
+## Responsive Tests
+
+Test all important pages on:
+
+- Android mobile.
+- iPhone-sized viewport.
+- Tablet.
+- Laptop.
+- Desktop.
+
+Check:
+
+- Horizontal overflow.
+- Cut-off headlines.
+- Slider functionality.
+- Navigation.
+- Buttons.
+- Forms.
+- Images.
+- Pop-ups.
+- Admin dashboard.
+
+---
+
+# 21. REQUIRED DEVELOPMENT WORKFLOW
+
+Follow this exact workflow.
+
+### PHASE 1 — COMPLETE PROJECT AUDIT
+
+Inspect all existing files, pages, services, database integrations, APIs, and deployment configuration.
+
+Produce a concise audit report containing:
+
+- Existing architecture.
+- Main root causes.
+- Broken features.
+- Missing environment variables.
+- Database problems.
+- Security risks.
+- Migration requirements.
+
+### PHASE 2 — ARCHITECTURE AND BACKUP
+
+Prepare the Firebase architecture.
+
+Determine the migration strategy from the existing database.
+
+Back up important data.
+
+Document the exact Firebase configuration required.
+
+### PHASE 3 — CORE DATABASE REPAIR
+
+Implement:
+
+- Firebase Realtime Database integration.
+- Authentication.
+- Security rules.
+- Real-time subscriptions.
+- Server-side operations.
+- Data migration where required.
+
+### PHASE 4 — NEWS ENGINE REPAIR
+
+Implement:
+
+- Duplicate detection.
+- News ingestion.
+- Categorization.
+- Relevance scoring.
+- Dynamic homepage updates.
+- Complete news archive.
+- Safe publication workflow.
+
+### PHASE 5 — ENGAGEMENT SYSTEM
+
+Implement:
+
+- One-time views reset.
+- One-time likes reset.
+- Real view tracking.
+- Real like tracking.
+- Popularity analytics.
+
+### PHASE 6 — MANDI SYSTEM
+
+Implement:
+
+- Verified data provider integration.
+- Scheduled updates.
+- Historical records.
+- District and commodity filters.
+- Stale-data handling.
+
+### PHASE 7 — PUSH NOTIFICATIONS
+
+Implement:
+
+- Firebase Cloud Messaging.
+- Subscriber management.
+- Notification preferences.
+- Server-side notification delivery.
+
+### PHASE 8 — ALL ADMIN PANEL PAGES
+
+Connect all existing 25 pages to real Firebase data.
+
+Preserve routes and existing capabilities.
+
+### PHASE 9 — MOBILE-FIRST REDESIGN
+
+Improve the existing interface without destroying the brand identity.
+
+Make every major feature easy to use on mobile.
+
+### PHASE 10 — PRODUCTION DEPLOYMENT
+
+Fix Netlify and GitHub integration.
+
+Verify the production build and real backend connections.
+
+### PHASE 11 — COMPLETE TESTING
+
+Run all tests and fix all discovered errors.
+
+Do not mark incomplete features as completed.
+
+---
+
+# 22. FINAL ACCEPTANCE CRITERIA
+
+The project is considered complete only when:
+
+1. Duplicate news are prevented at the database level.
+2. Existing duplicate news have been safely cleaned up.
+3. Mobile news slider works correctly.
+4. All published news are accessible through category and archive pages.
+5. Homepage news updates from the database.
+6. Important Rajasthan, farmer, student, and rural news receive priority.
+7. Artificial likes and views have been reset once.
+8. Real views and likes are tracked correctly.
+9. The entire website is mobile-friendly.
+10. Mandi prices come from a verified data source.
+11. Mandi data updates automatically according to the provider's availability.
+12. Firebase Authentication works.
+13. Firebase Realtime Database is the authoritative source for migrated live application data.
+14. All 25 existing Admin Panel pages work with real database operations.
+15. Admin changes synchronize across authorized devices.
+16. Push notifications work for opted-in subscribers.
+17. News collection works through secure server-side automation.
+18. The website does not depend on fake production data.
+19. Unexpected page reload loops are eliminated.
+20. LocalStorage quota errors are eliminated.
+21. Firebase security rules are properly configured.
+22. Netlify production uses the correct environment configuration.
+23. Google AI Studio Preview and Netlify Production behave consistently.
+24. All critical tests pass.
+
+---
+
+# 23. FINAL INSTRUCTIONS TO THE AI DEVELOPMENT ENVIRONMENT
+
+You must work with the actual existing HUNKAR 24 source code.
+
+Do not produce a completely separate demo application.
+
+Do not simply write a tutorial explaining how the user can do everything manually.
+
+Inspect, modify, and implement the existing project wherever the available development environment permits.
+
+If credentials or external service access are missing:
+
+- Implement the required integration code.
+- Create a clear environment-variable template.
+- Identify the exact credential required.
+- Explain where it must be configured.
+- Do not invent credentials.
+- Do not pretend that an unconfigured integration is working.
+
+If a requested feature depends on a paid API or service quota, identify that dependency before claiming it is production-ready.
+
+Maintain a clear separation between frontend code and privileged backend operations.
+
+Keep all sensitive credentials out of GitHub and browser bundles.
+
+Do not delete important existing data without a backup and verified migration.
+
+Do not break existing routes, SEO, content, or working functionality.
+
+After completing the work, provide:
+
+1. A list of root causes found.
+2. A list of files modified.
+3. A list of new files created.
+4. Database schema and migration changes.
+5. Firebase services configured.
+6. Environment variables required.
+7. Admin pages tested.
+8. Test results.
+9. Remaining external configuration requirements.
+10. Netlify deployment instructions.
+11. Final production verification checklist.
+
+**MOST IMPORTANT: HUNKAR 24 MUST BECOME A REAL, DATABASE-DRIVEN, MOBILE-FIRST, RELIABLE NEWS PLATFORM — NOT JUST A BEAUTIFUL PREVIEW OR A STATIC FRONTEND DEMO.**
+
+Preserve the existing project, fix the root causes, implement the features, test them, and verify production behavior.

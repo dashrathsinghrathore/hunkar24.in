@@ -15,88 +15,30 @@ import {
 import { useNews } from '../../context/NewsContext';
 import { ArticleCard } from './ArticleCard';
 
-interface MandiRate {
-  cropHi: string;
-  cropEn: string;
-  mandi: string;
-  minPrice: number;
-  maxPrice: number;
-  trend: 'up' | 'stable' | 'down';
-  changePercent: string;
-  unit: string;
-}
+import {
+  INITIAL_MANDI_DATA,
+  RAJASTHAN_MANDIS,
+  COMMODITIES_HI,
+  MandiRecord
+} from '../../data/mandiData';
 
 export const AgricultureFarmersSection: React.FC = () => {
   const { articles, setSelectedCategory, setActiveArticle, incrementArticleViews } = useNews();
-  const [selectedMandiTab, setSelectedMandiTab] = useState<'all' | 'shekhawati' | 'hadoti' | 'marwar'>('all');
+  const [selectedCommodity, setSelectedCommodity] = useState<string>('all');
+  const [selectedMandi, setSelectedMandi] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   // Filter agriculture, farmer and rural articles
   const agriArticles = articles.filter(
     a => a.category === 'agriculture' || a.tags?.some(t => ['किसान', 'कृषि', 'मंडी भाव', 'ग्रामीण', 'कुसुम योजना'].includes(t))
   );
 
-  const mandiRates: MandiRate[] = [
-    {
-      cropHi: 'सरसों (Mustard)',
-      cropEn: 'Mustard',
-      mandi: 'सीकर / जयपुर मंडी',
-      minPrice: 5950,
-      maxPrice: 6350,
-      trend: 'up',
-      changePercent: '+₹120',
-      unit: 'प्रति क्विंटल'
-    },
-    {
-      cropHi: 'चना (Gram)',
-      cropEn: 'Gram',
-      mandi: 'बीकानेर / चूरू मंडी',
-      minPrice: 5700,
-      maxPrice: 6150,
-      trend: 'up',
-      changePercent: '+₹80',
-      unit: 'प्रति क्विंटल'
-    },
-    {
-      cropHi: 'गेहूं (Wheat)',
-      cropEn: 'Wheat',
-      mandi: 'कोटा / बारां मंडी',
-      minPrice: 2550,
-      maxPrice: 2850,
-      trend: 'stable',
-      changePercent: '0',
-      unit: 'प्रति क्विंटल'
-    },
-    {
-      cropHi: 'ग्वार (Guar Seed)',
-      cropEn: 'Guar',
-      mandi: 'जोधपुर / नागौर मंडी',
-      minPrice: 5100,
-      maxPrice: 5450,
-      trend: 'up',
-      changePercent: '+₹65',
-      unit: 'प्रति क्विंटल'
-    },
-    {
-      cropHi: 'मूंग (Moong)',
-      cropEn: 'Moong',
-      mandi: 'मेड़ता सिटी मंडी',
-      minPrice: 7800,
-      maxPrice: 8400,
-      trend: 'up',
-      changePercent: '+₹150',
-      unit: 'प्रति क्विंटल'
-    },
-    {
-      cropHi: 'बाजरा (Pearl Millet)',
-      cropEn: 'Bajra',
-      mandi: 'अलवर / भरतपुर मंडी',
-      minPrice: 2280,
-      maxPrice: 2450,
-      trend: 'stable',
-      changePercent: '0',
-      unit: 'प्रति क्विंटल'
-    }
-  ];
+  const filteredMandiRates = INITIAL_MANDI_DATA.filter(item => {
+    const matchCrop = selectedCommodity === 'all' || item.cropHi.includes(selectedCommodity);
+    const matchMandi = selectedMandi === 'all' || item.mandi.includes(selectedMandi) || item.district === selectedMandi;
+    return matchCrop && matchMandi;
+  });
+
 
   const farmerSchemes = [
     {
@@ -173,43 +115,117 @@ export const AgricultureFarmersSection: React.FC = () => {
         </button>
       </div>
 
-      {/* Live Mandi Rates Ticker Box */}
-      <div className="mb-8 bg-linear-to-r from-amber-50 to-orange-50 dark:from-stone-900 dark:to-stone-900/90 rounded-2xl border border-amber-200 dark:border-amber-900/50 p-4 sm:p-5 shadow-xs">
-        <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-amber-200/80 dark:border-amber-900/40">
+      {/* Live Mandi Rates Interactive Control & Rates Grid */}
+      <div className="mb-8 bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-amber-50/90 dark:from-stone-900 dark:via-stone-900/90 dark:to-stone-900 rounded-2xl border border-amber-200 dark:border-amber-900/50 p-4 sm:p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-amber-200/80 dark:border-amber-900/40">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 uppercase tracking-wide">
-              राजस्थान कृषि उपज मंडी आज के भाव (Mandi Bhav Live):
+            <h3 className="text-sm font-black text-stone-900 dark:text-stone-100 uppercase tracking-wide">
+              राजस्थान कृषि उपज मंडी आज के भाव (Mandi Bhav Live 12 फसलें):
             </h3>
           </div>
-          <span className="text-[11px] font-bold text-stone-500">
-            स्रोत: राजस्थान राज्य कृषि विपणन बोर्ड
-          </span>
+          <div className="flex items-center gap-2 text-[11px] font-bold text-stone-500">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>दैनिक लाइव दरें | स्रोत: राजस्थान कृषि विपणन बोर्ड</span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {mandiRates.map((m, idx) => (
-            <div
-              key={idx}
-              className="bg-white dark:bg-stone-800/90 rounded-xl p-3 border border-stone-200 dark:border-stone-700/80 shadow-2xs hover:border-amber-400 transition-colors"
+        {/* Commodity Filter Pills */}
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+            <span className="text-stone-400 font-bold shrink-0 text-[11px]">फसल चुनें:</span>
+            <button
+              onClick={() => setSelectedCommodity('all')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition-colors cursor-pointer ${
+                selectedCommodity === 'all'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200'
+              }`}
             >
-              <div className="text-xs font-black text-stone-900 dark:text-stone-100 truncate">
-                {m.cropHi}
-              </div>
-              <div className="text-[11px] text-stone-500 dark:text-stone-400 truncate flex items-center gap-0.5 mt-0.5">
-                <MapPin className="w-2.5 h-2.5 shrink-0 text-amber-600" />
-                <span>{m.mandi}</span>
-              </div>
-              <div className="mt-2 flex items-baseline justify-between">
-                <div className="text-sm font-black text-amber-700 dark:text-amber-400 font-mono">
-                  ₹{m.maxPrice.toLocaleString()}
+              सभी 12 फसलें
+            </button>
+            {COMMODITIES_HI.map(crop => (
+              <button
+                key={crop}
+                onClick={() => setSelectedCommodity(crop)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-colors cursor-pointer ${
+                  selectedCommodity === crop
+                    ? 'bg-amber-600 text-white font-bold shadow-xs'
+                    : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200'
+                }`}
+              >
+                {crop}
+              </button>
+            ))}
+          </div>
+
+          {/* Mandi Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+            <span className="text-stone-400 font-bold shrink-0 text-[11px]">मंडी चुनें:</span>
+            <button
+              onClick={() => setSelectedMandi('all')}
+              className={`px-2 py-0.5 rounded text-[11px] font-bold shrink-0 transition-colors cursor-pointer ${
+                selectedMandi === 'all'
+                  ? 'bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900'
+                  : 'bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-400'
+              }`}
+            >
+              सभी मंडियां (10)
+            </button>
+            {RAJASTHAN_MANDIS.map(m => (
+              <button
+                key={m.name}
+                onClick={() => setSelectedMandi(m.district)}
+                className={`px-2 py-0.5 rounded text-[11px] font-semibold shrink-0 transition-colors cursor-pointer ${
+                  selectedMandi === m.district
+                    ? 'bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 font-bold'
+                    : 'bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
+                }`}
+              >
+                {m.name.split(' ')[0]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Mandi Cards Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {filteredMandiRates.slice(0, 12).map((m) => (
+            <div
+              key={m.id}
+              className="bg-white dark:bg-stone-800/90 rounded-xl p-3 border border-stone-200 dark:border-stone-700/80 shadow-2xs hover:border-amber-400 transition-all flex flex-col justify-between"
+            >
+              <div>
+                <div className="text-xs font-black text-stone-900 dark:text-stone-100 truncate">
+                  {m.cropHi}
                 </div>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1 py-0.5 rounded">
-                  {m.changePercent}
-                </span>
+                <div className="text-[11px] text-stone-500 dark:text-stone-400 truncate flex items-center gap-0.5 mt-0.5">
+                  <MapPin className="w-2.5 h-2.5 shrink-0 text-amber-600" />
+                  <span>{m.mandi}</span>
+                </div>
               </div>
-              <div className="text-[10px] text-stone-400 mt-0.5">
-                {m.unit}
+
+              <div className="mt-2.5 pt-2 border-t border-stone-100 dark:border-stone-700/50">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-sm font-black text-amber-700 dark:text-amber-400 font-mono">
+                    ₹{m.modalPrice.toLocaleString()}
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold px-1 py-0.5 rounded ${
+                      m.trend === 'up'
+                        ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40'
+                        : m.trend === 'down'
+                        ? 'text-red-600 bg-red-50 dark:bg-red-950/40'
+                        : 'text-stone-500 bg-stone-100 dark:bg-stone-800'
+                    }`}
+                  >
+                    {m.changeAmount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-stone-400 mt-1">
+                  <span>रेंज: {m.minPrice}-{m.maxPrice}</span>
+                  <span>{m.arrivalQuintal}q आवक</span>
+                </div>
               </div>
             </div>
           ))}

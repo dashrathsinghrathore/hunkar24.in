@@ -391,6 +391,20 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Problem Four: Controlled one-time engagement reset migration (hunkar24_engagement_reset_v1)
+    const ENGAGEMENT_RESET_KEY = 'hunkar24_engagement_reset_v1';
+    if (!localStorage.getItem(ENGAGEMENT_RESET_KEY)) {
+      setArticles(prev =>
+        prev.map(a => ({
+          ...a,
+          views: 0,
+          likesCount: 0
+        }))
+      );
+      localStorage.setItem(ENGAGEMENT_RESET_KEY, 'completed');
+      console.log('[Hunkar 24] One-time engagement reset completed (hunkar24_engagement_reset_v1)');
+    }
+
     syncAutoNewsApproved();
     // Non-intrusive 5-minute sync without aggressive polling or page reloading
     const interval = setInterval(syncAutoNewsApproved, 5 * 60 * 1000);
@@ -957,15 +971,61 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const incrementArticleViews = (id: string) => {
+    if (typeof window === 'undefined') return;
+    const sessionKey = `hunkar24_viewed_${id}`;
+    if (sessionStorage.getItem(sessionKey)) {
+      // Already viewed in this browser session — prevents inflated loops
+      return;
+    }
+    sessionStorage.setItem(sessionKey, '1');
+
     setArticles(prev =>
-      prev.map(art => (art.id === id ? { ...art, views: art.views + 1 } : art))
+      prev.map(art => {
+        if (art.id === id) {
+          const nextViews = (art.views || 0) + 1;
+          updateArticleInFirebase(id, { views: nextViews });
+          return { ...art, views: nextViews };
+        }
+        return art;
+      })
     );
+
+    if (activeArticle && activeArticle.id === id) {
+      setActiveArticle(prev => (prev ? { ...prev, views: (prev.views || 0) + 1 } : null));
+    }
   };
 
   const toggleArticleLike = (id: string) => {
+    if (typeof window === 'undefined') return;
+    const likeKey = `hunkar24_liked_${id}`;
+    const alreadyLiked = Boolean(localStorage.getItem(likeKey));
+
+    if (alreadyLiked) {
+      localStorage.removeItem(likeKey);
+    } else {
+      localStorage.setItem(likeKey, '1');
+    }
+
     setArticles(prev =>
-      prev.map(art => (art.id === id ? { ...art, likesCount: (art.likesCount || 0) + 1 } : art))
+      prev.map(art => {
+        if (art.id === id) {
+          const currentLikes = art.likesCount || 0;
+          const nextLikes = alreadyLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1;
+          updateArticleInFirebase(id, { likesCount: nextLikes });
+          return { ...art, likesCount: nextLikes };
+        }
+        return art;
+      })
     );
+
+    if (activeArticle && activeArticle.id === id) {
+      setActiveArticle(prev => {
+        if (!prev) return null;
+        const currentLikes = prev.likesCount || 0;
+        const nextLikes = alreadyLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1;
+        return { ...prev, likesCount: nextLikes };
+      });
+    }
   };
 
   // Breaking News with Instant Supabase Broadcast

@@ -5,6 +5,7 @@ import { MainHeader } from './components/header/MainHeader';
 import { NavBar } from './components/header/NavBar';
 import { MobileNavDrawer } from './components/header/MobileNavDrawer';
 import { BreakingTicker } from './components/breaking/BreakingTicker';
+import { MobileNewsSlider } from './components/news/MobileNewsSlider';
 import { HeroSection } from './components/news/HeroSection';
 import { RajasthanDistrictFeed } from './components/news/RajasthanDistrictFeed';
 import { AgricultureFarmersSection } from './components/news/AgricultureFarmersSection';
@@ -301,6 +302,13 @@ const NewsAppContent: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 w-full">
         <AdBanner placement="top_header" />
       </div>
+
+      {/* 5.1 Mobile News Slider (Touch-swipeable, responsive headline slider below top banner) */}
+      {!activeArticle && selectedCategory === 'all' && (
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 w-full pt-2">
+          <MobileNewsSlider />
+        </div>
+      )}
 
       {/* 6. Main Body Content Routing */}
       <div className="flex-1 max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 w-full py-4 sm:py-6">

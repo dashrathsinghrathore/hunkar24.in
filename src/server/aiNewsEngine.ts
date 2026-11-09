@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { RawNewsArticle } from './newsProviders';
 import { ProcessedArticle, cleanCanonicalUrl } from './deduplicationEngine';
+import { getTopicAccurateImage } from '../utils/newsImageMatcher';
 
 // Sensitive topic keywords for risk classification & editorial review routing (Requirement 4)
 const SENSITIVE_KEYWORDS = [
@@ -126,7 +127,7 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
         originalLanguage: isEnglish ? 'en' : 'hi',
         category: parsed.category || raw.categorySuggestion || (detectedDistrict ? 'rajasthan' : 'national'),
         district: parsed.district || detectedDistrict || undefined,
-        imageUrl: raw.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
+        imageUrl: getTopicAccurateImage(raw.title, parsed.category || 'rajasthan', parsed.district || detectedDistrict, raw.imageUrl).imageUrl,
         imageSource: raw.sourceName,
         publishedAt: raw.publishedAt,
         verificationLevel,
@@ -189,7 +190,7 @@ ${cleanRawDesc}
     originalLanguage: isEnglish ? 'en' : 'hi',
     category: fallbackCategory,
     district: detectedDistrict,
-    imageUrl: raw.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: getTopicAccurateImage(raw.title, fallbackCategory, detectedDistrict, raw.imageUrl).imageUrl,
     imageSource: raw.sourceName,
     publishedAt: raw.publishedAt,
     verificationLevel,

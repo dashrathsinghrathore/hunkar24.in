@@ -67,7 +67,43 @@ const CATEGORY_IMAGES: Record<string, string[]> = {
   ]
 };
 
-function pickImage(category: string, index = 0): string {
+function pickImage(category: string, index = 0, title = '', district = ''): string {
+  const text = `${title} ${category} ${district}`.toLowerCase();
+  
+  if (text.includes('सरसों') || text.includes('mustard') || text.includes('तिलहन')) {
+    return 'https://images.unsplash.com/photo-1508873696983-2df5293cb325?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (text.includes('गेहूं') || text.includes('wheat') || text.includes('अनाज')) {
+    return 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (text.includes('मंडी') || text.includes('बोरी') || text.includes('नीलामी') || text.includes('mandi')) {
+    return 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (text.includes('सोलर') || text.includes('कुसुम') || text.includes('पंप') || text.includes('सिंचाई')) {
+    return 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (text.includes('ercp') || text.includes('ईआरसीपी') || text.includes('बांध') || text.includes('नहर') || text.includes('बीसलपुर')) {
+    return 'https://images.unsplash.com/photo-1541888946425-d0fbb186c5f7?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (text.includes('rpsc') || text.includes('reet') || text.includes('भर्ती') || text.includes('परीक्षा')) {
+    return 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (text.includes('ट्रेन') || text.includes('रेलवे') || text.includes('वंदे भारत')) {
+    return 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (text.includes('बारिश') || text.includes('मानसून') || text.includes('मौसम') || text.includes('ओलावृष्टि')) {
+    return 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (text.includes('पुलिस') || text.includes('अपराध') || text.includes('थाना') || text.includes('जांच')) {
+    return 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (text.includes('अस्पताल') || text.includes('स्वास्थ्य') || text.includes('डॉक्टर')) {
+    return 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (text.includes('क्रिकेट') || text.includes('खेल') || text.includes('टूर्नामेंट')) {
+    return 'https://images.unsplash.com/photo-1531415074868-036b1c57e329?auto=format&fit=crop&w=1200&q=80';
+  }
+
   const list = CATEGORY_IMAGES[category] || CATEGORY_IMAGES.rajasthan;
   return list[index % list.length];
 }
@@ -562,7 +598,7 @@ export const handler = async (event: any) => {
     const artId = `art-auto-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const assignedImage = raw.imageUrl && raw.imageUrl.startsWith('http')
       ? raw.imageUrl
-      : pickImage(aiArticle.category, i);
+      : pickImage(aiArticle.category, i, aiArticle.headline, aiArticle.district);
 
     const articlePayload = {
       id: artId,
