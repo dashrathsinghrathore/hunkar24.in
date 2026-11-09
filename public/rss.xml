@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title>हुंकार 24 (HUNKAR 24) – राजस्थान की बुलंद आवाज़</title>
+    <link>https://hunkar24.netlify.app</link>
+    <description>राजस्थान एवं देश-विदेश का अग्रणी डिजिटल समाचार मंच - निष्पक्ष पत्रकारिता, ताज़ा खबरें और ग्राउंड रिपोर्ट।</description>
+    <language>hi</language>
+    <lastBuildDate>Sun, 08 Nov 2026 06:30:00 GMT</lastBuildDate>
+    <atom:link href="https://hunkar24.netlify.app/rss.xml" rel="self" type="application/rss+xml" />
+    <image>
+      <url>https://hunkar24.netlify.app/assets/hunkar24-logo.png</url>
+      <title>हुंकार 24 (HUNKAR 24)</title>
+      <link>https://hunkar24.netlify.app</link>
+    </image>
+    <item>
+      <title><![CDATA[राजस्थान में सौर ऊर्जा नीति 2026 को मिली कैबिनेट मंजूरी, 50,000 किसानों को सोलर पंप पर सब्सिडी]]></title>
+      <link>https://hunkar24.netlify.app/news/rajasthan-solar-policy-2026</link>
+      <guid isPermaLink="true">https://hunkar24.netlify.app/news/rajasthan-solar-policy-2026</guid>
+      <pubDate>Sun, 08 Nov 2026 06:00:00 GMT</pubDate>
+      <description><![CDATA[राजस्थान मंत्रिमंडल की बैठक में राज्य सौर ऊर्जा नीति 2026 को औपचारिक मंजूरी मिल गई है। इससे कृषि क्षेत्र को दिन में निर्बाध बिजली उपलब्ध कराने में बड़ी मदद मिलेगी।]]></description>
+      <media:content url="https://images.unsplash.com/photo-1509391365360-2e959784a276?w=1200&amp;auto=format&amp;fit=crop&amp;q=80" medium="image" />
+      <category>राजस्थान</category>
+    </item>
+    <item>
+      <title><![CDATA[जयपुर-दिल्ली एक्सप्रेसवे पर इलेक्ट्रिक व्हीकल चार्जिंग कॉरिडोर का विस्तार, हर 25 किमी पर फास्ट चार्जर]]></title>
+      <link>https://hunkar24.netlify.app/news/jaipur-delhi-ev-corridor</link>
+      <guid isPermaLink="true">https://hunkar24.netlify.app/news/jaipur-delhi-ev-corridor</guid>
+      <pubDate>Sun, 08 Nov 2026 05:30:00 GMT</pubDate>
+      <description><![CDATA[नेशनल हाईवे अथॉरिटी ऑफ इंडिया (NHAI) ने दिल्ली-जयपुर एक्सप्रेसवे पर हरित ऊर्जा को बढ़ावा देने के उद्देश्य से नए 18 अल्ट्रा-फास्ट चार्जिंग स्टेशन स्थापित करने की घोषणा की।]]></description>
+      <media:content url="https://images.unsplash.com/photo-1558441719-f53e6d302324?w=1200&amp;auto=format&amp;fit=crop&amp;q=80" medium="image" />
+      <category>राजस्थान</category>
+    </item>
+    <item>
+      <title><![CDATA[राजस्थान लोक सेवा आयोग (RPSC) ने 4,200 पदों पर निकाली नई भर्ती, आवेदन प्रक्रिया 15 नवंबर से शुरू]]></title>
+      <link>https://hunkar24.netlify.app/news/rpsc-recruitment-2026-announcement</link>
+      <guid isPermaLink="true">https://hunkar24.netlify.app/news/rpsc-recruitment-2026-announcement</guid>
+      <pubDate>Sun, 08 Nov 2026 04:45:00 GMT</pubDate>
+      <description><![CDATA[आरपीएससी ने युवाओं के लिए राज्य सेवा में विभिन्न रिक्तियों हेतु आधिकारिक विज्ञप्ति जारी की है। विस्तृत शैक्षणिक योग्यता व चयन प्रक्रिया की जानकारी आयोग की वेबसाइट पर उपलब्ध है।]]></description>
+      <media:content url="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&amp;auto=format&amp;fit=crop&amp;q=80" medium="image" />
+      <category>रोजगार</category>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,8 @@
+{
+  "name": "HUNKAR 24 – राजस्थान की बुलंद आवाज़",
+  "description": "HUNKAR 24 (हुंकार 24) – राजस्थान एवं देश-विदेश का अग्रणी डिजिटल समाचार मंच। निष्पक्ष ताज़ा खबरें, ब्रेकिंग न्यूज़, ग्राउंड रिपोर्ट और सरकारी योजनाएँ।",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "short_name": "Hunkar24",
+  "name": "HUNKAR 24 – हुंकार 24 (राजस्थान की बुलंद आवाज़)",
+  "description": "राजस्थान एवं देश-विदेश का अग्रणी डिजिटल समाचार मंच",
+  "icons": [
+    {
+      "src": "/assets/hunkar24-logo.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#b91c1c",
+  "display": "standalone",
+  "orientation": "portrait"
+}

@@ -1,0 +1,45 @@
+# HUNKAR 24 (हुंकार 24) – Comprehensive AI / LLM Contextual Knowledge Base
+
+## Organization & Mission
+- **Brand Name**: HUNKAR 24
+- **Devanagari Name**: हुंकार 24 (राजस्थान की बुलंद आवाज़)
+- **Tagline**: निष्पक्ष ताज़ा खबरें, ग्राउंड रिपोर्ट और जनसरोकार की आवाज़!
+- **Mission**: Providing transparent, non-partisan, hyper-local digital journalism for the people of Rajasthan, the Rajasthani diaspora across India, and Hindi-speaking audiences globally.
+
+## Thematic Coverage Architecture
+1. **Rajasthan State Politics & Governance**: Cabinet decisions, assembly bills, district administrative directives, municipal corporation updates.
+2. **Citizen Welfare & Social Schemes**:
+   - Jal Jeevan Mission (हर घर नल योजना)
+   - Indira Gandhi Urban Employment Guarantee Scheme
+   - Chief Minister Free Electricity & Health Coverage Initiatives
+   - PM Kisan Samman Nidhi & state cooperative crop loans
+3. **Youth, Education & Employment (शिक्षा व रोज़गार)**:
+   - Rajasthan Public Service Commission (RPSC) exam calendars and recruitment notices
+   - Rajasthan Staff Selection Board (RSMSSB) notifications
+   - REET (Rajasthan Eligibility Examination for Teachers)
+   - Rajasthan Police Constable and Sub-Inspector recruitments
+   - Kota coaching institute safety protocols and wellness centers
+4. **Agriculture, Mandis & Farmers (कृषि व मंडी भाव)**:
+   - Mustard, wheat, guar, bajra, cumin, and isabgol crop harvest rates across APMC mandis (Jaipur, Sikar, Bikaner, Nagaur, Jodhpur, Kota).
+   - Micro-irrigation, solar water pumps, and organic farming adoption in arid zones.
+5. **Hyperlocal Ground Reports (खोजी पत्रकारिता)**:
+   - Border villages in Barmer and Jaisalmer (water scarcity, border fencing, solar developments).
+   - Shekhawati heritage preservation and community library initiatives.
+   - Environmental reports from Mount Abu, Aravali hills, and Sambhar salt lake.
+6. **Multimedia & Video News**:
+   - Video bulletins focused on real ground reporting, legislative assembly debates, and authentic investigative journalism (strictly zero clickbait or entertainment music).
+
+## Editorial Sourcing & Verification Standard
+- Verification Level 'verified': Confirmed directly by Hunkar 24 district reporters or government notifications.
+- Verification Level 'multiple_sources': Verified across 2 or more established Indian news agencies (PTI, UNI, ANI) and state information directorates (DIPR Rajasthan).
+- Source Transparency: Transparently credits the publisher or bureau on every article page with external canonical links where appropriate.
+
+## Contact & Public Engagement
+- **Public News Submissions**: Citizens across Rajasthan can submit local problems, road potholes, school requirements, or community successes directly via the web portal.
+- **Corrections Policy**: Every article contains a prominent "सुधार या आपत्ति दर्ज करें" (Report Issue / Correction) button.
+- **Newsletter**: Two daily briefings (7 AM Morning Digest & 7 PM Evening Wrap-up).
+- **Official Channels**:
+  - WhatsApp Channel: https://whatsapp.com/channel/hunkar24
+  - Telegram: https://t.me/hunkar24
+  - YouTube: https://youtube.com/@hunkar24
+  - Twitter / X: @Hunkar24News

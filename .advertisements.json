@@ -1,0 +1,21 @@
+[
+  {
+    "id": "ad-1794040787298-61bh",
+    "campaignTitle": "श्री करणी कंप्यूटर एवं स्किल सेंटर - नवीन प्रवेश प्रारंभ",
+    "advertiserName": "श्री करणी एजुकेशन सोसाइटी",
+    "placement": "homepage_top",
+    "imageUrl": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
+    "targetUrl": "https://wa.me/919414012345",
+    "desktopVisible": true,
+    "mobileVisible": true,
+    "impressions": 0,
+    "clicks": 0,
+    "status": "active",
+    "startDate": "2026-11-01",
+    "endDate": "2026-12-31",
+    "pricingInr": 15000,
+    "approved": true,
+    "createdByAdmin": true,
+    "isDemo": false
+  }
+]

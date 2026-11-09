@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-serif: 'Martel', serif;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-display: 'Rozha One', 'Martel', serif;
+
+  --color-brand-navy: #09172a;
+  --color-brand-red: #b91c1c;
+  --color-brand-red-dark: #991b1b;
+  --color-brand-gold: #b45309;
+}
+
+/* Base newspaper typography rules */
+.font-newspaper-headline {
+  font-family: 'Martel', serif;
+  font-feature-settings: "kern" 1, "liga" 1;
+  text-wrap: balance;
+}
+
+.font-newspaper-display {
+  font-family: 'Rozha One', 'Martel', serif;
+  letter-spacing: -0.01em;
+}
+
+/* Clean print styles for news readers */
+@media print {
+  header, footer, .no-print, aside, .ad-banner {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}
+
+/* Subtle editorial scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(185, 28, 28, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(185, 28, 28, 0.5);
+}

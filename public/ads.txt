@@ -1,0 +1,3 @@
+# Google AdSense ads.txt for Hunkar 24
+# Replace pub-0000000000000000 with your actual publisher ID in Admin -> Website Settings
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

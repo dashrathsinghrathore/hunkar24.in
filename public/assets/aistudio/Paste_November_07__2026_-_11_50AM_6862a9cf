@@ -1,0 +1,1252 @@
+# HUNKAR 24 – ULTIMATE PREMIUM DIGITAL NEWS PLATFORM
+## COMPLETE MASTER DEVELOPMENT PROMPT – FINAL VERSION
+
+You are an elite team of senior software architects, full-stack engineers, UI/UX designers, database engineers, cybersecurity specialists, SEO experts, and digital media product designers.
+
+Your mission is to build a completely new, premium, advanced, scalable, and production-oriented digital news platform named:
+
+# HUNKAR 24 (हुंकार 24)
+
+**Brand Name:** HUNKAR 24  
+**Hindi Name:** हुंकार 24  
+**Official Tagline:** राजस्थान की बुलंद आवाज़!  
+**Primary Language:** Hindi  
+**Secondary Language:** Rajasthani  
+**Optional Language:** English
+
+---
+
+# 1. OFFICIAL BRAND CONFIGURATION – IMPORTANT
+
+Use this exact brand configuration throughout the entire project.
+
+### OFFICIAL LOGO URL
+
+https://ibb.co/RkCCbsZ9
+
+This is the official HUNKAR 24 logo reference supplied by the owner.
+
+IMPORTANT:
+- Use this logo consistently throughout the entire website and admin panel.
+- Do not generate another logo.
+- Do not replace it with a temporary unrelated logo.
+- Do not use different logos on different pages.
+- If the supplied URL is an image-hosting page instead of a direct image file, resolve the actual image URL and use the image itself.
+- Verify that the image loads correctly before implementation.
+- Keep the logo URL in one centralized configuration variable so it can be updated once.
+- Preserve the image aspect ratio.
+- Do not crop, stretch, or distort the logo.
+- Use an appropriate transparent or clean background treatment where supported.
+
+Use the official logo in:
+
+1. Website desktop header
+2. Website mobile header
+3. Footer
+4. Admin login page
+5. Admin dashboard
+6. Admin sidebar
+7. Admin mobile navigation
+8. Loading screen
+9. Favicon, where a suitable icon version is available
+10. PWA icons, where suitable versions are available
+11. Social sharing previews
+12. Open Graph image where appropriate
+13. Email templates
+14. News sharing templates
+15. Advertisement and promotional templates where brand identity is required
+
+### DOMAIN CONFIGURATION
+
+CURRENT LIVE / INITIAL DOMAIN:
+
+https://hunkar24.netlify.app/
+
+FUTURE CUSTOM DOMAIN:
+
+https://hunkar24.in
+
+IMPORTANT:
+- The .in domain has not yet been purchased.
+- The website must work immediately on the Netlify domain.
+- Do not force redirects to the future .in domain.
+- Do not assume that the .in domain is already connected.
+- Make domain configuration centralized and environment-based.
+- Prepare the application to support both domains.
+- When the .in domain is purchased and connected, allow it to become the primary canonical domain through configuration.
+- Do not hardcode the future domain into every page.
+- All internal links, share links, SEO URLs, email links, redirects, and API callbacks must use the centralized domain configuration.
+- Avoid duplicate SEO indexing when both domains are active. Use one configured canonical domain and suitable redirects after the custom domain is verified.
+
+Example configuration:
+
+CURRENT_SITE_URL=https://hunkar24.netlify.app
+
+FUTURE_CUSTOM_DOMAIN=https://hunkar24.in
+
+PRIMARY_SITE_URL=https://hunkar24.netlify.app
+
+When the custom domain becomes active, PRIMARY_SITE_URL can be changed to https://hunkar24.in.
+
+The application must never break because the custom domain is not yet purchased.
+
+---
+
+# 2. CRITICAL DEVELOPMENT RULES
+
+1. Build a complete working application, not just a static homepage.
+2. Use a clean, modular, scalable architecture.
+3. Build mobile-first and responsive layouts.
+4. Every major button must perform its actual intended function.
+5. Include proper loading, success, empty, and error states.
+6. Do not use fake functionality.
+7. Do not fabricate live statistics, visitors, views, news, or reporter identities.
+8. Public news submissions must always go through editorial moderation.
+9. Preserve all features described in this prompt.
+10. Do not silently remove existing modules while implementing new features.
+11. Do not expose secret keys in frontend code.
+12. Use reusable components and centralized configuration.
+13. Keep the project maintainable and easy to expand.
+14. Use original branding and visual design.
+15. Test the major workflows before declaring them complete.
+
+The goal is to create a premium national-level digital news platform, not a basic news blog.
+
+---
+
+# 3. TECHNOLOGY STACK
+
+Preferred stack:
+
+FRONTEND:
+- React
+- Vite
+- TypeScript
+- Tailwind CSS
+- Lucide icons
+- Modern reusable UI components
+
+BACKEND:
+- Supabase
+- PostgreSQL
+- Supabase Authentication
+- Supabase Storage
+- Supabase Row Level Security
+- Supabase Realtime where useful
+- Supabase Edge Functions where required
+
+HOSTING:
+- Netlify
+- Netlify Functions or another suitable server-side rendering/prerendering solution for crawler-compatible social previews.
+
+INTEGRATIONS:
+- Google AdSense
+- Google Analytics 4
+- Google Search Console
+- YouTube embeds
+- Instagram embeds
+- WhatsApp
+- Telegram
+- Facebook
+- X
+- Optional payment gateway
+
+Keep all integrations modular and configurable.
+
+---
+
+# 4. BRAND DESIGN SYSTEM
+
+Create a premium editorial identity for HUNKAR 24.
+
+DESIGN DIRECTION:
+- Modern Indian digital news organization
+- Premium editorial design
+- Clean professional appearance
+- Strong news typography
+- Excellent Devanagari typography
+- High readability
+- Mobile-first layouts
+- Professional card design
+- Smooth micro-interactions
+- Subtle animations
+
+COLOR PALETTE:
+- Deep Navy
+- News Red
+- White
+- Charcoal
+- Light Grey
+- Restrained Gold accents
+
+Use the official supplied logo as the source of brand identity.
+
+Do not overuse gradients, glass effects, excessive shadows, or animations.
+
+Create a consistent design system for the website and admin panel.
+
+---
+
+# 5. PUBLIC WEBSITE – COMPLETE HOMEPAGE
+
+Build a premium homepage with the following sections.
+
+A. TOP HEADER
+- Official HUNKAR 24 logo
+- Hindi / Rajasthani language switch
+- Current date
+- Search
+- WhatsApp contact
+- Social media icons
+- Mobile navigation
+- Breaking news indicator
+
+B. BREAKING NEWS TICKER
+- Scrolling headlines
+- Admin-controlled breaking news
+- Clickable article links
+- Schedule start/end time
+- Enable/disable option
+- Urgent news styling
+
+C. NAVIGATION
+
+Categories:
+- होम
+- ताज़ा खबरें
+- राजस्थान
+- देश
+- दुनिया
+- राजनीति
+- अपराध
+- शिक्षा
+- सरकारी योजनाएँ
+- नौकरी एवं रोजगार
+- व्यापार
+- कृषि
+- तकनीक एवं AI
+- खेल
+- मनोरंजन
+- स्वास्थ्य
+- मौसम
+- वीडियो न्यूज़
+- ग्राउंड रिपोर्ट
+- फोटो गैलरी
+
+Admin must be able to add, edit, reorder, hide, and safely delete categories.
+
+D. PREMIUM HERO NEWS
+- Featured headline
+- Featured image
+- Breaking / Exclusive labels
+- Short description
+- Publication date
+- News Desk / verified reporter attribution
+- Read More button
+
+E. LATEST NEWS
+- Chronological news feed
+- Category labels
+- Images
+- Publication time
+- Pagination or infinite loading
+
+F. RAJASTHAN NEWS
+- State-level news
+- District-level news
+- Tehsil-level news
+- Village-level news
+
+G. NATIONAL NEWS
+
+H. INTERNATIONAL NEWS
+
+I. EDUCATION & EMPLOYMENT
+- Government jobs
+- Exam notifications
+- Results
+- Admit cards
+- Education news
+- Government schemes
+- Official application links
+
+J. VIDEO NEWS
+- YouTube videos
+- Supported Instagram embeds
+- External video URLs
+- Video thumbnails
+- Video categories
+
+K. GROUND REPORTS & INTERVIEWS
+
+L. PHOTO GALLERY
+- Multiple images
+- Albums
+- Captions
+- Image viewer
+
+M. TRENDING NEWS
+- Actual view-based popularity
+- Most-read stories
+- Time filters
+
+N. ADVERTISEMENT SECTIONS
+- Homepage top banner before news
+- Homepage middle banner
+- Sidebar banner
+- Article banner
+- Category banner
+- Mobile-specific banner
+
+All paid promotions must be clearly marked Advertisement / Sponsored / प्रचारित सामग्री.
+
+O. FOOTER
+- About Us
+- Contact Us
+- Advertise With Us
+- Submit Your News
+- Editorial Policy
+- Fact Checking Policy
+- Corrections Policy
+- Privacy Policy
+- Terms and Conditions
+- Disclaimer
+- Grievance Contact
+- Social links
+- Copyright
+
+---
+
+# 6. NEWS ARTICLE PAGE
+
+Every news article must include:
+
+- Headline
+- URL slug
+- Main image
+- Image caption
+- Image source
+- Short description
+- Full article content
+- Category
+- District / location
+- Reporter or News Desk attribution
+- Publication date
+- Updated date
+- Reading time
+- Related news
+- WhatsApp share
+- Facebook share
+- Telegram share
+- X share
+- Copy link
+- Previous / next article
+- Video embed
+- Photo gallery
+- Advertisement placements
+- Report an issue option
+
+SEO:
+- Unique page title
+- Meta description
+- Canonical URL
+- Open Graph
+- Twitter/X cards
+- NewsArticle structured data
+- Breadcrumb structured data
+- Sitemap inclusion
+
+All URLs must use the centralized PRIMARY_SITE_URL configuration.
+
+---
+
+# 7. PREMIUM ADMIN PANEL
+
+Admin URL:
+
+https://hunkar24.netlify.app/admin
+
+When the custom domain is connected, the same route should work on the custom domain.
+
+IMPORTANT:
+A hidden URL is not sufficient security. Implement proper authentication and backend authorization.
+
+ADMIN DESIGN:
+- Premium dashboard
+- Collapsible sidebar
+- Top navigation
+- Notifications
+- Global search
+- Quick actions
+- User profile
+- Dark / light mode
+- Responsive mobile dashboard
+- Charts
+- Professional tables
+
+DASHBOARD STATISTICS:
+- Total published news
+- Drafts
+- Pending submissions
+- Registered users
+- Active reporters
+- Active advertisement campaigns
+- Article views
+- Top articles
+- Recent activities
+- Recent submissions
+- Publishing performance
+
+Use actual backend data. Never invent statistics.
+
+### ADMIN SIDEBAR
+
+1. Dashboard
+2. News Management
+3. Create New News
+4. Breaking News
+5. Categories
+6. Districts & Locations
+7. Public News Submissions
+8. Reporter Management
+9. User Management
+10. Media Library
+11. Video Management
+12. Photo Gallery
+13. Advertisement Management
+14. Paid Promotions
+15. Business Listings
+16. Payment Management
+17. Analytics & Reports
+18. SEO Management
+19. Social Media Settings
+20. Website Settings
+21. Notifications
+22. Roles & Permissions
+23. Activity Logs
+24. Security Settings
+25. Backup & Maintenance
+
+All modules must be connected to real backend data when configuration is complete.
+
+---
+
+# 8. ADVANCED NEWS EDITOR
+
+Create a powerful but extremely easy publishing interface.
+
+ADMIN SHOULD BE ABLE TO:
+
+- Write headline
+- Add short description
+- Write full news article
+- Select category
+- Select district / tehsil / village
+- Upload main image
+- Upload multiple images
+- Paste image URL
+- Add video URL
+- Embed YouTube
+- Embed supported Instagram content
+- Add image captions
+- Add image source
+- Select reporter attribution
+- Generate SEO title
+- Generate SEO description
+- Add keywords
+- Set social sharing image
+- Save draft
+- Preview
+- Publish immediately
+- Schedule publication
+- Update existing article
+- View revision history
+
+EDITOR:
+- Rich text editor
+- Headings
+- Bold
+- Italic
+- Lists
+- Links
+- Images
+- Captions
+- Video embeds
+- Autosave
+- Draft recovery
+- Preview mode
+
+### MEDIA INPUT OPTIONS
+
+1. Upload images from computer.
+2. Upload multiple images.
+3. Upload supported video files when configured storage allows.
+4. Paste direct image URL.
+5. Paste video URL.
+6. Embed YouTube.
+7. Embed supported Instagram posts/reels.
+8. Add external media links.
+9. Add thumbnail URLs.
+10. Reuse existing Media Library files.
+
+Use URL validation.
+
+Do not promise that every social platform URL can be directly downloaded. Use supported embeds and official APIs.
+
+---
+
+# 9. MEDIA LIBRARY
+
+Create a complete media management system.
+
+Features:
+- Image grid
+- Video grid
+- Search
+- Filters
+- File type
+- Upload date
+- File size
+- Alt text
+- Caption
+- Source
+- Copy URL
+- Delete with confirmation
+- Reuse media
+
+Use Supabase Storage after backend configuration.
+
+Prepare secure storage buckets and policies.
+
+Use signed URLs for private media where required.
+
+---
+
+# 10. PUBLIC SUBMIT YOUR NEWS SYSTEM
+
+Create a simple public Submit Your News page.
+
+Any visitor can submit news without an admin account.
+
+FORM:
+- Headline
+- News description
+- District
+- Tehsil
+- Village
+- Date/time
+- Images
+- Video URL
+- YouTube link
+- Instagram link
+- Submitter name
+- Mobile number
+- WhatsApp number
+- Email optional
+- Consent checkbox
+
+WORKFLOW:
+
+1. User submits news.
+2. Validate all fields.
+3. Save in Supabase.
+4. Set status to PENDING.
+5. Generate submission ID.
+6. Notify authorized administrators.
+7. Admin reviews submission.
+8. Admin can approve, reject, request changes, or edit.
+9. Approved submission can become a published article.
+10. Notify the submitter where consent exists.
+
+SECURITY:
+- CAPTCHA or equivalent abuse protection
+- Rate limiting
+- File validation
+- File size restrictions
+- Spam protection
+- Personal data protection
+
+Never automatically publish unverified submissions.
+
+---
+
+# 11. REPORTER MANAGEMENT
+
+Roles:
+- Super Admin
+- Admin
+- Editor
+- Reporter
+- Media Manager
+- Advertisement Manager
+- Analyst
+
+Reporter profile:
+- Name
+- Profile photo
+- Assigned district
+- Assigned tehsil
+- Assigned villages
+- Contact details
+- Account status
+- Published article count
+
+Reporter dashboard:
+- Submit news
+- Upload images
+- Submit video links
+- Save drafts
+- View submission status
+- Edit permitted drafts
+- View published news
+
+Reporters must not access Super Admin functions.
+
+Implement backend-enforced role-based access control.
+
+---
+
+# 12. ADVERTISEMENT & MONETIZATION SYSTEM
+
+Create a complete advertising module.
+
+ADVERTISEMENT TYPES:
+- Homepage top banner
+- Homepage middle banner
+- Sidebar banner
+- Article banner
+- Category banner
+- Mobile banner
+- Sponsored article
+- Sponsored video
+- Business promotion
+- Event promotion
+- Education promotion
+- Job advertisement
+
+ADMIN FEATURES:
+- Create advertisement
+- Upload poster
+- Paste image URL
+- Paste video URL
+- Add target link
+- Advertiser information
+- Campaign title
+- Placement
+- Desktop/mobile visibility
+- Start date
+- End date
+- Pricing
+- Payment status
+- Approval status
+- Active / paused / expired
+- Impression tracking
+- Click tracking
+- Campaign reports
+
+Clearly mark all paid promotions.
+
+### GOOGLE ADSENSE
+
+Prepare the website for AdSense:
+- Responsive ad placements
+- Ad code configuration
+- Ads.txt support
+- Privacy and consent readiness
+- Policy pages
+
+Do not guarantee AdSense approval or income.
+
+### REVENUE SOURCES
+
+- Google AdSense
+- Direct local advertisements
+- Paid poster promotion
+- Sponsored articles
+- Sponsored videos
+- Business listings
+- Event promotion
+- Recruitment advertisements
+
+Create a revenue dashboard using actual campaign and payment data.
+
+---
+
+# 13. BUSINESS PROMOTION PORTAL
+
+Allow local businesses to request paid promotions.
+
+Target:
+- Shops
+- Schools
+- Colleges
+- Coaching institutes
+- Hospitals
+- Clinics
+- Hotels
+- Restaurants
+- Local service providers
+- Events
+- Businesses
+
+FORM:
+- Business name
+- Contact person
+- Mobile
+- WhatsApp
+- Email
+- Category
+- Promotion title
+- Description
+- Poster upload
+- Video URL
+- Website/social link
+- Preferred placement
+- Campaign duration
+- Budget
+- Consent
+
+WORKFLOW:
+- Submit request
+- Generate request ID
+- Save in database
+- Admin review
+- Approve/reject
+- Payment verification
+- Campaign activation
+- Campaign expiry
+- Performance report
+
+Advertisers must not publish directly without approval.
+
+---
+
+# 14. PAYMENT SYSTEM
+
+Create a modular payment architecture.
+
+Prepare for a supported payment provider such as Razorpay.
+
+Payment methods where supported:
+- UPI
+- Cards
+- Net banking
+- Wallets
+- Verified bank transfer
+
+Requirements:
+- Server-side order creation
+- Server-side signature verification
+- Secure webhooks
+- Transaction ID
+- Payment status
+- Receipts
+- Campaign payment history
+- Refund status
+- Admin reports
+
+Never store card numbers, CVV, or UPI PIN.
+
+Never publish private bank account credentials.
+
+Payment integration can remain pending until credentials are configured.
+
+---
+
+# 15. VIDEO & SOCIAL MEDIA SETTINGS
+
+Create centralized Social Media Settings.
+
+Admin can configure:
+- WhatsApp contact
+- WhatsApp channel
+- Telegram channel
+- Instagram
+- YouTube
+- Facebook
+- X
+
+Display configured links on:
+- Header
+- Footer
+- Contact page
+- Article sharing section
+
+Video system:
+- YouTube embeds
+- Supported Instagram embeds
+- External video URLs
+- Uploaded video files within storage limits
+- Video thumbnails
+- Categories
+- Descriptions
+
+---
+
+# 16. ANALYTICS & VIRAL CONTENT ASSISTANT
+
+Create a real analytics dashboard.
+
+Track where permitted:
+- Article views
+- Unique visitor estimates
+- Popular articles
+- Top categories
+- Traffic sources
+- Device types
+- Referral sources
+- Advertisement impressions
+- Advertisement clicks
+- Social shares where measurable
+- Publishing performance
+
+Create an AI Viral Content Assistant.
+
+Features:
+- Headline suggestions
+- Short descriptions
+- SEO titles
+- Keywords
+- WhatsApp captions
+- Facebook captions
+- Instagram captions
+- Category suggestions
+- Related articles
+- Image alt text
+
+All AI-generated content must be reviewed by an editor.
+
+Never fabricate facts or sources.
+
+Never guarantee virality.
+
+---
+
+# 17. SEO & GOOGLE DISCOVERY
+
+Implement:
+- Technical SEO
+- Unique titles
+- Meta descriptions
+- Canonical URLs
+- Open Graph
+- Twitter/X cards
+- NewsArticle structured data
+- Organization structured data
+- Breadcrumb structured data
+- XML sitemap
+- News sitemap where eligible
+- Robots.txt
+- Image alt attributes
+- Clean URL slugs
+- Internal linking
+- Category SEO
+- Search Console configuration
+- Analytics configuration
+
+### SOCIAL SHARING – VERY IMPORTANT
+
+When a visitor shares the homepage or an article on:
+
+- WhatsApp
+- Facebook
+- Telegram
+- X
+- LinkedIn
+
+Show a proper rich preview with:
+- HUNKAR 24 logo or appropriate article image
+- Brand name
+- Article headline
+- Article description
+- Canonical URL
+
+Use the configured logo URL for brand-level social previews.
+
+For individual articles, use the article's featured image where available.
+
+Implement crawler-compatible metadata using server-side rendering, prerendering, or Netlify Functions as appropriate.
+
+Do not depend only on client-side React metadata.
+
+### DOMAIN-AWARE SEO
+
+Initially:
+PRIMARY_SITE_URL=https://hunkar24.netlify.app
+
+Future:
+PRIMARY_SITE_URL=https://hunkar24.in
+
+Use the configured primary domain for:
+- Canonical tags
+- XML sitemap
+- News sitemap
+- Open Graph URLs
+- Article share links
+- Organization structured data
+- Email links
+- Internal URLs
+
+Do not index duplicate versions of the same article across both domains.
+
+Only switch the canonical domain and redirect after the custom domain is actually connected and verified.
+
+---
+
+# 18. AUTHENTICATION & SECURITY
+
+Implement secure Supabase authentication.
+
+Features:
+- Admin login
+- Email/password login
+- Password reset
+- Email verification
+- Optional Google login
+- Optional OTP login when configured
+- Session management
+- Logout
+- Role-based permissions
+- Admin activation/deactivation
+- Login protection
+- Rate limiting
+- Audit logs
+- Security alerts
+
+Never hardcode a reusable admin password.
+
+Never expose Supabase service-role credentials in frontend code.
+
+All permissions must be enforced on the backend.
+
+Use Row Level Security on all sensitive tables.
+
+---
+
+# 19. SUPABASE DATABASE ARCHITECTURE
+
+Prepare a scalable PostgreSQL schema.
+
+Tables:
+- profiles
+- user_roles
+- permissions
+- articles
+- article_revisions
+- categories
+- districts
+- tehsils
+- villages
+- reporters
+- news_submissions
+- submission_media
+- media_library
+- videos
+- galleries
+- gallery_images
+- advertisements
+- ad_campaigns
+- advertisers
+- business_listings
+- promotion_requests
+- payments
+- payment_events
+- notifications
+- article_views
+- ad_impressions
+- ad_clicks
+- social_settings
+- website_settings
+- seo_settings
+- audit_logs
+
+Requirements:
+- Primary keys
+- Foreign keys
+- Indexes
+- Created/updated timestamps
+- Status fields
+- Referential integrity
+- Safe deletion rules
+- RLS policies
+- Database constraints
+- Storage policies
+
+Use version-controlled SQL migrations.
+
+Do not delete data during schema changes.
+
+Do not create unrestricted public database access.
+
+---
+
+# 20. PERFORMANCE & RESPONSIVENESS
+
+Build:
+- Mobile-first layouts
+- Desktop layouts
+- Tablet layouts
+- Responsive images
+- Lazy loading
+- Code splitting
+- Efficient queries
+- Caching
+- Error boundaries
+- Skeleton loaders
+- Accessible forms
+- Keyboard navigation
+- Semantic HTML
+
+Test at:
+- 320px
+- 360px
+- 375px
+- 390px
+- 414px
+- Tablet
+- Desktop
+
+No horizontal overflow or clipped content.
+
+Do not autoplay large videos.
+
+---
+
+# 21. LEGAL & EDITORIAL PAGES
+
+Create editable pages:
+- About Us
+- Contact Us
+- Advertise With Us
+- Privacy Policy
+- Terms and Conditions
+- Disclaimer
+- Editorial Policy
+- Fact Checking Policy
+- Corrections Policy
+- Copyright Policy
+- Grievance Contact
+
+Clearly separate advertisements from editorial reporting.
+
+Allow visitors to report incorrect content.
+
+The owner must review applicable laws, publisher obligations, privacy requirements, and platform policies before launch.
+
+---
+
+# 22. PWA & FUTURE EXPANSION
+
+Prepare for:
+- Progressive Web App
+- Installable website
+- Web push notifications after permission
+- News alerts
+- Future Android app
+- E-paper module
+- Multilingual expansion
+- Reporter mobile interface
+
+Do not create fake notification functionality.
+
+---
+
+# 23. CENTRALIZED ENVIRONMENT CONFIGURATION
+
+Create centralized configuration files.
+
+Example frontend configuration:
+
+VITE_SITE_URL=https://hunkar24.netlify.app
+
+VITE_FUTURE_CUSTOM_DOMAIN=https://hunkar24.in
+
+VITE_BRAND_NAME=HUNKAR 24
+
+VITE_BRAND_NAME_HI=हुंकार 24
+
+VITE_BRAND_TAGLINE=राजस्थान की बुलंद आवाज़!
+
+VITE_LOGO_URL=https://ibb.co/RkCCbsZ9
+
+VITE_SUPABASE_URL=
+
+VITE_SUPABASE_ANON_KEY=
+
+Use the currently recommended Supabase publishable key format where applicable.
+
+Server-side secrets must be stored separately in Netlify environment variables or Supabase Edge Function secrets.
+
+Example server-side variable names:
+
+SUPABASE_SERVICE_ROLE_KEY=
+
+PAYMENT_GATEWAY_KEY_ID=
+
+PAYMENT_GATEWAY_KEY_SECRET=
+
+PAYMENT_WEBHOOK_SECRET=
+
+GOOGLE_ANALYTICS_ID=
+
+GOOGLE_ADSENSE_PUBLISHER_ID=
+
+These are placeholders only.
+
+Never place service-role keys or payment secrets in frontend code.
+
+Do not invent any credentials.
+
+---
+
+# 24. DEVELOPMENT WORKFLOW
+
+PHASE 1 – FOUNDATION
+- Create project structure
+- Create design system
+- Configure official logo
+- Configure current Netlify domain
+- Prepare future custom domain configuration
+- Build homepage
+- Build article pages
+- Build navigation
+- Build admin layout
+- Build reusable components
+
+PHASE 2 – FUNCTIONAL MODULES
+- News editor
+- Breaking news
+- Categories
+- Media library
+- Public submissions
+- Reporter dashboard
+- Advertisement management
+- Paid promotions
+- Analytics interface
+- Social settings
+
+PHASE 3 – SUPABASE
+- Database migrations
+- Authentication
+- RLS
+- Storage
+- Backend integration
+- Realtime where needed
+- Error handling
+
+PHASE 4 – INTEGRATIONS
+- Analytics
+- AdSense readiness
+- Social sharing
+- YouTube / Instagram embeds
+- Payment gateway readiness
+- Notifications
+
+PHASE 5 – TESTING & DEPLOYMENT
+- Test homepage
+- Test all categories
+- Test article pages
+- Test search
+- Test mobile navigation
+- Test admin authentication
+- Test roles and permissions
+- Test publishing
+- Test uploads
+- Test public submissions
+- Test advertiser requests
+- Test payment verification
+- Test SEO
+- Test social previews
+- Test RLS
+- Test Netlify deployment
+- Fix critical errors
+
+---
+
+# 25. FINAL ACCEPTANCE CRITERIA
+
+The completed application must include:
+
+1. Complete premium HUNKAR 24 website.
+2. Official supplied logo used everywhere.
+3. Current Netlify domain support.
+4. Future .in domain readiness.
+5. Premium admin panel.
+6. Advanced news editor.
+7. Image uploads and direct image URL support.
+8. Supported video URL and social embeds.
+9. Public news submission.
+10. Reporter management.
+11. Advertisement management.
+12. Paid promotions.
+13. Payment integration readiness.
+14. Supabase database architecture.
+15. Secure authentication.
+16. Role-based permissions.
+17. RLS security.
+18. SEO.
+19. Rich social sharing previews.
+20. Analytics architecture.
+21. Mobile-first responsive design.
+22. Legal and editorial pages.
+23. Deployment instructions.
+24. Database migration files.
+25. Environment variable documentation.
+
+Do not stop after creating a beautiful homepage.
+
+---
+
+# 26. FINAL SUPABASE CONNECTION CHECKLIST
+
+After building the project foundation and major modules, stop before using real credentials.
+
+Show a complete Supabase configuration checklist.
+
+Ask me for:
+
+1. Supabase Project URL
+2. Supabase Publishable / Anon Key
+3. Database configuration
+4. Storage bucket configuration
+5. Authentication provider settings
+6. Google OAuth credentials if needed
+7. Email / SMTP settings if needed
+8. Edge Function secrets if required
+9. Other genuinely necessary integration credentials
+
+For each item:
+- Explain where to find it.
+- Explain whether it is public or secret.
+- Explain where it must be stored.
+- Never ask me to place private credentials in frontend code.
+- Prefer secure environment-variable configuration.
+
+After receiving configuration:
+- Generate SQL migrations.
+- Configure RLS.
+- Connect database.
+- Configure Storage.
+- Connect Authentication.
+- Integrate all modules.
+- Test all major workflows.
+
+If a feature requires a paid service, external permission, unavailable API, or additional configuration, explain it clearly instead of pretending it works.
+
+---
+
+# FINAL INSTRUCTION
+
+Build HUNKAR 24 as a premium, secure, scalable, mobile-first Indian digital news and media platform.
+
+Keep the entire original feature scope and business idea intact.
+
+Use the official logo URL supplied above everywhere.
+
+Use https://hunkar24.netlify.app/ as the current working domain.
+
+Prepare https://hunkar24.in as the future custom domain without forcing it before purchase and connection.
+
+Make the website visually premium, the admin panel powerful, and the publishing process extremely simple.
+
+The final result must be a complete digital media ecosystem, not merely a news homepage.
