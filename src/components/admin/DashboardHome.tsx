@@ -12,7 +12,11 @@ import {
   ArrowRight,
   Database,
   Radio,
-  Plus
+  Plus,
+  Sparkles,
+  Bot,
+  RefreshCw,
+  CheckCircle2
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { AdminTab } from './AdminLayout';
@@ -29,7 +33,10 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
     advertisements,
     reporters,
     auditLogs,
-    autoNewsPendingCount
+    autoNewsPendingCount,
+    supabaseStatus,
+    realtimeStatus,
+    lastSyncTime
   } = useNews();
 
   const publishedCount = articles.filter(a => a.status === 'published').length;
@@ -78,6 +85,82 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
             <Database className="w-4 h-4 text-emerald-400" />
             <span>Supabase चेकलिस्ट</span>
           </button>
+        </div>
+      </div>
+
+      {/* Live System Health & Automation Status (Phase 9 Indicators) */}
+      <div className="bg-stone-900 border border-stone-800 rounded-2xl p-4 text-white shadow-xs">
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-stone-800">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-200">
+              लाइव सिस्टम स्थिति एवं ऑटोमेशन मॉनिटर (Live System Health)
+            </h2>
+          </div>
+          {lastSyncTime && (
+            <div className="flex items-center gap-1.5 text-[11px] text-stone-400 font-mono">
+              <RefreshCw className="w-3 h-3 text-stone-500" />
+              <span>अंतिम डेटाबेस सिंक: {new Date(lastSyncTime).toLocaleTimeString('hi-IN')}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          {/* Supabase Status */}
+          <div className="p-3 bg-stone-950/60 rounded-xl border border-stone-800/80">
+            <div className="flex items-center justify-between text-stone-400 mb-1">
+              <span className="text-[11px] font-medium">Supabase DB</span>
+              <Database className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <div className="flex items-center gap-1.5 font-bold font-mono">
+              <span className={`w-2 h-2 rounded-full ${supabaseStatus === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              <span className={supabaseStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'}>
+                {supabaseStatus === 'connected' ? 'कनेक्टेड (LIVE)' : 'लोकल सिंक (POLL)'}
+              </span>
+            </div>
+            <p className="text-[10px] text-stone-500 mt-1">Single Source of Truth</p>
+          </div>
+
+          {/* Realtime Sync */}
+          <div className="p-3 bg-stone-950/60 rounded-xl border border-stone-800/80">
+            <div className="flex items-center justify-between text-stone-400 mb-1">
+              <span className="text-[11px] font-medium">रीयल-टाइम सिंक</span>
+              <Radio className={`w-3.5 h-3.5 ${realtimeStatus === 'active' ? 'text-emerald-400 animate-pulse' : 'text-stone-500'}`} />
+            </div>
+            <div className="flex items-center gap-1.5 font-bold font-mono">
+              <span className={`w-2 h-2 rounded-full ${realtimeStatus === 'active' ? 'bg-emerald-500' : 'bg-stone-500'}`} />
+              <span className={realtimeStatus === 'active' ? 'text-emerald-400' : 'text-stone-400'}>
+                {realtimeStatus === 'active' ? 'सक्रिय (ACTIVE)' : 'पुनः संयोजन'}
+              </span>
+            </div>
+            <p className="text-[10px] text-stone-500 mt-1">मल्टी-डिवाइस ऑटो पुश</p>
+          </div>
+
+          {/* Google Gemini AI Engine */}
+          <div className="p-3 bg-stone-950/60 rounded-xl border border-stone-800/80">
+            <div className="flex items-center justify-between text-stone-400 mb-1">
+              <span className="text-[11px] font-medium">Gemini 2.5 AI</span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            </div>
+            <div className="flex items-center gap-1.5 font-bold font-mono text-amber-400">
+              <span className="w-2 h-2 rounded-full bg-amber-400" />
+              <span>सक्रिय (ENABLED)</span>
+            </div>
+            <p className="text-[10px] text-stone-500 mt-1">हिंदी पत्रकारिता रूपांतरण</p>
+          </div>
+
+          {/* 3-Hour News Scheduler & ChatGPT API */}
+          <div className="p-3 bg-stone-950/60 rounded-xl border border-stone-800/80">
+            <div className="flex items-center justify-between text-stone-400 mb-1">
+              <span className="text-[11px] font-medium">3-घंटे शेड्यूलर & API</span>
+              <Bot className="w-3.5 h-3.5 text-blue-400" />
+            </div>
+            <div className="flex items-center gap-1.5 font-bold font-mono text-blue-400">
+              <span className="w-2 h-2 rounded-full bg-blue-400" />
+              <span>180m चक्र / OpenAPI</span>
+            </div>
+            <p className="text-[10px] text-stone-500 mt-1">ऑटो-पब्लिश & ChatGPT</p>
+          </div>
         </div>
       </div>
 

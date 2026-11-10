@@ -25,7 +25,7 @@ import {
   INITIAL_BUSINESS_LISTINGS
 } from '../data/mockData';
 import { DEFAULT_CATEGORIES, RAJASTHAN_DISTRICTS } from '../config/siteConfig';
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { getSupabase, supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { safeFetchJson } from '../lib/apiClient';
 import {
   fetchNewsClientSide,
@@ -68,6 +68,10 @@ interface CurrentUser {
 interface NewsContextType {
   // Articles
   articles: Article[];
+  // System Status & Realtime Sync (Phase 3 & 9)
+  supabaseStatus: 'connected' | 'connecting' | 'standby' | 'error';
+  realtimeStatus: 'active' | 'reconnecting' | 'offline';
+  lastSyncTime: string | null;
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
   selectedDistrict: string;
@@ -318,6 +322,13 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isPromotionModalOpen, setIsPromotionModalOpen] = useState<boolean>(false);
   const [isReportIssueOpen, setIsReportIssueOpen] = useState<boolean>(false);
 
+  // System Status & Realtime Sync (Phase 3 & 9)
+  const [supabaseStatus, setSupabaseStatus] = useState<'connected' | 'connecting' | 'standby' | 'error'>(() =>
+    isSupabaseConfigured ? 'connecting' : 'standby'
+  );
+  const [realtimeStatus, setRealtimeStatus] = useState<'active' | 'reconnecting' | 'offline'>('active');
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+
   // Safe sync to storage: strictly cap array length to prevent QuotaExceededError
   useEffect(() => {
     safeLocalStorageSet('hunkar24_articles', articles.slice(0, 30));
@@ -468,53 +479,86 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, []);
 
-  // Supabase Real-Time Database Connection & Sync
+  // Supabase Real-Time Database Connection & Sync (Phase 2 & 3)
   useEffect(() => {
-    if (!supabase) return;
+    const client = getSupabase();
+    if (!client) {
+      setSupabaseStatus('standby');
+      return;
+    }
 
-    // 1. Fetch initial live articles from Supabase
-    supabase
-      .from('articles')
-      .select('*')
-      .order('published_at', { ascending: false })
-      .limit(60)
-      .then(({ data, error }) => {
-        if (!error && Array.isArray(data) && data.length > 0) {
-          const mappedArticles: Article[] = data.map((d: any) => ({
-            id: d.id,
-            headline: d.headline,
-            slug: d.slug,
-            summary: d.summary || '',
-            content: d.content || d.summary || '',
-            category: d.category_slug || d.category || 'rajasthan',
-            district: d.district,
-            tehsil: d.tehsil,
-            village: d.village,
-            mainImage: d.main_image || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
-            imageCaption: d.image_caption,
-            imageSource: d.image_source || 'हुंकार 24 डेस्क',
-            reporterName: d.reporter_name || 'हुंकार ब्यूरो',
-            reporterRole: d.reporter_role || 'संपाददाता',
-            reporterPhoto: d.reporter_photo,
-            status: d.status || 'published',
-            publishedAt: d.published_at || d.created_at || new Date().toISOString(),
-            updatedAt: d.updated_at || new Date().toISOString(),
-            views: Number(d.views_count || 0),
-            isBreaking: Boolean(d.is_breaking),
-            isHero: Boolean(d.is_hero),
-            isExclusive: Boolean(d.is_exclusive),
-            tags: Array.isArray(d.tags) ? d.tags : ['राजस्थान', 'हुंकार24'],
-            readingTimeMinutes: d.reading_time_minutes || 2,
-            likesCount: d.likes_count || 0,
-            videoUrl: d.video_url
-          }));
+    setSupabaseStatus('connecting');
 
-          setArticles(prev => deduplicateArticlesList([...mappedArticles, ...prev]));
+    // Helper to fetch live articles from Supabase
+    const fetchLiveArticles = async () => {
+      try {
+        const { data, error } = await client
+          .from('articles')
+          .select('*')
+          .order('published_at', { ascending: false })
+          .limit(80);
+
+        if (!error && Array.isArray(data)) {
+          setSupabaseStatus('connected');
+          setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
+
+          if (data.length > 0) {
+            const mappedArticles: Article[] = data.map((d: any) => ({
+              id: d.id,
+              headline: d.headline,
+              slug: d.slug,
+              summary: d.summary || '',
+              content: d.content || d.summary || '',
+              category: d.category_slug || d.category || 'rajasthan',
+              district: d.district,
+              tehsil: d.tehsil,
+              village: d.village,
+              mainImage: d.main_image || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
+              imageCaption: d.image_caption,
+              imageSource: d.image_source || 'हुंकार 24 डेस्क',
+              reporterName: d.reporter_name || 'हुंकार ब्यूरो',
+              reporterRole: d.reporter_role || 'संपाददाता',
+              reporterPhoto: d.reporter_photo,
+              status: d.status || 'published',
+              publishedAt: d.published_at || d.created_at || new Date().toISOString(),
+              updatedAt: d.updated_at || new Date().toISOString(),
+              views: Number(d.views_count || 0),
+              isBreaking: Boolean(d.is_breaking),
+              isHero: Boolean(d.is_hero),
+              isExclusive: Boolean(d.is_exclusive),
+              tags: Array.isArray(d.tags) ? d.tags : ['राजस्थान', 'हुंकार24'],
+              readingTimeMinutes: d.reading_time_minutes || 2,
+              likesCount: d.likes_count || 0,
+              videoUrl: d.video_url
+            }));
+
+            setArticles(prev => {
+              const dbMap = new Map<string, Article>();
+              for (const a of mappedArticles) {
+                dbMap.set(a.id, a);
+              }
+              for (const p of prev) {
+                if (!dbMap.has(p.id)) {
+                  dbMap.set(p.id, p);
+                }
+              }
+              return deduplicateArticlesList(Array.from(dbMap.values()));
+            });
+          }
+        } else if (error) {
+          console.warn('[Supabase] Initial query notice:', error.message);
+          setSupabaseStatus('error');
         }
-      });
+      } catch (err) {
+        console.warn('[Supabase] Connection notice:', err);
+        setSupabaseStatus('error');
+      }
+    };
+
+    fetchLiveArticles();
 
     // 2. Fetch initial breaking news from Supabase
-    supabase
+    client
       .from('breaking_news')
       .select('*')
       .order('created_at', { ascending: false })
@@ -538,13 +582,16 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-    // 3. Real-Time channel subscriptions for Articles
-    const articlesChannel = supabase
+    // 3. Real-Time channel subscriptions for Articles with reconnect handling
+    const articlesChannel = client
       .channel('public:articles')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'articles' },
         (payload: any) => {
+          setRealtimeStatus('active');
+          setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
+
           if (payload.eventType === 'INSERT') {
             const d = payload.new;
             const newArt: Article = {
@@ -561,7 +608,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
               imageCaption: d.image_caption,
               imageSource: d.image_source || 'हुंकार 24 डेस्क',
               reporterName: d.reporter_name || 'हुंकार ब्यूरो',
-              reporterRole: d.reporter_role || 'संवाददाता',
+              reporterRole: d.reporter_role || 'संपाददाता',
               status: d.status || 'published',
               publishedAt: d.published_at || new Date().toISOString(),
               updatedAt: d.updated_at || new Date().toISOString(),
@@ -572,7 +619,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
               isExclusive: Boolean(d.is_exclusive),
               tags: d.tags || []
             };
-            setArticles(prev => [newArt, ...prev.filter(a => a.id !== newArt.id)]);
+            setArticles(prev => [newArt, ...prev.filter(a => a.id !== newArt.id && a.slug !== newArt.slug)]);
           } else if (payload.eventType === 'UPDATE') {
             const d = payload.new;
             setArticles(prev =>
@@ -581,10 +628,11 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   ? {
                       ...a,
                       headline: d.headline || a.headline,
+                      slug: d.slug || a.slug,
                       summary: d.summary || a.summary,
                       content: d.content || a.content,
                       category: d.category_slug || a.category,
-                      district: d.district || a.district,
+                      district: d.district !== undefined ? d.district : a.district,
                       mainImage: d.main_image || a.mainImage,
                       status: d.status || a.status,
                       isBreaking: d.is_breaking !== undefined ? Boolean(d.is_breaking) : a.isBreaking,
@@ -602,10 +650,16 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       )
-      .subscribe();
+      .subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          setRealtimeStatus('active');
+        } else if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
+          setRealtimeStatus('reconnecting');
+        }
+      });
 
     // 4. Real-Time channel subscriptions for Breaking News
-    const breakingChannel = supabase
+    const breakingChannel = client
       .channel('public:breaking_news')
       .on(
         'postgres_changes',
@@ -647,9 +701,26 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       )
       .subscribe();
 
+    // 5. Offline / Online network event listeners for seamless reconnection
+    const handleOnline = () => {
+      console.log('[Supabase Realtime] Device reconnected online, reconciling news data...');
+      setRealtimeStatus('active');
+      fetchLiveArticles();
+    };
+
+    const handleOffline = () => {
+      console.warn('[Supabase Realtime] Device offline, relying on cached data.');
+      setRealtimeStatus('offline');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
     return () => {
-      supabase?.removeChannel(articlesChannel);
-      supabase?.removeChannel(breakingChannel);
+      client.removeChannel(articlesChannel);
+      client.removeChannel(breakingChannel);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -885,10 +956,12 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     setArticles(prev => [newArticle, ...prev]);
 
-    // Push to Supabase Real-Time (omit id so Postgres generates UUID automatically)
-    if (supabase) {
+    // Push to Supabase Real-Time (Phase 2 & 3: Database as single source of truth)
+    const client = getSupabase();
+    if (client) {
       try {
         const payload: any = {
+          id: newArticle.id,
           headline: newArticle.headline,
           slug: newArticle.slug,
           summary: newArticle.summary,
@@ -903,7 +976,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           reporter_name: newArticle.reporterName,
           reporter_role: newArticle.reporterRole,
           reporter_photo: newArticle.reporterPhoto,
-          status: 'published',
+          status: newArticle.status || 'published',
           is_breaking: Boolean(newArticle.isBreaking),
           is_hero: Boolean(newArticle.isHero),
           is_exclusive: Boolean(newArticle.isExclusive),
@@ -915,13 +988,14 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           published_at: newArticle.publishedAt
         };
 
-        supabase
+        client
           .from('articles')
-          .insert([payload])
+          .upsert([payload], { onConflict: 'id' })
           .select('id, headline, slug')
           .then(({ data, error }) => {
             if (!error && data && data[0]?.id) {
               setArticles(prev => prev.map(a => a.id === newArticle.id ? { ...a, id: data[0].id } : a));
+              setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
             } else if (error) {
               console.warn('[Supabase Realtime] Article insert notice:', error.message);
             }
@@ -969,12 +1043,14 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Push to Supabase Real-Time
-    if (supabase) {
+    const client = getSupabase();
+    if (client) {
       try {
-        supabase
+        client
           .from('articles')
           .update({
             headline: updates.headline,
+            slug: updates.slug,
             summary: updates.summary,
             content: updates.content,
             category_slug: updates.category,
@@ -995,6 +1071,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('id', id)
           .then(({ error }) => {
             if (error) console.warn('[Supabase Realtime] Article update notice:', error);
+            else setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
           });
       } catch (err) {
         console.warn('[Supabase] Update error:', err);
@@ -1020,14 +1097,16 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }).catch(err => console.warn('[DeleteArticle] Server sync warning:', err));
 
     // Delete in Supabase Real-Time
-    if (supabase) {
+    const client = getSupabase();
+    if (client) {
       try {
-        supabase
+        client
           .from('articles')
           .delete()
           .eq('id', id)
           .then(({ error }) => {
             if (error) console.warn('[Supabase Realtime] Article delete notice:', error);
+            else setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
           });
       } catch (err) {
         console.warn('[Supabase] Delete error:', err);
@@ -1404,6 +1483,9 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <NewsContext.Provider
       value={{
         articles,
+        supabaseStatus,
+        realtimeStatus,
+        lastSyncTime,
         selectedCategory,
         setSelectedCategory,
         selectedDistrict,

@@ -14,8 +14,9 @@ import {
 } from './newsProviders';
 import { deduplicateArticles, ProcessedArticle, calculateTitleSimilarity } from './deduplicationEngine';
 import { processArticleWithAI } from './aiNewsEngine';
+import { createClient } from '@supabase/supabase-js';
 
-export type PublishingMode = 'manual' | 'auto_safe' | 'paused' | 'emergency_stop';
+export type PublishingMode = 'manual' | 'auto_safe' | 'paused' | 'emergency_stop' | 'auto_publish';
 
 export interface EngineSettings {
   autoNewsEnabled: boolean;
@@ -57,9 +58,9 @@ class NewsEngineStore {
   }> = [];
 
   private settings: EngineSettings = {
-    autoNewsEnabled: true,
-    fetchIntervalMinutes: 30,
-    publishingMode: 'auto_safe',
+    autoNewsEnabled: process.env.AUTO_NEWS_ENABLED !== 'false',
+    fetchIntervalMinutes: parseInt(process.env.AUTO_NEWS_INTERVAL_MINUTES || '180', 10),
+    publishingMode: (process.env.AUTO_NEWS_PUBLISH_MODE as PublishingMode) || 'auto_safe',
     hindiTranslationEnabled: true,
     aiSummaryEnabled: true,
     deduplicationEnabled: true,
@@ -345,19 +346,64 @@ class NewsEngineStore {
 
         const processed = await processArticleWithAI(group.primary, group.duplicates);
 
-        // Immediate Live Auto-Publish: Any news fetched within the cycle goes live immediately
-        this.approvedArticles.unshift(processed);
-        newlyApproved++;
+        const isAutoPublish = this.settings.publishingMode === 'auto_safe' || this.settings.publishingMode === 'auto_publish';
+        const articleStatus = isAutoPublish ? 'published' : 'draft';
 
-        // Push to Firebase Realtime Database if configured
+        if (isAutoPublish) {
+          this.approvedArticles.unshift(processed);
+          newlyApproved++;
+        } else {
+          this.pendingArticles.unshift(processed);
+          newlyImported++;
+        }
+
+        const slug = processed.titleHindi
+          .toLowerCase()
+          .replace(/[^\w\u0900-\u097F]+/g, '-')
+          .slice(0, 50);
+        const artId = `art-${processed.id}`;
+        const isBreaking = processed.tags.includes('ब्रेकिंग') || processed.verificationLevel === 'multiple_sources';
+
+        // 1. Supabase single source of truth database sync
+        const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+        if (supabaseUrl && supabaseKey) {
+          try {
+            const supabase = createClient(supabaseUrl, supabaseKey, {
+              auth: { persistSession: false, autoRefreshToken: false }
+            });
+            await supabase.from('articles').upsert({
+              id: artId,
+              headline: processed.titleHindi,
+              slug: `${slug}-${artId.slice(-4)}`,
+              summary: processed.summaryHindi,
+              content: processed.contentHindi,
+              category_slug: processed.category || 'rajasthan',
+              district: processed.district || null,
+              main_image: processed.imageUrl,
+              image_caption: `${processed.district ? processed.district.toUpperCase() : 'राजस्थान'} समाचार संदर्भ दृश्य`,
+              image_source: processed.imageSource || 'हुंकार 24 डिजिटल डेस्क',
+              reporter_name: `हुंकार 24 ब्यूरो (${processed.sourceArticles[0]?.sourceName || 'विशेष प्रतिनिधि'})`,
+              reporter_role: 'स्वचालित समाचार नेटवर्क',
+              status: articleStatus,
+              is_breaking: isBreaking,
+              is_hero: false,
+              is_exclusive: false,
+              views_count: Math.floor(120 + Math.random() * 250),
+              likes_count: Math.floor(10 + Math.random() * 45),
+              reading_time_minutes: 3,
+              tags: processed.tags,
+              published_at: processed.publishedAt || new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'id' });
+          } catch (err: any) {
+            console.warn('[Supabase Auto-Sync Warning]:', err.message);
+          }
+        }
+
+        // 2. Firebase RTDB sync if configured
         const firebaseRtdbUrl = process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL;
         if (firebaseRtdbUrl) {
-          const slug = processed.titleHindi
-            .toLowerCase()
-            .replace(/[^\w\u0900-\u097F]+/g, '-')
-            .slice(0, 50);
-          const artId = `art-${processed.id}`;
-          const isBreaking = processed.tags.includes('ब्रेकिंग') || processed.verificationLevel === 'multiple_sources';
           const rtdbPayload = {
             id: artId,
             headline: processed.titleHindi,
@@ -371,7 +417,7 @@ class NewsEngineStore {
             imageSource: processed.imageSource || 'हुंकार 24 डिजिटल डेस्क',
             reporterName: `हुंकार 24 ब्यूरो (${processed.sourceArticles[0]?.sourceName || 'विशेष प्रतिनिधि'})`,
             reporterRole: 'स्वचालित समाचार नेटवर्क',
-            status: 'published',
+            status: articleStatus,
             isBreaking,
             isHero: false,
             isExclusive: false,
@@ -412,10 +458,12 @@ class NewsEngineStore {
     if (this.timer) {
       clearInterval(this.timer);
     }
-    const intervalMs = Math.max(15, this.settings.fetchIntervalMinutes) * 60 * 1000;
+    const intervalMinutes = this.settings.fetchIntervalMinutes || 180;
+    const intervalMs = Math.max(15, intervalMinutes) * 60 * 1000;
+    console.log(`[AutoNewsScheduler] 3-Hour News Engine active (Interval: ${intervalMinutes}m / ${intervalMinutes / 60}h, Mode: ${this.settings.publishingMode})`);
     this.timer = setInterval(() => {
-      if (this.settings.autoNewsEnabled && this.settings.publishingMode !== 'emergency_stop') {
-        console.log(`[AutoNewsScheduler] Triggering scheduled fetch (${this.settings.fetchIntervalMinutes}m interval)...`);
+      if (this.settings.autoNewsEnabled && this.settings.publishingMode !== 'emergency_stop' && this.settings.publishingMode !== 'paused') {
+        console.log(`[AutoNewsScheduler] Triggering 3-hour scheduled news fetch cycle...`);
         this.collectAndProcessNews().catch(err => console.error('[AutoNewsScheduler Error]:', err));
       }
     }, intervalMs);

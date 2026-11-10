@@ -79,7 +79,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   onExitAdmin,
   children
 }) => {
-  const { currentUser, logout, theme, toggleTheme, submissions, promotionRequests, autoNewsPendingCount } = useNews();
+  const {
+    currentUser,
+    logout,
+    theme,
+    toggleTheme,
+    submissions,
+    promotionRequests,
+    autoNewsPendingCount,
+    supabaseStatus,
+    realtimeStatus,
+    lastSyncTime
+  } = useNews();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -149,6 +160,33 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Live Sync Status Indicators */}
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 bg-stone-900 rounded-lg border border-stone-800 text-[11px]">
+            <div className="flex items-center gap-1.5" title="Supabase PostgreSQL Status">
+              <span className={`w-2 h-2 rounded-full ${supabaseStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : supabaseStatus === 'connecting' ? 'bg-amber-500' : 'bg-stone-500'}`} />
+              <span className="text-stone-400 font-medium">Supabase:</span>
+              <span className={`font-mono font-bold text-[10px] ${supabaseStatus === 'connected' ? 'text-emerald-400' : supabaseStatus === 'connecting' ? 'text-amber-400' : 'text-stone-400'}`}>
+                {supabaseStatus === 'connected' ? 'LIVE' : supabaseStatus === 'connecting' ? 'SYNC...' : 'OFFLINE'}
+              </span>
+            </div>
+            <span className="text-stone-700">|</span>
+            <div className="flex items-center gap-1.5" title="Supabase Realtime Sync">
+              <Radio className={`w-3 h-3 ${realtimeStatus === 'active' ? 'text-emerald-400 animate-pulse' : 'text-stone-500'}`} />
+              <span className="text-stone-400 font-medium">Realtime:</span>
+              <span className={`font-mono font-bold text-[10px] ${realtimeStatus === 'active' ? 'text-emerald-400' : realtimeStatus === 'reconnecting' ? 'text-amber-400' : 'text-stone-400'}`}>
+                {realtimeStatus === 'active' ? 'SYNCED' : realtimeStatus === 'reconnecting' ? 'RECONNECTING' : 'OFFLINE'}
+              </span>
+            </div>
+            {lastSyncTime && (
+              <>
+                <span className="text-stone-700">|</span>
+                <span className="text-[10px] text-stone-400 font-mono">
+                  {new Date(lastSyncTime).toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              </>
+            )}
+          </div>
+
           {/* View live site button */}
           <button
             onClick={onExitAdmin}

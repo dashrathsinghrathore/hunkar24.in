@@ -1,2 +1,5 @@
+# Netlify API redirect to serverless functions
+/api/*   /.netlify/functions/api/:splat   200
+
 # Netlify SPA Catch-all redirect for /admin, /news/:slug, and categories
-/*    /index.html   200
+/*       /index.html                      200

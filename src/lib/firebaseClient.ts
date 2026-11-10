@@ -20,14 +20,14 @@ import {
 import { Article, BreakingNewsItem } from '../types';
 
 export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDvSh0pBO6rxxlkjnQ9K4OCu9qGZSIcn1E",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "hunkar24.firebaseapp.com",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://hunkar24-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "hunkar24",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "hunkar24.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "296053970998",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:296053970998:web:ae4f7bccd02818c1042097",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-QQKTFVD6SQ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ""
 };
 
 export const isFirebaseConfigured = Boolean(

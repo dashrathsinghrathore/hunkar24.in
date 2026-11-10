@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { safeLocalStorageGet, safeLocalStorageSet, safeLocalStorageRemove } from '../utils/storageUtils';
 
 // Retrieve credentials from environment or saved configuration
-function getCredentials() {
+export function getCredentials() {
   const envUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
   const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
@@ -23,11 +23,13 @@ function getCredentials() {
   return { url, anonKey, isConfigured };
 }
 
-const { url: activeUrl, anonKey: activeKey, isConfigured: isConfiguredInitial } = getCredentials();
+let activeClientInstance: SupabaseClient | null = null;
 
-export const isSupabaseConfigured = isConfiguredInitial;
+export function createSupabaseInstance(customUrl?: string, customKey?: string): SupabaseClient | null {
+  const { url: defaultUrl, anonKey: defaultKey } = getCredentials();
+  const url = customUrl || defaultUrl;
+  const key = customKey || defaultKey;
 
-export function createSupabaseInstance(url = activeUrl, key = activeKey): SupabaseClient | null {
   if (!url || !key || !url.startsWith('https://') || url.includes('your-project')) {
     return null;
   }
@@ -49,7 +51,18 @@ export function createSupabaseInstance(url = activeUrl, key = activeKey): Supaba
   }
 }
 
-export const supabase: SupabaseClient | null = createSupabaseInstance();
+activeClientInstance = createSupabaseInstance();
+
+// Dynamic accessor ensuring current instance
+export function getSupabase(): SupabaseClient | null {
+  if (!activeClientInstance) {
+    activeClientInstance = createSupabaseInstance();
+  }
+  return activeClientInstance;
+}
+
+export const supabase: SupabaseClient | null = activeClientInstance;
+export const isSupabaseConfigured = Boolean(getCredentials().isConfigured);
 
 export interface SupabaseConfigStatus {
   isConfigured: boolean;
@@ -70,6 +83,24 @@ export function getSupabaseConfigStatus(): SupabaseConfigStatus {
   };
 }
 
+export async function checkSupabaseHealth(): Promise<{ ok: boolean; latencyMs: number; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { ok: false, latencyMs: 0, error: 'Supabase credentials not configured' };
+  }
+  const start = Date.now();
+  try {
+    const { error } = await client.from('articles').select('id').limit(1);
+    const latencyMs = Date.now() - start;
+    if (error && error.code !== 'PGRST116') {
+      return { ok: false, latencyMs, error: error.message };
+    }
+    return { ok: true, latencyMs };
+  } catch (err: any) {
+    return { ok: false, latencyMs: Date.now() - start, error: err.message };
+  }
+}
+
 export async function saveSupabaseCredentials(url: string, anonKey: string): Promise<{ success: boolean; error?: string }> {
   const cleanUrl = url.trim();
   const cleanKey = anonKey.trim();
@@ -83,14 +114,14 @@ export async function saveSupabaseCredentials(url: string, anonKey: string): Pro
 
   try {
     const testClient = createClient(cleanUrl, cleanKey);
-    // Simple ping check
     const { error } = await testClient.from('articles').select('id').limit(1);
     if (error && error.code !== 'PGRST116' && !error.message.includes('relation "public.articles" does not exist')) {
-      // If table doesn't exist yet, schema migration is needed, but credentials are valid!
+      // Valid connection even if tables need migration
     }
 
     safeLocalStorageSet('hunkar24_supabase_url', cleanUrl);
     safeLocalStorageSet('hunkar24_supabase_anon_key', cleanKey);
+    activeClientInstance = createSupabaseInstance(cleanUrl, cleanKey);
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message || 'Supabase से कनेक्ट करने में त्रुटि' };
@@ -100,4 +131,5 @@ export async function saveSupabaseCredentials(url: string, anonKey: string): Pro
 export function clearSupabaseCredentials(): void {
   safeLocalStorageRemove('hunkar24_supabase_url');
   safeLocalStorageRemove('hunkar24_supabase_anon_key');
+  activeClientInstance = null;
 }

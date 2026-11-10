@@ -1,0 +1,270 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HUNKAR 24 News Publishing API",
+    "description": "Direct, authenticated news publishing integration for HUNKAR 24 (हुंकार 24) — Rajasthan's leading digital journalism network. Enables ChatGPT and automated journalistic workflows to submit verified Hindi news articles, drafts, and media directly into Supabase and Realtime distribution.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Hunkar 24 News Desk",
+      "url": "https://hunkar24.in",
+      "email": "editor@hunkar24.in"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://hunkar24.in",
+      "description": "Production Live Server"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/news/publish": {
+      "post": {
+        "summary": "Publish or Submit News Article",
+        "operationId": "publishNewsArticle",
+        "description": "Submits a complete, rewritten Hindi news article to HUNKAR 24. Depending on the configured system publishing mode (Auto-Safe vs Admin Approval), the article is either immediately published and distributed to all connected devices via Supabase Realtime, or saved as pending editorial review.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishArticleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Article successfully registered in Supabase",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishArticleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required fields or invalid parameters"
+          },
+          "401": {
+            "description": "Unauthorized — Missing or invalid API key"
+          },
+          "409": {
+            "description": "Duplicate article detected"
+          }
+        }
+      }
+    },
+    "/api/v1/news/draft": {
+      "post": {
+        "summary": "Submit News Draft for Review",
+        "operationId": "submitNewsDraft",
+        "description": "Submits a news draft strictly for editor review in the HUNKAR 24 admin panel without public publishing.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftArticleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Draft saved successfully for review"
+          }
+        }
+      }
+    },
+    "/api/v1/news/status": {
+      "get": {
+        "summary": "Get Publishing Engine Status",
+        "operationId": "getNewsStatus",
+        "description": "Returns current system status, active publishing mode (auto_safe or manual), and published/pending article counts.",
+        "responses": {
+          "200": {
+            "description": "Engine status details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/news/categories": {
+      "get": {
+        "summary": "List News Categories & Districts",
+        "operationId": "getCategories",
+        "description": "Returns list of all active news categories and Rajasthan districts recognized by HUNKAR 24.",
+        "responses": {
+          "200": {
+            "description": "List of categories and districts"
+          }
+        }
+      }
+    },
+    "/api/v1/news/image": {
+      "post": {
+        "summary": "Generate or Upload News Image",
+        "operationId": "uploadNewsImage",
+        "description": "Uploads an image to Supabase Storage bucket 'article-images' or generates an image using Gemini.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image saved and public URL returned"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-HUNKAR24-API-KEY",
+        "description": "Secret API key provided by HUNKAR 24 administration"
+      }
+    },
+    "schemas": {
+      "PublishArticleRequest": {
+        "type": "object",
+        "required": ["headline", "summary", "content", "category"],
+        "properties": {
+          "headline": {
+            "type": "string",
+            "description": "Punchy, authoritative Hindi headline (under 20 words)",
+            "example": "राजस्थान में नई सौर कृषि योजना को कैबिनेट की मंजूरी, किसानों को मिलेगी 80% तक सब्सिडी"
+          },
+          "summary": {
+            "type": "string",
+            "description": "Concise 2-sentence summary in pure Hindi (60-90 words)",
+            "example": "जयपुर। राजस्थान सरकार ने राज्य के किसानों के लिए सौर ऊर्जा से चलने वाले कृषि पंपों पर बड़ी राहत का ऐलान किया है। योजना के तहत पात्र किसानों को 80 प्रतिशत तक का अनुदान उपलब्ध कराया जाएगा।"
+          },
+          "content": {
+            "type": "string",
+            "description": "Comprehensive Hindi news report (300-500 words) with Markdown subheadings (###)",
+            "example": "### मुख्य समाचार एवं ताज़ा अपडेट\nराज्य मंत्रिमंडल की बैठक में आज एक महत्वपूर्ण निर्णय लिया गया..."
+          },
+          "category": {
+            "type": "string",
+            "enum": ["agriculture", "schemes", "jobs", "education", "rajasthan", "national", "politics", "business", "sports", "crime", "world"],
+            "example": "agriculture"
+          },
+          "district": {
+            "type": "string",
+            "description": "Specific Rajasthan district identifier in lowercase",
+            "enum": ["jaipur", "churu", "sikar", "bikaner", "jodhpur", "nagaur", "ajmer", "kota", "udaipur", "alwar", "barmer", "jhunjhunu", "ganganagar", "hanumangarh"],
+            "example": "jaipur"
+          },
+          "mainImage": {
+            "type": "string",
+            "description": "Public HTTPS URL of a relevant high-resolution photo",
+            "example": "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1200&q=80"
+          },
+          "imageCaption": {
+            "type": "string",
+            "description": "Contextual description of the photo",
+            "example": "राजस्थान में सौर ऊर्जा कृषि पंप संयंत्र"
+          },
+          "imageSource": {
+            "type": "string",
+            "description": "Attribution for the photograph",
+            "example": "हुंकार 24 ग्राउंड रिपोर्ट"
+          },
+          "sourceName": {
+            "type": "string",
+            "description": "Name of original source or wire service",
+            "example": "आधिकारिक प्रेस नोट / विशेष प्रतिनिधि"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "description": "Reference source URL for verification",
+            "example": "https://dipr.rajasthan.gov.in"
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["राजस्थान", "कृषि योजना", "सोलर पंप", "हुंकार 24"]
+          },
+          "isBreaking": {
+            "type": "boolean",
+            "default": false
+          },
+          "isHero": {
+            "type": "boolean",
+            "default": false
+          },
+          "status": {
+            "type": "string",
+            "enum": ["published", "draft"],
+            "description": "Override status. If omitted, follows system publishing mode setting."
+          }
+        }
+      },
+      "DraftArticleRequest": {
+        "type": "object",
+        "required": ["headline", "content", "category"],
+        "properties": {
+          "headline": { "type": "string" },
+          "summary": { "type": "string" },
+          "content": { "type": "string" },
+          "category": { "type": "string" },
+          "district": { "type": "string" },
+          "notes": { "type": "string", "description": "Internal notes for the editor" }
+        }
+      },
+      "PublishArticleResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "articleId": { "type": "string" },
+          "slug": { "type": "string" },
+          "url": { "type": "string" },
+          "status": { "type": "string", "enum": ["published", "draft"] },
+          "message": { "type": "string" }
+        }
+      },
+      "StatusResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "publishingMode": { "type": "string", "enum": ["auto_safe", "manual"] },
+          "publishedCount": { "type": "integer" },
+          "pendingCount": { "type": "integer" },
+          "supabaseStatus": { "type": "string" },
+          "schedulerIntervalMinutes": { "type": "integer" },
+          "version": { "type": "string" }
+        }
+      },
+      "ImageUploadRequest": {
+        "type": "object",
+        "properties": {
+          "prompt": { "type": "string", "description": "Text prompt for AI image generation" },
+          "dataUrl": { "type": "string", "description": "Base64 data URL for direct upload" },
+          "filename": { "type": "string" },
+          "articleId": { "type": "string" }
+        }
+      }
+    }
+  }
+}

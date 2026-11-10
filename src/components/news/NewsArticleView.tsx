@@ -72,8 +72,7 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
 
   // Text to Speech (Listen to News in Hindi)
   const handleToggleAudio = () => {
-    if (!('speechSynthesis' in window)) {
-      alert('आपके ब्राउज़र में ऑडियो वाचन समर्थित नहीं है।');
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       return;
     }
 

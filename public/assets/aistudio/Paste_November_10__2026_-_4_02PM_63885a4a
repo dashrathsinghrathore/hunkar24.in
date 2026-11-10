@@ -1,0 +1,898 @@
+# HUNKAR 24 — ULTIMATE PRODUCTION MASTER PROMPT
+## Full-Stack Audit • Supabase Realtime • Gemini AI News Engine • GPT Direct Publishing • AI Image Generation • Netlify Production Deployment
+
+You are acting as a Senior Full-Stack Software Architect, Supabase Database Engineer, React Developer, AI Integration Engineer, Security Engineer, and DevOps Engineer.
+
+Your task is to fully audit, repair, upgrade, and production-optimize my EXISTING HUNKAR 24 news website.
+
+This is an existing live project, not a new project.
+
+**Website:** HUNKAR 24 (हुंकार 24)
+
+**Brand tagline:** राजस्थान की बुलंद आवाज़!
+
+**Primary audience:** Rajasthan, India.
+
+**Primary language:** Hindi.
+
+**Existing technology stack:**
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- Supabase PostgreSQL
+- Supabase Realtime
+- Supabase Storage
+- Supabase Authentication
+- Gemini API
+- Netlify Hosting and Deployment
+- Existing Admin Panel and existing website components.
+
+IMPORTANT: Preserve the existing design, branding, website structure, routes, features, authentication, admin functionality, and database wherever possible.
+
+Do not unnecessarily redesign or rebuild the website.
+
+Your primary objective is to make the existing website reliable, functional, secure, fast, and production-ready.
+
+---
+
+# PHASE 1 — COMPLETE PROJECT AUDIT
+
+Before modifying anything:
+
+1. Inspect the complete source code.
+2. Inspect package.json and dependencies.
+3. Inspect React components and routing.
+4. Inspect existing Admin Panel.
+5. Inspect all Supabase integration files.
+6. Inspect existing database tables and their columns.
+7. Inspect database relationships and foreign keys.
+8. Inspect existing authentication and RLS policies.
+9. Inspect existing Netlify configuration.
+10. Inspect environment variable usage.
+11. Identify why news publishing fails on the deployed Netlify website.
+12. Identify any frontend/backend inconsistencies.
+13. Identify localStorage or sessionStorage usage that incorrectly makes news device-specific.
+14. Identify existing API errors and broken functionality.
+
+Create a complete internal audit before making changes.
+
+Do not assume database table names or column names. Read the actual schema.
+
+Do not delete existing database data.
+
+Do not drop existing tables.
+
+Do not replace working functionality unnecessarily.
+
+---
+
+# PHASE 2 — SUPABASE AS THE PRIMARY DATABASE
+
+Supabase must become the single source of truth for HUNKAR 24 news content.
+
+The existing Supabase project is already connected.
+
+The following 17 tables have already been enabled in the supabase_realtime publication by the administrator.
+
+Preserve the existing publication configuration.
+
+Inspect which tables are actually needed by the application.
+
+Do not expose sensitive tables publicly just because they are included in the Realtime publication.
+
+### Database requirements
+
+- All news must be saved permanently in Supabase PostgreSQL.
+- All news must be accessible across devices.
+- Do not use localStorage as the primary news database.
+- Do not use React state as permanent storage.
+- Use UUID-based article identifiers.
+- Maintain created_at and updated_at timestamps.
+- Maintain publication status.
+- Maintain article source and reference URLs.
+- Maintain image URLs.
+- Maintain category relationships.
+- Maintain SEO metadata.
+- Maintain author information.
+
+First inspect existing tables.
+
+Reuse existing tables if their structures support the requirements.
+
+If required fields are missing, create safe, backward-compatible migrations.
+
+Never create duplicate tables unnecessarily.
+
+### Suggested news fields
+
+- id
+- headline
+- slug
+- summary
+- content
+- category_id
+- featured_image
+- image_alt
+- source_name
+- source_url
+- author
+- status
+- is_breaking
+- seo_title
+- seo_description
+- published_at
+- created_at
+- updated_at
+
+Adapt these fields to the actual existing schema.
+
+---
+
+# PHASE 3 — COMPLETE SUPABASE REALTIME SYSTEM
+
+This is one of the highest-priority requirements.
+
+Implement genuine Supabase Realtime functionality.
+
+### Required functionality
+
+When an authorized administrator publishes news:
+
+1. Validate the news.
+2. Save it to Supabase.
+3. Confirm successful database commit.
+4. Trigger the appropriate Realtime event.
+5. Update every connected website instance.
+6. Display the news without manual refresh.
+
+The same functionality must work for:
+
+- Desktop browsers.
+- Mobile browsers.
+- Tablets.
+- Multiple simultaneously open browser tabs.
+- Different users.
+- Different internet connections.
+
+### Realtime events
+
+Implement:
+
+- INSERT
+- UPDATE
+- DELETE
+
+Use Supabase Realtime appropriately.
+
+Evaluate Postgres Changes and Realtime Broadcast. Choose the most suitable architecture for the actual expected audience and workload.
+
+Use secure Broadcast authorization where appropriate.
+
+### Important implementation details
+
+- Subscribe only to necessary application events.
+- Prevent duplicate event processing.
+- Maintain stable article identifiers.
+- Implement initial database loading.
+- Handle reconnecting.
+- Handle disconnected internet.
+- Handle subscription errors.
+- Clean up subscriptions on component unmount.
+- Reconcile data after reconnection.
+- Prevent stale news from overwriting newer updates.
+- Ensure pagination and filters remain synchronized.
+
+If an update is missed while a device is offline, retrieve the latest correct state from Supabase after reconnection.
+
+### Required result
+
+An administrator publishes an article on Device A.
+
+Device B, Device C and all other connected devices automatically receive the update.
+
+No manual refresh should be necessary.
+
+Apply the same synchronization to article edits, deletions, breaking news and other relevant published content.
+
+Do not claim zero latency. Optimize for minimal practical latency and reliable delivery.
+
+---
+
+# PHASE 4 — FIX NETLIFY PRODUCTION BACKEND ERRORS
+
+This is another critical requirement.
+
+Currently, news publishing may work differently locally and on the deployed Netlify website.
+
+Sometimes the Admin Panel displays backend or publishing errors, and news does not appear.
+
+Find and fix the actual root cause.
+
+### Inspect
+
+- Supabase project URL.
+- Supabase publishable/anon key.
+- Environment variables.
+- Vite environment variable configuration.
+- Netlify environment configuration.
+- API request URLs.
+- Database permissions.
+- RLS policies.
+- Authentication sessions.
+- Supabase client initialization.
+- CORS configuration where applicable.
+- Netlify Functions or other existing backend endpoints.
+- Production versus development configuration.
+
+### Requirements
+
+- News creation must work on the deployed Netlify website.
+- News editing must work.
+- News deletion must work.
+- Image uploading must work.
+- Authentication must work.
+- Admin authorization must work.
+- Realtime must work.
+- Production errors must be logged meaningfully.
+
+If server-side operations are needed, implement secure Netlify Functions or Supabase Edge Functions as appropriate.
+
+Never place Supabase service_role keys or Gemini API keys in frontend JavaScript.
+
+Use server-side environment variables for secret keys.
+
+Never expose private credentials in GitHub.
+
+Create or update .env.example with variable names and descriptions, but never include actual secrets.
+
+Document the exact Netlify environment variables that the owner must configure.
+
+Do not claim a production fix is complete merely because npm run build succeeds.
+
+---
+
+# PHASE 5 — GEMINI AI AUTOMATIC NEWS ENGINE
+
+Integrate the existing Google Gemini API securely.
+
+The objective is to create a professional automated news collection and publishing system.
+
+### News collection
+
+Use legitimate, accessible news sources, RSS feeds, official government sources, and permitted news APIs.
+
+Focus on:
+
+- Rajasthan News
+- District News
+- Politics
+- Government Schemes
+- Education
+- Government Jobs
+- India News
+- World News
+- Business
+- Technology
+- Agriculture
+- Breaking News
+- Local News
+
+### News processing
+
+For every collected article:
+
+1. Identify the original source.
+2. Extract available factual information.
+3. Check publication date.
+4. Detect duplicates.
+5. Identify the relevant category.
+6. Send the factual material to Gemini.
+7. Generate an original Hindi news article in HUNKAR 24's editorial style.
+8. Generate an appropriate headline.
+9. Generate a short summary.
+10. Generate detailed news content.
+11. Generate SEO title and description.
+12. Preserve source attribution and reference URL.
+13. Store the processed article in Supabase.
+
+### Editorial requirements
+
+- Write natural, professional Hindi.
+- Use original sentence structures.
+- Avoid word-for-word copying.
+- Do not fabricate quotes.
+- Do not invent facts.
+- Do not convert allegations into established facts.
+- Clearly identify unverified claims.
+- Preserve the distinction between reports, allegations and confirmed information.
+- Maintain a neutral journalistic tone.
+- Do not generate misleading headlines.
+- Do not present AI-generated images as authentic event photographs.
+
+### Duplicate protection
+
+Use a combination of:
+
+- Source URL.
+- Original article ID.
+- Normalized headline.
+- Content similarity.
+- Database-level unique constraints where appropriate.
+
+The same news must not be published repeatedly.
+
+---
+
+# PHASE 6 — AUTOMATIC NEWS SCHEDULER
+
+Implement an automatic news processing scheduler.
+
+Default interval: Every 3 hours.
+
+The system must support two publishing modes.
+
+### MODE A — AUTOMATIC PUBLISHING
+
+- Fetch new news every 3 hours.
+- Process with Gemini.
+- Generate original Hindi content.
+- Generate a relevant image.
+- Check duplicates.
+- Save to Supabase.
+- Publish automatically only when all configured verification requirements are satisfied.
+
+### MODE B — ADMIN APPROVAL
+
+- Fetch new news every 3 hours.
+- Process with Gemini.
+- Generate content and images.
+- Save as pending review.
+- Display in the Admin Panel.
+- Allow the administrator to preview.
+- Allow editing.
+- Approve and publish.
+- Reject or delete.
+
+### Admin settings
+
+Add settings for:
+
+- Automatic news fetching ON/OFF.
+- Automatic publishing ON/OFF.
+- Fetch interval.
+- Selected categories.
+- Selected districts.
+- Maximum news per cycle.
+- Source management.
+- Image generation ON/OFF.
+- Manual Fetch Now button.
+- Last successful fetch.
+- Last publishing time.
+- Scheduler status.
+- Error logs.
+
+The default publishing mode must be ADMIN APPROVAL until the administrator explicitly enables automatic publishing.
+
+Use a reliable scheduled backend mechanism such as Supabase Cron with Edge Functions or an appropriate Netlify scheduled function.
+
+Do not rely on an open browser tab or frontend setInterval for production scheduling.
+
+Prevent overlapping scheduled executions.
+
+---
+
+# PHASE 7 — AI IMAGE GENERATION
+
+Integrate an available image-generation model through the appropriate Google API.
+
+Inspect which image-generation capabilities are actually available to the configured Gemini API account.
+
+For every news article:
+
+- Generate an image relevant to its actual subject.
+- Use professional Indian news-editorial visual aesthetics.
+- Prefer realistic visual compositions.
+- Use appropriate Rajasthan and Indian context.
+- Avoid fake logos and misleading news branding.
+- Do not generate fake photographs of real events.
+- Do not create false visual evidence.
+- Do not generate misleading images of real people.
+- Add appropriate image descriptions and alt text.
+
+Images must be uploaded to Supabase Storage.
+
+Save their URLs in the news database.
+
+Do not store image files as browser-only objects or temporary base64 data.
+
+Use optimized image sizes and formats.
+
+Provide fallback images when generation fails.
+
+Image-generation failures must not destroy otherwise valid news records.
+
+---
+
+# PHASE 8 — CHATGPT DIRECT NEWS PUBLISHING INTEGRATION
+
+This is an essential feature.
+
+I want to provide news to ChatGPT through normal text conversations.
+
+ChatGPT should be able to send the prepared news directly to HUNKAR 24 through an authorized backend integration.
+
+### Required workflow
+
+1. I provide news text to ChatGPT.
+2. ChatGPT rewrites the material into original HUNKAR 24 Hindi editorial style.
+3. ChatGPT prepares headline, summary, category and detailed article.
+4. ChatGPT generates or requests an appropriate AI-generated image.
+5. ChatGPT submits the article to the HUNKAR 24 publishing backend.
+6. The backend validates the request.
+7. The article is stored in Supabase.
+8. The configured publishing mode determines whether it becomes pending approval or published.
+9. After publication, Supabase Realtime distributes it across all connected devices.
+10. I can subsequently edit or delete the article from the existing Admin Panel.
+
+### Backend API
+
+Create a secure, documented publishing endpoint.
+
+For example:
+
+POST /api/v1/news/publish
+
+Also provide:
+
+- GET /api/v1/news/status
+- GET /api/v1/news/categories
+- POST /api/v1/news/draft
+- POST /api/v1/news/image
+
+Use authenticated API access.
+
+Implement:
+
+- Strong authorization.
+- API key or signed-token authentication.
+- Request validation.
+- Rate limiting.
+- Idempotency keys.
+- Duplicate protection.
+- Image validation.
+- Structured error responses.
+- Audit logging.
+
+Never put a permanent administrator password or service_role key inside a ChatGPT prompt.
+
+### ChatGPT Action Compatibility
+
+Create an OpenAPI 3.1 specification for the publishing API.
+
+Document how to connect it through a ChatGPT Custom GPT Action or another supported authenticated ChatGPT integration.
+
+Explain what the website owner must configure manually.
+
+IMPORTANT:
+
+Do not claim ChatGPT can publish directly just because an endpoint exists. Actual publishing requires the endpoint to be connected to ChatGPT through an authorized Action or supported integration.
+
+If direct image transfer is unavailable, implement a secure image-upload endpoint and document the supported image-transfer workflow.
+
+---
+
+# PHASE 9 — ADMIN PANEL UPGRADE
+
+Preserve the existing Admin Panel design and functionality.
+
+Improve it without unnecessarily changing the UI.
+
+### News management
+
+- Create news.
+- Edit news.
+- Delete news.
+- Publish news.
+- Save draft.
+- Schedule news.
+- Preview news.
+- Upload featured image.
+- Select category.
+- Set breaking news.
+- Manage source references.
+- Edit SEO fields.
+- View publication status.
+
+### AI controls
+
+- Fetch news now.
+- Generate article using Gemini.
+- Regenerate headline.
+- Regenerate summary.
+- Generate image.
+- Regenerate image.
+- Approve article.
+- Reject article.
+- Publish article.
+- Enable or disable automatic news processing.
+
+### Status indicators
+
+Show:
+
+- Supabase connection.
+- Realtime connection.
+- Gemini API status.
+- Image generation status.
+- Scheduler status.
+- Last successful synchronization.
+- Pending news count.
+- Published news count.
+- Recent errors.
+
+Do not expose API secrets or sensitive backend information in the Admin Panel.
+
+---
+
+# PHASE 10 — SECURITY AND DATA PROTECTION
+
+Security is mandatory.
+
+- Preserve existing administrator authentication.
+- Enforce role-based authorization.
+- Enable and verify RLS.
+- Public visitors may only read publicly published news.
+- Only authorized administrators may create, edit, publish or delete articles.
+- Protect profiles, OTP records, audit logs and private user information.
+- Do not expose private data through Realtime.
+- Do not expose service_role credentials.
+- Secure all backend endpoints.
+- Validate uploads.
+- Validate incoming API requests.
+- Add rate limiting.
+- Maintain audit logs.
+- Never bypass RLS for convenience.
+
+Do not disable RLS globally to solve publishing problems.
+
+---
+
+# PHASE 11 — PERFORMANCE AND SCALABILITY
+
+Optimize the existing website for a growing Indian news audience.
+
+Implement:
+
+- Database indexes for frequently queried columns.
+- Efficient pagination.
+- Lazy image loading.
+- Image optimization.
+- Caching where appropriate.
+- Efficient React rendering.
+- Reusable Supabase clients.
+- Proper connection cleanup.
+- Error boundaries.
+- Network retry handling.
+- Duplicate request prevention.
+- Optimized category and search queries.
+
+Avoid unnecessary subscriptions.
+
+Do not subscribe every visitor to every database table.
+
+Keep news loading fast on mobile networks.
+
+Do not assume unlimited database capacity or unlimited free API usage.
+
+Design the application so it can be scaled with an appropriate infrastructure plan.
+
+---
+
+# PHASE 12 — INITIAL NEWS CONTENT
+
+Add the following three supplied news items into the existing HUNKAR 24 content workflow.
+
+IMPORTANT:
+
+These are supplied source materials, not independently verified facts.
+
+Rewrite them in original Hindi journalistic language.
+
+Preserve factual details and attribution.
+
+Verify claims against reliable sources before public publication.
+
+Do not invent missing information.
+
+Initially create these as DRAFT / PENDING REVIEW records.
+
+Do not automatically publish them until they pass editorial verification and receive administrator approval.
+
+## NEWS 1 — NATIONAL NEWS
+
+Original headline:
+
+सरकारी योजनाओं के भुगतान पर सरकार का यू-टर्न! आधार कार्ड की नहीं होगी छुट्टी, अब वोटर ID और बायोमेट्रिक से भी होगी पहचान
+
+Supplied material:
+
+नई दिल्ली। सरकारी योजनाओं के लाभार्थियों की पहचान में आधार और वोटर आईडी की भूमिका को लेकर चर्चा शुरू हुई।
+
+केंद्रीय मंत्री राजीव रंजन सिंह उर्फ ललन सिंह के बयान के बाद यह सवाल उठा कि क्या सरकारी योजनाओं में आधार कार्ड की जगह वोटर आईडी और बायोमेट्रिक प्रमाणीकरण का उपयोग होगा।
+
+30 अक्टूबर 2026 को पंचायती राज मंत्रालय द्वारा आयोजित नेशनल वर्कशॉप ऑन पीपल्स प्लान कैंपेन 2026-27 में मंत्री के बयान के बाद इस विषय पर राजनीतिक विवाद शुरू हुआ।
+
+बाद में 7 नवंबर को मंत्री ने सफाई देते हुए कहा कि प्रधानमंत्री विकसित ग्राम स्वराज योजना के तहत प्रशिक्षण लेने वाले लोगों की पहचान EPIC नंबर और आधार आधारित बायोमेट्रिक प्रमाणीकरण दोनों के माध्यम से की जाएगी।
+
+इस मामले में विपक्ष ने चिंता जताई कि मतदाता सूची से नाम हटने की स्थिति में सरकारी योजनाओं के लाभार्थियों को परेशानी हो सकती है।
+
+राहुल गांधी ने भी इस मुद्दे पर सरकार की आलोचना की।
+
+प्रधानमंत्री किसान सम्मान निधि, प्रधानमंत्री आवास योजना ग्रामीण, वृद्धावस्था पेंशन, विधवा पेंशन और दिव्यांग पेंशन जैसी योजनाओं के संदर्भ में भी चर्चा हुई।
+
+हालांकि, उपलब्ध सामग्री में इन सभी योजनाओं के लिए आधार की जगह वोटर आईडी लागू करने का कोई विस्तृत आधिकारिक आदेश उपलब्ध नहीं है।
+
+आम लाभार्थियों को संबंधित योजनाओं के वर्तमान नियमों का पालन करने और आधिकारिक सरकारी अधिसूचनाओं पर भरोसा करने की सलाह दी जाए।
+
+Editorial instruction:
+
+Do not falsely claim that Aadhaar has been removed from all government schemes.
+
+Clearly distinguish the minister's original statement from his subsequent clarification.
+
+Verify the relevant government statement before publication.
+
+Suggested category: India / Government Schemes.
+
+## NEWS 2 — RAJASTHAN PANCHAYAT ELECTIONS
+
+Original headline:
+
+दीपावली की छुट्टियों के बाद फिर चुनावी तैयारियों में जुटा प्रशासन, गांवों में बनेगी नई सरकार
+
+Supplied subtitle:
+
+चतुर्थ चरण के मतदान 14 व 16 नवंबर को, पंचायत चुनावों को लेकर प्रशासन ने तेज की तैयारियां।
+
+Supplied material:
+
+दीपावली की छुट्टियों के बाद प्रशासनिक गतिविधियां तेज होने और पंचायत चुनावों की तैयारियों से संबंधित समाचार।
+
+चतुर्थ चरण में 14 नवंबर को जिला परिषद एवं पंचायत समिति सदस्यों के लिए मतदान तथा 16 नवंबर को पंच एवं सरपंच पदों के लिए मतदान होने की जानकारी दी गई है।
+
+प्रशासन द्वारा मतदान केंद्रों पर आवश्यक सुविधाओं और चुनावी व्यवस्थाओं की तैयारी की जा रही है।
+
+IMPORTANT:
+
+The original supplied article is incomplete.
+
+Its final sentence ends with:
+
+"प्रशासन की ओर से मतदान केंद्रों पर आवश्यक सुविधाएं उपलब्ध करा…"
+
+Do not invent the missing continuation.
+
+Do not fabricate polling arrangements, locations, official statements or election statistics.
+
+Check the official Rajasthan State Election Commission information before publication.
+
+Create this article as an incomplete-content draft requiring administrator review.
+
+Suggested category: Rajasthan / Panchayat Elections.
+
+## NEWS 3 — SIKAR POLITICS
+
+Original headline:
+
+सीकर जिला परिषद चुनाव : टिकटों का खेल, राजनीतिक सेटिंग और बेनीवाल के बदले तेवर!
+
+Supplied material:
+
+सीकर जिला परिषद चुनाव में सात सीटों पर नामांकन रद्द होने की घटना के बाद राजनीतिक गतिविधियां चर्चा में हैं।
+
+आपूर्ति की गई सामग्री के अनुसार हनुमान बेनीवाल ने टिकट वितरण में कथित सेटिंग और आर्थिक लेन-देन के आरोप लगाए थे।
+
+विकास पचार और महेंद्र डोरवाल के साथ राजनीतिक दूरी की चर्चा भी सामने आई है।
+
+कांग्रेस, भाजपा, वामपंथी दलों और RLP के प्रत्याशियों से जुड़े चुनावी घटनाक्रम पर राजनीतिक बहस जारी है।
+
+सात नामांकन रद्द होने की घटना को लेकर कई सवाल उठाए गए हैं।
+
+Editorial requirements:
+
+- Attribute allegations to the person or source making them.
+- Do not state unverified financial transactions as facts.
+- Do not invent the reason for rejection of nomination forms.
+- Do not falsely accuse any person or political party.
+- Verify election-related details from reliable sources.
+- Keep the editorial tone neutral and professional.
+
+Suggested category: Rajasthan / Sikar / Politics.
+
+---
+
+# PHASE 13 — TESTING AND VERIFICATION
+
+Perform actual testing, not simulated testing.
+
+### Test A — News Publishing
+
+Publish a test article through the Admin Panel.
+
+Verify it is saved in Supabase.
+
+### Test B — Realtime
+
+Open the website on multiple devices.
+
+Publish from Device A.
+
+Confirm the article appears on all connected devices without refreshing.
+
+### Test C — Editing
+
+Edit an existing article.
+
+Confirm the new content appears everywhere.
+
+### Test D — Deletion
+
+Delete a test article.
+
+Confirm it disappears from all connected devices.
+
+### Test E — Image Storage
+
+Upload a test image.
+
+Confirm it is stored in Supabase Storage and loads from multiple devices.
+
+### Test F — Production Deployment
+
+Run:
+
+npm install
+
+npm run build
+
+Fix all build errors.
+
+Check TypeScript errors.
+
+Check production environment configuration.
+
+Verify Netlify Functions or Edge Functions where applicable.
+
+### Test G — Network Recovery
+
+Temporarily disconnect the internet.
+
+Reconnect.
+
+Verify the application restores its database connection and synchronizes missed changes.
+
+### Test H — ChatGPT API
+
+Test authenticated publishing endpoint.
+
+Test invalid authentication.
+
+Test duplicate requests.
+
+Test image uploads.
+
+Test draft and publish modes.
+
+### Test I — Scheduler
+
+Verify the configured three-hour scheduling mechanism.
+
+Confirm that overlapping runs cannot create duplicate articles.
+
+### Test J — Security
+
+Test unauthorized publishing.
+
+Test public access to unpublished content.
+
+Test access to private profiles and audit logs.
+
+Verify that unauthorized users cannot modify news.
+
+---
+
+# PHASE 14 — GITHUB AND NETLIFY DEPLOYMENT
+
+The final project must be compatible with GitHub and Netlify.
+
+Prepare:
+
+- Correct Vite configuration.
+- Correct build configuration.
+- Correct Netlify configuration.
+- Correct redirects and SPA routing.
+- Secure environment variable documentation.
+- Serverless API functions where required.
+- Supabase migrations.
+- OpenAPI specification for ChatGPT Actions.
+- Updated .env.example.
+- Production build.
+
+Do not include real API keys in GitHub.
+
+Do not overwrite existing user configuration unnecessarily.
+
+Do not remove existing website pages or features.
+
+---
+
+# PHASE 15 — FINAL IMPLEMENTATION REPORT
+
+After completing the work, provide a clear report containing:
+
+1. Problems discovered.
+2. Problems fixed.
+3. Files created.
+4. Files modified.
+5. Database changes.
+6. Supabase Realtime implementation details.
+7. Gemini integration status.
+8. Image generation status.
+9. Automatic news scheduler status.
+10. ChatGPT API integration status.
+11. Security improvements.
+12. Production build results.
+13. Netlify deployment instructions.
+14. Environment variables that the owner must configure.
+15. Remaining manual steps, if any.
+
+Clearly distinguish between:
+
+- Implemented and tested.
+- Implemented but awaiting credentials.
+- Awaiting external configuration.
+- Not implemented.
+
+Never claim that an integration works if it has not been tested.
+
+---
+
+# FINAL NON-NEGOTIABLE INSTRUCTIONS
+
+1. Work on the EXISTING HUNKAR 24 project.
+2. Preserve all existing working features.
+3. Do not create a fake backend.
+4. Do not simulate Supabase Realtime.
+5. Do not use localStorage as the main database.
+6. Do not expose API keys.
+7. Do not disable security policies to bypass errors.
+8. Do not create duplicate database tables without checking the schema.
+9. Do not fabricate news or images.
+10. Do not silently discard errors.
+11. Do not stop after writing a plan.
+12. Implement the changes in the actual project files.
+13. Run production build and resolve errors.
+14. Test the critical functionality.
+15. Provide exact remaining deployment instructions.
+
+If a required credential, external service permission, or unavailable API prevents completion, clearly identify it and provide the exact action required from the project owner.
+
+**THE FINAL GOAL:**
+
+Transform HUNKAR 24 into a reliable, scalable, AI-assisted digital news platform where:
+
+- Admin publishing works.
+- Supabase is the central database.
+- News updates propagate to all connected devices automatically.
+- Netlify production backend works correctly.
+- Gemini fetches and rewrites news.
+- AI generates relevant news images.
+- Automatic news processing runs every three hours.
+- Admin approval and automatic publishing are both supported.
+- ChatGPT can publish news through a secure authenticated integration.
+- Every article can subsequently be managed through the existing Admin Panel.
+
+Build a real, production-oriented implementation, not a demonstration or prototype.
+
+**HUNKAR 24 — राजस्थान की बुलंद आवाज़!**
