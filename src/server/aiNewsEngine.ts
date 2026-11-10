@@ -79,7 +79,14 @@ export async function processArticleWithAI(
   // If Gemini API is available and key is configured, use Google GenAI
   if (apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.length > 10) {
     try {
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build'
+          }
+        }
+      });
       const prompt = `You are the lead Hindi editor for 'HUNKAR 24 (हुंकार 24)'.
 Task: Process this news item into authentic, natural, neutral, accurate Hindi journalism.
 Rules:
@@ -108,7 +115,7 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
 }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: prompt
       });
 

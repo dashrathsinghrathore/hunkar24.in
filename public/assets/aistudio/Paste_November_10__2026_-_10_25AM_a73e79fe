@@ -1,0 +1,1010 @@
+# HUNKAR 24 — FINAL MASTER PRODUCTION REPAIR & DEPLOYMENT PROMPT
+
+## ROLE
+
+Act as a Principal Full-Stack Engineer, Senior React Architect, Firebase Realtime Database Specialist, Supabase Backend Engineer, AI News Automation Engineer, Database Reliability Engineer, Security Auditor, SEO Engineer and Production DevOps Engineer.
+
+You are responsible for repairing and completing the EXISTING HUNKAR 24 production project.
+
+This is not a tutorial or a prototype task. This is a real production repair.
+
+Your job is to inspect the entire existing codebase, identify root causes, implement permanent fixes, test the complete system, and prepare the project for production deployment.
+
+Do not merely provide suggestions, sample code, or a theoretical report. Make actual changes to the existing project wherever the connected environment permits.
+
+---
+
+# 1. PROJECT IDENTITY
+
+Brand: HUNKAR 24  
+Hindi Brand: हुंकार 24  
+Tagline: राजस्थान की बुलंद आवाज़!  
+Primary Language: Hindi  
+Target Audience: Rajasthan, India  
+Website: https://hunkar24.in  
+Hosting: Netlify  
+Development Environment: Google AI Studio  
+Backend Database: Supabase  
+Realtime Database: Firebase Realtime Database  
+News Automation: AI-assisted multi-provider news engine
+
+Main news categories:
+
+- राजस्थान
+- देश
+- दुनिया
+- शिक्षा
+- सरकारी नौकरी
+- राजनीति
+- व्यापार
+- कृषि
+- टेक्नोलॉजी
+- खेल
+- मनोरंजन
+- मौसम
+- स्थानीय समाचार
+
+The existing website, UI, branding, database, authentication, admin panel and functionality must be preserved wherever they work correctly.
+
+## CRITICAL RULE
+
+DO NOT rebuild the project from scratch.
+
+First inspect the complete existing project and understand its architecture, dependencies, database schema, environment variables, existing APIs, Firebase integration, Supabase integration and Netlify configuration.
+
+Repair the existing application instead of replacing working modules.
+
+---
+
+# 2. COMPLETE PROJECT AUDIT
+
+Before modifying anything, inspect:
+
+- Complete source code
+- package.json
+- Build configuration
+- Vite configuration
+- React application entry points
+- Routing
+- NewsContext and state management
+- Admin Panel
+- Authentication
+- Supabase client
+- Firebase initialization
+- Firebase Realtime Database integration
+- Edge Functions
+- Auto News Engine
+- News provider integrations
+- Gemini AI integration
+- Database migrations and SQL schema
+- Netlify deployment configuration
+- Environment variable usage
+- Existing scheduled jobs
+- Existing news fetching and publishing logic
+
+Identify every broken connection and duplicate implementation.
+
+Create a root-cause list internally and fix the problems rather than applying superficial workarounds.
+
+Do not delete existing functionality just because it is difficult to repair.
+
+---
+
+# 3. CRITICAL NEWS DUPLICATION BUG — PERMANENT FIX
+
+CURRENT PROBLEM:
+
+The website repeatedly publishes the same news article thousands of times. New and different news articles are not appearing correctly.
+
+This is the highest-priority bug.
+
+Investigate the actual root cause.
+
+Possible causes to investigate:
+
+- Missing unique constraints
+- Incorrect slug generation
+- Duplicate RSS feed entries
+- Repeated scheduled function execution
+- Concurrent execution race conditions
+- Missing source URL validation
+- Incorrect title normalization
+- Duplicate React rendering
+- Incorrect realtime event handling
+- Repeated Firebase listeners
+- Incorrect database upsert logic
+- Missing provider pagination
+- Incorrect article IDs
+- Incorrect cache invalidation
+- Repeated state appending instead of replacing/updating
+
+Implement a reliable deduplication system.
+
+## Required Deduplication Architecture
+
+Every article must have:
+
+- A stable article UUID
+- A canonical source URL
+- A normalized headline
+- A normalized source identifier
+- A unique deduplication key
+- A unique slug
+- A publication timestamp
+- A provider/source name
+
+Generate a deterministic deduplication key using a cryptographic hash of the canonicalized source URL.
+
+Also use normalized headline similarity as a secondary duplicate detection mechanism.
+
+Normalization must handle:
+
+- Hindi Unicode text
+- Extra spaces
+- Punctuation
+- Different URL tracking parameters
+- UTM parameters
+- URL fragments
+- Different URL variants of the same source
+- Hindi and English title variations where practical
+
+Do not use random suffixes as a duplicate prevention strategy.
+
+## Database-Level Protection
+
+Implement database-level uniqueness wherever compatible with the existing schema.
+
+Use safe, idempotent migrations.
+
+Create appropriate unique indexes for:
+
+- Canonical source URL
+- Deduplication key
+- Slug
+
+Handle existing duplicate records safely before adding unique constraints.
+
+Do not delete existing legitimate articles automatically.
+
+If old duplicate records exist, create a safe deduplication migration or an admin review mechanism. Preserve the oldest legitimate record and its useful metadata.
+
+Use atomic insert/upsert operations.
+
+When a duplicate is found:
+
+- Do not publish another copy.
+- Do not create another article ID.
+- Do not create another slug.
+- Record it in automation logs.
+- Continue processing other unique articles.
+
+A duplicate article must never appear repeatedly in the public news feed.
+
+---
+
+# 4. NEWS FETCHING ENGINE — MULTI-SOURCE SYSTEM
+
+Repair and improve all existing news providers.
+
+Inspect and integrate the configured providers where valid:
+
+- Google News RSS
+- BBC Hindi RSS
+- GNews
+- NewsAPI
+- NewsData.io
+- Currents API
+- MediaStack API
+
+Use only providers whose API keys and endpoints are actually configured and supported.
+
+Do not assume every provider is working.
+
+For every provider:
+
+- Validate API response status.
+- Validate response structure.
+- Handle rate limits.
+- Handle invalid API keys.
+- Handle empty results.
+- Handle timeout.
+- Handle malformed JSON.
+- Handle provider downtime.
+- Record provider-specific errors.
+- Prevent one failed provider from stopping other providers.
+
+Use pagination wherever supported.
+
+Do not fetch only the first few articles from every provider and repeatedly process them.
+
+Implement source rotation, time-based filtering and pagination so new articles can be discovered.
+
+Do not repeatedly fetch only the same latest articles.
+
+## News Filtering
+
+Prioritize:
+
+1. Rajasthan news
+2. District-level news
+3. Education and government jobs
+4. National news
+5. International news
+6. Agriculture and business
+7. Technology and sports
+
+Do not invent news.
+
+Do not publish empty headlines, invalid URLs, irrelevant content or malformed articles.
+
+Each article must have a valid title, source, canonical URL and useful content.
+
+---
+
+# 5. GEMINI AI NEWS TRANSFORMATION
+
+Repair the Gemini integration.
+
+Inspect the actual configured Gemini API model and use a currently supported model.
+
+Do not hardcode an unverified model name.
+
+Use a configurable model setting and handle model errors gracefully.
+
+The AI must:
+
+- Understand Hindi news.
+- Generate original Hindi headlines.
+- Produce concise and readable summaries.
+- Generate structured article content.
+- Assign the correct category.
+- Identify Rajasthan district when supported by the source.
+- Generate SEO titles and meta descriptions.
+- Avoid misleading claims.
+- Avoid fabricated quotes.
+- Avoid fabricated names, dates and statistics.
+- Avoid invented government announcements.
+- Avoid unsupported claims.
+- Preserve source attribution.
+
+IMPORTANT:
+
+Use only facts supported by the supplied source material.
+
+If the source provides only a headline and short description, produce a short news brief instead of inventing a long article.
+
+Never pretend that HUNKAR 24 independently conducted ground reporting when it did not.
+
+Preserve the original source name and source URL.
+
+Do not reproduce full copyrighted articles from external publishers.
+
+If Gemini fails, use a safe fallback summary based only on the available source data.
+
+A failed AI transformation must not create a broken or empty published article.
+
+---
+
+# 6. FIREBASE REALTIME DATABASE — COMPLETE ADMIN PANEL INTEGRATION
+
+This is a mandatory requirement.
+
+The existing Admin Panel must be fully connected to Firebase Realtime Database.
+
+Currently the Admin Panel is not properly receiving real-time updates.
+
+Inspect the existing Firebase project configuration and repair the integration.
+
+Use the existing Firebase project and environment configuration.
+
+Do not create an unrelated new Firebase project.
+
+## Architecture
+
+Use:
+
+SUPABASE:
+- Primary durable article database.
+- Article history.
+- Unique constraints.
+- Persistent storage.
+- Server-side publishing operations.
+- Database-level deduplication.
+
+FIREBASE REALTIME DATABASE:
+- Real-time Admin Panel synchronization.
+- Live article status updates.
+- Real-time dashboard statistics.
+- Live automation status.
+- Live article updates.
+- Live notifications.
+- Live publishing events.
+- Real-time synchronization of approved article records.
+
+Supabase remains the canonical durable article store.
+
+Firebase Realtime Database must be a reliable real-time projection of the canonical Supabase records.
+
+Never allow two independent databases to create conflicting article identities.
+
+## Firebase Requirements
+
+Repair and implement:
+
+- Firebase initialization
+- Firebase Realtime Database connection
+- Correct database URL
+- Environment configuration
+- Authentication integration
+- Database read/write operations
+- Realtime subscriptions
+- Listener cleanup
+- Connection state monitoring
+- Error handling
+- Reconnection handling
+- Secure write permissions
+
+Do not expose Firebase Admin SDK credentials or private service account keys in frontend code.
+
+Use secure server-side operations for privileged writes.
+
+Do not use unauthenticated public writes.
+
+Do not disable Firebase security rules to make the application work.
+
+## Suggested Realtime Structure
+
+Adapt to the existing Firebase schema rather than blindly overwriting it.
+
+Use a consistent structure such as:
+
+/hunkar24/
+    /articles/
+    /breaking_news/
+    /categories/
+    /automation/
+        status
+        lastRun
+        nextRun
+        lastSuccess
+        lastError
+    /dashboard/
+        totalArticles
+        publishedArticles
+        pendingArticles
+        todayArticles
+    /notifications/
+    /system/
+        databaseStatus
+        lastSync
+        syncStatus
+
+Use the same stable article UUID in Supabase and Firebase.
+
+Use timestamps and synchronization metadata.
+
+Implement retryable synchronization.
+
+If Firebase synchronization fails after a successful Supabase insert, do not create a second article on retry.
+
+Provide a reconciliation mechanism to repair missing Firebase records.
+
+## Admin Panel Realtime Features
+
+The Admin Panel must show:
+
+- Live article list
+- Live published articles
+- Live pending articles
+- Live breaking news
+- Live automation status
+- Last fetch time
+- Last successful publish time
+- Next scheduled fetch time
+- Total fetched articles
+- Unique articles
+- Duplicate articles filtered
+- Failed provider count
+- Firebase connection status
+- Supabase connection status
+- Synchronization status
+
+Updates must appear without refreshing the page.
+
+Do not create duplicate realtime listeners on every render.
+
+Clean up subscriptions when components unmount.
+
+Show a meaningful error state if a realtime connection is lost.
+
+---
+
+# 7. COMPLETE ADMIN PANEL REPAIR
+
+Audit every Admin Panel page and button.
+
+Repair:
+
+- Admin authentication
+- Admin dashboard
+- Article management
+- Create article
+- Edit article
+- Delete article with confirmation
+- Publish article
+- Unpublish article
+- Draft management
+- Pending articles
+- Breaking news management
+- Category management
+- Automation settings
+- Provider status
+- API status
+- Firebase connection status
+- Supabase connection status
+- Analytics
+- System logs
+- Settings
+
+Every visible button must perform its advertised action.
+
+No demo-only buttons.
+
+No fake dashboard statistics.
+
+No fake connection indicators.
+
+No hardcoded success messages.
+
+Every operation must report its actual backend result.
+
+Use role-based authorization and secure server-side checks.
+
+Never rely only on hiding admin routes in the frontend.
+
+Never expose service-role keys or Gemini API keys to the browser.
+
+---
+
+# 8. AUTOMATIC NEWS PUBLISHING — EVERY 3 HOURS
+
+The required automation interval is:
+
+180 MINUTES / EVERY 3 HOURS.
+
+The system must run automatically without requiring a manual admin click.
+
+Use the existing Supabase Edge Function:
+
+auto-news-fetch
+
+Repair the existing function rather than creating duplicate functions.
+
+The function must:
+
+1. Start a scheduled fetch.
+2. Fetch from all configured providers.
+3. Validate provider responses.
+4. Normalize URLs and titles.
+5. Filter previously published articles.
+6. Transform valid new articles with Gemini.
+7. Validate the AI output.
+8. Insert unique articles into Supabase.
+9. Synchronize new article records into Firebase Realtime Database.
+10. Record the execution in automation_logs.
+11. Update the automation status.
+12. Return accurate execution statistics.
+
+Implement a reliable scheduler using Supabase Cron / pg_cron and pg_net if available.
+
+Use the existing scheduling architecture where possible.
+
+Required schedule:
+
+0 */3 * * *
+
+Use the correct project timezone or UTC scheduling with clearly displayed local Indian time.
+
+Prevent overlapping executions using a database lock or another atomic mechanism.
+
+A scheduled execution must not start another copy of itself while the previous run is still processing.
+
+Add timeout handling and execution limits.
+
+Do not allow an unlimited number of Gemini requests in one run.
+
+Implement a sensible processing batch size and continuation mechanism if necessary.
+
+## Automation Dashboard
+
+Display:
+
+- Automation enabled/disabled
+- Schedule interval: 180 minutes
+- Last run
+- Last successful run
+- Next run
+- Articles discovered
+- New articles published
+- Duplicate articles filtered
+- Failed articles
+- Provider failures
+- AI transformation failures
+- Firebase sync failures
+
+Never show success if the actual scheduled job failed.
+
+---
+
+# 9. ARTICLE LIFECYCLE AND PUBLISHING
+
+Implement a consistent article lifecycle:
+
+draft
+pending
+published
+archived
+
+Use the existing database enum and schema where possible.
+
+Do not change UUID IDs to TEXT.
+
+Do not change existing enum columns to TEXT without a compelling migration reason.
+
+Do not break existing foreign keys.
+
+Ensure:
+
+- Every article has one stable ID.
+- Every article has one canonical slug.
+- Every article has one original source URL.
+- Every article has one source attribution.
+- Every published article has valid content.
+- Every published article is available in the public website.
+- Every article update is reflected in the Admin Panel.
+- Every status change is reflected in Firebase Realtime Database.
+
+Automatic publishing must respect the existing automation configuration.
+
+Provide a secure emergency disable switch.
+
+---
+
+# 10. DATABASE MIGRATIONS AND DATA SAFETY
+
+Inspect the existing Supabase schema before changing anything.
+
+Do not assume column names or types.
+
+Do not blindly execute CREATE TABLE statements against existing tables.
+
+Use idempotent migrations.
+
+Preserve existing data.
+
+Preserve existing UUID primary keys.
+
+Preserve existing enum types.
+
+Preserve existing relationships and foreign keys.
+
+Inspect RLS policies.
+
+Public users may read only appropriate published articles.
+
+Only authorized administrators and secure server-side operations may create, update or delete privileged records.
+
+Automation logs must not be publicly readable.
+
+Never create a public policy such as USING (true) for private operational logs.
+
+Use appropriate RLS policies.
+
+Do not expose service-role credentials.
+
+Do not automatically delete articles to save storage.
+
+Create backups or a safe rollback strategy before destructive migrations.
+
+---
+
+# 11. NEWS WEBSITE FRONTEND REPAIR
+
+Ensure that the public website displays the correct database data.
+
+Repair:
+
+- Homepage news feed
+- Category pages
+- Article detail pages
+- Rajasthan news
+- District news
+- Education news
+- Government jobs
+- Search
+- Breaking news ticker
+- Latest news
+- Related articles
+- Trending articles
+- Pagination
+- Infinite scroll if already supported
+
+The homepage must not repeatedly display the same article.
+
+Use stable article IDs as React keys.
+
+Implement correct pagination and deduplication in frontend state.
+
+Do not append the same records repeatedly when realtime events arrive.
+
+Do not confuse a Firebase synchronization event with a newly created article.
+
+Use canonical data and consistent sorting.
+
+Show a proper empty state when there is no content.
+
+Show proper loading and error states.
+
+---
+
+# 12. SEO AND GOOGLE NEWS READINESS
+
+Repair and verify:
+
+- Unique page titles
+- Meta descriptions
+- Canonical URLs
+- Open Graph metadata
+- Twitter metadata
+- Article structured data
+- NewsArticle JSON-LD
+- Breadcrumb structured data
+- XML sitemap
+- News sitemap where appropriate
+- robots.txt
+- RSS feed
+- Hindi language metadata
+- Mobile SEO
+- Internal linking
+- Category indexing
+- Article indexing
+- 404 handling
+- Redirects
+
+Ensure every article has a unique canonical URL.
+
+Do not generate duplicate indexable pages.
+
+Do not promise Google News approval or guaranteed search ranking.
+
+Make the site technically SEO-ready.
+
+---
+
+# 13. NETLIFY PRODUCTION CONFIGURATION
+
+Inspect and repair:
+
+- Netlify build command
+- Publish directory
+- Environment variables
+- Redirects
+- SPA routing
+- API routing
+- Serverless functions if required
+- Build-time environment configuration
+- Production asset paths
+- Domain configuration compatibility
+- HTTPS compatibility
+
+Do not put private secrets into VITE_ variables.
+
+Frontend environment variables may contain only public configuration.
+
+Private keys must remain server-side.
+
+Ensure the website works at:
+
+https://hunkar24.in
+
+Also preserve the existing Netlify URL as a working fallback.
+
+Do not break the custom domain configuration.
+
+---
+
+# 14. ERROR HANDLING AND OBSERVABILITY
+
+Implement centralized logging.
+
+Every automated run should record:
+
+- Run ID
+- Start time
+- End time
+- Execution status
+- Provider results
+- Articles discovered
+- New articles inserted
+- Duplicates filtered
+- Gemini failures
+- Firebase synchronization failures
+- Database failures
+- Error messages
+
+Avoid logging private API keys, tokens, passwords or user credentials.
+
+Create clear operational errors that an administrator can understand.
+
+Provide an admin-facing system health panel.
+
+---
+
+# 15. PERFORMANCE AND RELIABILITY
+
+Optimize:
+
+- Database queries
+- Pagination
+- Realtime subscriptions
+- React rendering
+- API requests
+- Provider fetching
+- Gemini requests
+- Image loading
+- Caching
+- Error retries
+
+Avoid unnecessary polling.
+
+Use realtime subscriptions where appropriate.
+
+Avoid repeated network requests caused by React effects.
+
+Use AbortController and sensible timeouts.
+
+Do not allow one provider failure to crash the entire automation engine.
+
+Do not allow one malformed article to stop processing other valid articles.
+
+---
+
+# 16. SECURITY AUDIT
+
+Perform a complete security audit.
+
+Check:
+
+- Admin route protection
+- Authentication
+- Authorization
+- RLS policies
+- Edge Function authentication
+- CRON_SECRET validation
+- Firebase rules
+- Supabase service-role usage
+- API key exposure
+- CORS configuration
+- Input validation
+- XSS risks
+- SQL injection risks
+- Rate limiting
+- Privileged operations
+
+Remove all authentication bypasses.
+
+Never accept an arbitrary long Bearer token as authorization.
+
+Validate the configured CRON_SECRET exactly.
+
+Do not expose the service-role key to frontend code.
+
+Do not commit secrets to GitHub.
+
+Do not print secrets in logs.
+
+If any secret has been exposed, flag it for rotation.
+
+---
+
+# 17. TESTING — MANDATORY BEFORE PRODUCTION
+
+Do not claim the project is fixed merely because the code compiles.
+
+Run all available tests.
+
+## Build Tests
+
+- Install dependencies correctly.
+- Run production build.
+- Resolve TypeScript errors.
+- Resolve import errors.
+- Resolve missing dependencies.
+- Resolve invalid environment references.
+- Resolve lint errors where configured.
+
+## News Automation Tests
+
+Test at least:
+
+1. A valid new article.
+2. The same article fetched twice.
+3. Same URL with UTM tracking parameters.
+4. Similar title from a different provider.
+5. Invalid source URL.
+6. Empty provider response.
+7. Provider API failure.
+8. Gemini API failure.
+9. Firebase write failure.
+10. Supabase insert failure.
+11. Two simultaneous automation requests.
+12. Repeated scheduled execution.
+
+Expected results:
+
+- A duplicate article is never inserted twice.
+- New valid unique articles can be inserted.
+- Provider failures do not stop other providers.
+- Failed Firebase sync does not create duplicate articles.
+- Repeated requests do not multiply articles.
+- Every operation has an accurate log.
+
+## Firebase Tests
+
+Verify:
+
+- Firebase initializes correctly.
+- Admin authentication works.
+- Admin can read authorized records.
+- Authorized backend operations can write records.
+- Realtime updates appear without refreshing.
+- Listener cleanup works.
+- Reconnection works.
+- Unauthorized writes are rejected.
+
+## Admin Tests
+
+Verify every visible action.
+
+No fake buttons.
+
+No demo data.
+
+No hardcoded statistics.
+
+## Deployment Tests
+
+Verify the production build and deployment configuration.
+
+Do not report a successful deployment unless the deployment system actually confirms it.
+
+---
+
+# 18. PRODUCTION DEPLOYMENT AND GITHUB
+
+The target deployment flow is:
+
+Google AI Studio → GitHub → Netlify.
+
+If GitHub access and authorization are available:
+
+1. Inspect the connected repository.
+2. Preserve existing branches and history.
+3. Apply the verified code changes.
+4. Run all available checks.
+5. Commit the changes with a clear message.
+6. Push only to the intended production branch.
+7. Verify the Netlify deployment result if connected.
+
+Do not claim to push or deploy if you do not actually have access.
+
+If direct GitHub or Netlify operations are unavailable, prepare the complete corrected project and clearly state the exact remaining action.
+
+Do not invent successful deployment results.
+
+Do not delete existing repository files unless required and verified.
+
+---
+
+# 19. STRICT IMPLEMENTATION RULES
+
+- Work on the existing project.
+- Do not rebuild from scratch.
+- Do not replace working UI unnecessarily.
+- Do not remove existing branding.
+- Do not invent credentials.
+- Do not fabricate database records.
+- Do not use fake news.
+- Do not create fake dashboard metrics.
+- Do not silently ignore errors.
+- Do not create duplicate Edge Functions.
+- Do not create duplicate schedulers.
+- Do not disable database security.
+- Do not expose private secrets.
+- Do not run destructive migrations without safeguards.
+- Do not claim tests passed unless they were actually run.
+- Do not claim Firebase is connected unless verified.
+- Do not claim automatic publishing works unless a real test confirms it.
+
+When an external credential is missing, identify its exact environment variable name. Never ask the user to paste private credentials into chat or source code.
+
+When a feature cannot be verified because a live service is unavailable, mark it as NOT VERIFIED.
+
+---
+
+# 20. FINAL ACCEPTANCE CRITERIA
+
+The project is ready only when all applicable requirements below are verified.
+
+[ ] Existing website builds successfully.
+[ ] Existing design and branding are preserved.
+[ ] Admin Panel works.
+[ ] Admin authentication is secure.
+[ ] Supabase database connection works.
+[ ] Firebase Realtime Database connection works.
+[ ] Admin Panel receives real-time updates.
+[ ] Firebase synchronization works.
+[ ] New unique news articles are fetched.
+[ ] Duplicate articles are blocked at database level.
+[ ] Existing duplicate records are handled safely.
+[ ] Multiple news providers work independently.
+[ ] Gemini produces fact-grounded Hindi content.
+[ ] Source attribution is preserved.
+[ ] Automatic publishing works.
+[ ] Automation runs every 180 minutes.
+[ ] Overlapping executions are prevented.
+[ ] Logs accurately record every run.
+[ ] Public news feeds do not repeat articles.
+[ ] Search and category pages work.
+[ ] SEO metadata and sitemap work.
+[ ] No private credentials are exposed.
+[ ] Production build passes.
+[ ] Netlify configuration is correct.
+[ ] Deployment is verified or its remaining steps are clearly documented.
+
+---
+
+# 21. FINAL OUTPUT REQUIRED
+
+After completing the implementation, provide a concise but complete production report containing:
+
+1. Root causes discovered.
+2. Files modified.
+3. Database changes and migrations.
+4. Firebase integration status.
+5. Supabase integration status.
+6. News duplication fix details.
+7. News provider status.
+8. Gemini model and API status.
+9. Automatic publishing status.
+10. Three-hour scheduling status.
+11. Admin Panel status.
+12. Security improvements.
+13. Build and test results.
+14. GitHub push status.
+15. Netlify deployment status.
+16. Remaining blockers, if any.
+
+Use these exact status labels:
+
+- VERIFIED
+- FIXED
+- NOT VERIFIED
+- BLOCKED
+- REQUIRES USER ACTION
+
+Do not hide failed tests or incomplete work.
+
+## FINAL COMMAND
+
+Start by auditing the complete existing HUNKAR 24 project.
+
+Then repair the actual root causes, implement the Firebase Realtime Database integration, permanently fix news duplication, restore reliable multi-source news fetching, configure automatic publishing every three hours, repair the Admin Panel, verify the database and security architecture, run production tests, and prepare the verified changes for GitHub and Netlify.
+
+Do not stop after writing a plan.
+
+Do not stop after making a partial code change.
+
+Complete every task that the connected environment and available credentials genuinely permit.
+
+The final objective is a stable, secure, production-ready HUNKAR 24 Hindi news platform — not another demo or incomplete prototype.

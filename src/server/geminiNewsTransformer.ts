@@ -15,6 +15,11 @@ if (GEMINI_API_KEY) {
   try {
     aiInstance = new GoogleGenAI({
       apiKey: GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build'
+        }
+      }
     });
   } catch (err) {
     console.warn('[GeminiTransformer] Initialization notice:', err);
@@ -32,7 +37,7 @@ export interface TransformedHindiArticle {
 }
 
 /**
- * Transforms raw news data into high-grade Hindi journalistic copy using Gemini 2.5 Flash
+ * Transforms raw news data into high-grade Hindi journalistic copy using Gemini 3.8 Flash
  */
 export async function transformRawNewsWithGemini(
   rawTitle: string,
@@ -70,7 +75,7 @@ Source: ${sourceName}
 Respond ONLY with valid JSON.`;
 
       const response = await aiInstance.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json'

@@ -26,7 +26,7 @@ import { useNews } from '../../context/NewsContext';
 import { AutoNewsArticleItem } from '../../types';
 import { safeFetchJson } from '../../lib/apiClient';
 import {
-  getClientStatus,
+  getRealDatabaseStatus,
   getClientPendingArticles,
   getClientApprovedArticles
 } from '../../lib/clientNewsEngine';
@@ -59,7 +59,7 @@ export const AutoNewsControlCenter: React.FC = () => {
     maxArticlesPerFetch: number;
   }>({
     enabled: true,
-    intervalMinutes: 30,
+    intervalMinutes: 180,
     autoApproveSafe: true,
     prioritizeRajasthan: true,
     maxArticlesPerFetch: 25
@@ -129,18 +129,18 @@ export const AutoNewsControlCenter: React.FC = () => {
           setApprovedArticles([...clientApproved, ...serverApproved]);
         }
       } else {
-        // Fallback for Netlify static deployment (No Node.js backend)
-        const clientStatus = getClientStatus();
-        setStats(clientStatus.stats as any);
-        setProviders(clientStatus.providers as any);
-        setLogs(clientStatus.logs);
+        // Netlify static deployment: fetch real counts & logs directly from Supabase
+        const realStatus = await getRealDatabaseStatus();
+        setStats(realStatus.stats as any);
+        setProviders(realStatus.providers as any);
+        setLogs(realStatus.logs);
         setPendingArticles(getClientPendingArticles());
         setApprovedArticles(getClientApprovedArticles() as any);
       }
     } catch {
-      const clientStatus = getClientStatus();
-      setStats(clientStatus.stats as any);
-      setProviders(clientStatus.providers as any);
+      const realStatus = await getRealDatabaseStatus();
+      setStats(realStatus.stats as any);
+      setProviders(realStatus.providers as any);
       setPendingArticles(getClientPendingArticles());
       setApprovedArticles(getClientApprovedArticles() as any);
     } finally {
@@ -448,10 +448,9 @@ export const AutoNewsControlCenter: React.FC = () => {
               onChange={e => handleUpdateConfig({ intervalMinutes: Number(e.target.value) })}
               className="bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:ring-1 focus:ring-red-600"
             >
-              <option value={15}>15 मिनट</option>
-              <option value={30}>30 मिनट (अनुशंसित)</option>
               <option value={60}>60 मिनट (1 घंटा)</option>
               <option value={120}>120 मिनट (2 घंटे)</option>
+              <option value={180}>180 मिनट (3 घंटे - अनुशंसित प्रोडक्शन)</option>
             </select>
           </div>
         </div>

@@ -83,6 +83,31 @@ export function areHeadlinesDuplicate(h1: string, h2: string): boolean {
 }
 
 /**
+ * Canonicalizes a source URL by stripping tracking parameters, hash fragments, and trailing slashes.
+ */
+export function canonicalizeUrl(rawUrl: string): string {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  try {
+    const parsed = new URL(rawUrl.trim());
+    const paramsToStrip = [
+      'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+      'oc', 'ref', 'ref_src', 'fbclid', 'gclid', 'msclkid', 'ved', 'ei'
+    ];
+    for (const p of paramsToStrip) {
+      parsed.searchParams.delete(p);
+    }
+    let clean = `${parsed.protocol}//${parsed.hostname.toLowerCase()}${parsed.pathname}`.replace(/\/+$/, '');
+    const remainingParams = parsed.searchParams.toString();
+    if (remainingParams) {
+      clean += `?${remainingParams}`;
+    }
+    return clean;
+  } catch {
+    return rawUrl.trim().toLowerCase().split('?')[0].replace(/\/+$/, '');
+  }
+}
+
+/**
  * Deduplicates a list of articles, keeping ONLY THE SINGLE BEST CANONICAL COPY.
  * Discards all clones, identical stories, and duplicate URLs.
  */
@@ -109,8 +134,10 @@ export function deduplicateArticlesList(articles: Article[]): Article[] {
     const baseSlug = art.slug ? art.slug.replace(/-\d{3,}$/, '').replace(/-[a-f0-9]{4,}$/, '') : '';
     if (baseSlug && baseSlug.length > 8 && seenBaseSlugs.has(baseSlug)) continue;
 
-    // 4. Exact Source URL check
-    if (art.sourceUrl && seenSourceUrls.has(art.sourceUrl)) continue;
+    // 4. Canonical Source URL check
+    const rawUrl = art.sourceUrl || (art as any).original_url || (art as any).originalUrl;
+    const cleanUrl = rawUrl ? canonicalizeUrl(rawUrl) : '';
+    if (cleanUrl && seenSourceUrls.has(cleanUrl)) continue;
 
     // 5. Headline similarity check against all accepted canonical stories
     const isDuplicate = seenHeadlines.some(existingHeadline =>
@@ -125,7 +152,7 @@ export function deduplicateArticlesList(articles: Article[]): Article[] {
     seenIds.add(art.id);
     if (art.slug) seenSlugs.add(art.slug);
     if (baseSlug) seenBaseSlugs.add(baseSlug);
-    if (art.sourceUrl) seenSourceUrls.add(art.sourceUrl);
+    if (cleanUrl) seenSourceUrls.add(cleanUrl);
     seenHeadlines.push(art.headline);
 
     canonicalList.push(art);

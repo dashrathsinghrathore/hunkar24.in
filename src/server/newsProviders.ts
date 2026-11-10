@@ -157,7 +157,11 @@ export async function fetchFromNewsApi(config: ProviderConfig): Promise<RawNewsA
 
   for (const q of queries.slice(0, 1)) {
     const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&sortBy=publishedAt&pageSize=10&apiKey=${apiKey}`;
-    const res = await fetchWithTimeout(url);
+    const res = await fetchWithTimeout(url, {
+      headers: {
+        'User-Agent': 'Hunkar24NewsEngine/1.0'
+      }
+    });
     if (!res.ok) {
       throw new Error(`NewsAPI error ${res.status}: ${await res.text()}`);
     }

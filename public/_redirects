@@ -1,5 +1,2 @@
-# Netlify scheduled function and proxy
-/api/auto-news-trigger    /.netlify/functions/auto-news-cron    200
-
 # Netlify SPA Catch-all redirect for /admin, /news/:slug, and categories
 /*    /index.html   200
