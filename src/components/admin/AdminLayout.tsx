@@ -181,7 +181,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <>
                 <span className="text-stone-700">|</span>
                 <span className="text-[10px] text-stone-400 font-mono">
-                  {new Date(lastSyncTime).toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  {lastSyncTime.includes('T') ? new Date(lastSyncTime).toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : lastSyncTime}
                 </span>
               </>
             )}

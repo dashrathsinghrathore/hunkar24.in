@@ -91,7 +91,7 @@ export const PublicSubmissionsReview: React.FC = () => {
                     {sub.id}
                   </span>
                   <span className="text-xs text-stone-500">
-                    {new Date(sub.createdAt).toLocaleString('hi-IN')}
+                    {sub?.createdAt ? new Date(sub.createdAt).toLocaleString('hi-IN') : 'हाल ही में'}
                   </span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                     sub.status === 'pending'

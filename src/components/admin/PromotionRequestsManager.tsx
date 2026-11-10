@@ -64,9 +64,9 @@ export const PromotionRequestsManager: React.FC = () => {
             <div className="flex items-center gap-4 text-xs shrink-0">
               <div className="text-right">
                 <span className="text-base font-bold text-emerald-600 font-mono block">
-                  ₹{req.budgetInr.toLocaleString()}
+                  ₹{req?.budgetInr != null ? Number(req.budgetInr).toLocaleString('hi-IN') : '0'}
                 </span>
-                <span className="text-[10px] text-stone-400">{req.campaignDurationDays} दिनों के लिए</span>
+                <span className="text-[10px] text-stone-400">{req.campaignDurationDays || 7} दिनों के लिए</span>
               </div>
 
               {req.status === 'pending' && (

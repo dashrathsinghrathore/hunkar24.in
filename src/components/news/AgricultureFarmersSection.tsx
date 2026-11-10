@@ -236,7 +236,7 @@ export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps>
               <div className="mt-2.5 pt-2 border-t border-stone-100 dark:border-stone-700/50">
                 <div className="flex items-baseline justify-between">
                   <div className="text-sm font-black text-amber-700 dark:text-amber-400 font-mono">
-                    ₹{m.modalPrice.toLocaleString()}
+                    ₹{m?.modalPrice != null ? Number(m.modalPrice).toLocaleString('hi-IN') : Number(m?.maxPrice || m?.minPrice || 0).toLocaleString('hi-IN')}
                   </div>
                   <span
                     className={`text-[10px] font-bold px-1 py-0.5 rounded ${

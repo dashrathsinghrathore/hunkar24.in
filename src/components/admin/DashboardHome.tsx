@@ -100,7 +100,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
           {lastSyncTime && (
             <div className="flex items-center gap-1.5 text-[11px] text-stone-400 font-mono">
               <RefreshCw className="w-3 h-3 text-stone-500" />
-              <span>अंतिम डेटाबेस सिंक: {new Date(lastSyncTime).toLocaleTimeString('hi-IN')}</span>
+              <span>अंतिम डेटाबेस सिंक: {lastSyncTime.includes('T') ? new Date(lastSyncTime).toLocaleTimeString('hi-IN') : lastSyncTime}</span>
             </div>
           )}
         </div>
@@ -172,7 +172,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
             <Newspaper className="w-4 h-4 text-red-600" />
           </div>
           <div className="text-2xl font-black font-mono text-stone-900 dark:text-stone-100">
-            {publishedCount.toLocaleString()}
+            {(publishedCount ?? 0).toLocaleString('hi-IN')}
           </div>
           <div className="text-[11px] text-stone-400 mt-1">
             {draftCount} ड्राफ्ट सुरक्षित
@@ -293,7 +293,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
                 <div className="flex items-center justify-between text-stone-500 mb-1">
                   <span className="font-bold text-stone-800 dark:text-stone-200">{log.action}</span>
                   <span className="text-[10px] font-mono">
-                    {new Date(log.timestamp).toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' })}
+                    {log?.timestamp ? new Date(log.timestamp).toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' }) : 'हाल ही में'}
                   </span>
                 </div>
                 <p className="text-[11px] text-stone-600 dark:text-stone-300 line-clamp-2">

@@ -34,7 +34,7 @@ export const ActivityLogsView: React.FC = () => {
             {auditLogs.map(log => (
               <tr key={log.id} className="hover:bg-stone-50/50 dark:hover:bg-stone-800/40">
                 <td className="p-3 whitespace-nowrap font-mono text-stone-500 text-[11px]">
-                  {new Date(log.timestamp).toLocaleString('hi-IN')}
+                  {log?.timestamp ? new Date(log.timestamp).toLocaleString('hi-IN') : 'हाल ही में'}
                 </td>
                 <td className="p-3 whitespace-nowrap">
                   <span className="font-bold block text-stone-900 dark:text-stone-100">{log.userName}</span>

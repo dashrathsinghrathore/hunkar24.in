@@ -131,7 +131,7 @@ export const AdManager: React.FC = () => {
           <span className="text-xs font-bold text-stone-500 block mb-1">कुल सक्रिय विज्ञापन इम्प्रेशन</span>
           <div className="text-xl font-mono font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
             <Eye className="w-4 h-4 text-blue-600" />
-            <span>{totalImpressions.toLocaleString()}</span>
+            <span>{(totalImpressions ?? 0).toLocaleString('hi-IN')}</span>
           </div>
         </div>
 
@@ -139,14 +139,14 @@ export const AdManager: React.FC = () => {
           <span className="text-xs font-bold text-stone-500 block mb-1">कुल पाठक क्लिक्स</span>
           <div className="text-xl font-mono font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
             <MousePointerClick className="w-4 h-4 text-emerald-600" />
-            <span>{totalClicks.toLocaleString()}</span>
+            <span>{(totalClicks ?? 0).toLocaleString('hi-IN')}</span>
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700">
           <span className="text-xs font-bold text-stone-500 block mb-1">सक्रिय अभियान कुल मूल्य</span>
           <div className="text-xl font-mono font-bold text-emerald-600 flex items-center gap-1">
-            <span>₹{totalRevenue.toLocaleString()}</span>
+            <span>₹{(totalRevenue ?? 0).toLocaleString('hi-IN')}</span>
           </div>
         </div>
       </div>
@@ -200,14 +200,14 @@ export const AdManager: React.FC = () => {
               <div className="flex items-center gap-4 text-xs">
                 <div className="text-right">
                   <span className="font-mono font-bold block">
-                    {(ad.impressions || 0).toLocaleString()} दृश्य
+                    {(ad.impressions ?? 0).toLocaleString('hi-IN')} दृश्य
                   </span>
                   <span className="text-[10px] text-stone-400 font-mono">{ad.clicks || 0} क्लिक्स</span>
                 </div>
 
                 <div className="text-right">
                   <span className="font-bold text-emerald-600 block">
-                    ₹{(ad.pricingInr || 0).toLocaleString()}
+                    ₹{(ad.pricingInr ?? 0).toLocaleString('hi-IN')}
                   </span>
                   <span className="text-[10px] text-stone-400">{ad.endDate} तक</span>
                 </div>
