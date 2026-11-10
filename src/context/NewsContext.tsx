@@ -185,7 +185,11 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const existing = map.get(a.id);
       map.set(a.id, existing ? { ...existing, ...a } : a);
     }
-    // Make sure Katar Kabaddi article is explicitly present and active
+    // Make sure Board Exam & Katar Kabaddi articles are explicitly present and active
+    const boardExamArt = INITIAL_ARTICLES.find(a => a.id === 'art-board-exam-course-incomplete-2027');
+    if (boardExamArt) {
+      map.set(boardExamArt.id, boardExamArt);
+    }
     const katarArt = INITIAL_ARTICLES.find(a => a.id === 'art-katar-kabaddi-2026');
     if (katarArt) {
       map.set(katarArt.id, katarArt);
@@ -211,7 +215,11 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     for (const b of storedBreaking) {
       bMap.set(b.id, b);
     }
-    // Ensure Katar Kabaddi breaking is active and present
+    // Ensure Board Exam and Katar Kabaddi breaking are active and present
+    const boardExamBrk = INITIAL_BREAKING_NEWS.find(b => b.id === 'brk-board-exam-2027-incomplete');
+    if (boardExamBrk) {
+      bMap.set(boardExamBrk.id, boardExamBrk);
+    }
     const katarBrk = INITIAL_BREAKING_NEWS.find(b => b.id === 'brk-katar-kabaddi-1');
     if (katarBrk) {
       bMap.set(katarBrk.id, katarBrk);
@@ -715,7 +723,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 3. Real-time live listener for breaking news
     const unsubBreaking = subscribeToFirebaseBreakingNews((firebaseBreaking) => {
       if (Array.isArray(firebaseBreaking) && firebaseBreaking.length > 0) {
-        setBreakingNews(firebaseBreaking);
+        const sorted = [...firebaseBreaking].sort((a, b) => (a.priority || 99) - (b.priority || 99));
+        setBreakingNews(sorted);
       }
     });
 

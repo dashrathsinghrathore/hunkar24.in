@@ -102,6 +102,8 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
     if (clean.includes('ibb.co/') && !clean.includes('i.ibb.co/')) {
       if (clean.includes('xtFcQHhM')) {
         clean = 'https://i.ibb.co/hJYnvfsK/Whats-App-Image-2026-11-09-at-19-06-47.jpg';
+      } else if (clean.includes('v6p5rwwb')) {
+        clean = 'https://i.ibb.co/67zhpnn2/image.png';
       }
     }
     setMainImage(clean);

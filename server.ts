@@ -676,6 +676,53 @@ function saveAdminArticles(list: any[]): void {
 
 let persistedAdminArticles: any[] = loadAdminArticles();
 
+const FIREBASE_DATABASE_URL = process.env.FIREBASE_DATABASE_URL || "https://hunkar24-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+async function syncArticleToFirebase(article: any) {
+  try {
+    const url = `${FIREBASE_DATABASE_URL}/articles/${article.id}.json`;
+    await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(article)
+    });
+  } catch (err: any) {
+    console.warn('[FirebaseRTDBSync] Notice on sync:', err?.message);
+  }
+}
+
+async function deleteArticleFromFirebase(id: string) {
+  try {
+    const url = `${FIREBASE_DATABASE_URL}/articles/${id}.json`;
+    await fetch(url, { method: 'DELETE' });
+  } catch (err: any) {
+    console.warn('[FirebaseRTDBSync] Notice on delete:', err?.message);
+  }
+}
+
+// Hydrate live articles from Firebase Realtime Database
+async function hydrateArticlesFromFirebase() {
+  try {
+    const res = await fetch(`${FIREBASE_DATABASE_URL}/articles.json`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === 'object') {
+        const list = Object.values(data) as any[];
+        list.sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
+        if (list.length > 0) {
+          persistedAdminArticles = list.slice(0, 100);
+          saveAdminArticles(persistedAdminArticles);
+          console.log(`[Firebase RTDB] Hydrated ${list.length} articles from live database.`);
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn('[Firebase RTDB] Notice hydrating articles:', err?.message);
+  }
+}
+
+hydrateArticlesFromFirebase().catch(() => {});
+
 // GET /api/articles - All client devices fetch live server articles
 app.get('/api/articles', (req: Request, res: Response) => {
   res.json({
@@ -715,9 +762,14 @@ app.post('/api/articles', (req: Request, res: Response) => {
   }
 
   saveAdminArticles(persistedAdminArticles);
+  const targetArticle = existingIndex >= 0 ? persistedAdminArticles[existingIndex] : persistedAdminArticles[0];
+  
+  // Realtime multi-device sync via Firebase RTDB
+  syncArticleToFirebase(targetArticle);
+
   res.json({
     success: true,
-    article: existingIndex >= 0 ? persistedAdminArticles[existingIndex] : persistedAdminArticles[0]
+    article: targetArticle
   });
 });
 
@@ -726,6 +778,7 @@ app.delete('/api/articles/:id', requireAdminAuth, (req: Request, res: Response) 
   const id = req.params.id;
   persistedAdminArticles = persistedAdminArticles.filter(a => a.id !== id);
   saveAdminArticles(persistedAdminArticles);
+  deleteArticleFromFirebase(id);
   res.json({ success: true, deletedId: id });
 });
 

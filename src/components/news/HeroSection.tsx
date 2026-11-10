@@ -8,8 +8,8 @@ import { SafeImage } from '../common/SafeImage';
 export const HeroSection: React.FC = () => {
   const { articles, setActiveArticle } = useNews();
 
-  // Prioritize top featured story (Katar Kabaddi Championship) or lead hero
-  const leadStory = articles.find(a => a.id === 'art-katar-kabaddi-2026') || articles.find(a => a.isHero) || articles[0];
+  // Prioritize top featured story (Board Exam announced / Katar Kabaddi Championship) or lead hero
+  const leadStory = articles.find(a => a.id === 'art-board-exam-course-incomplete-2027') || articles.find(a => a.id === 'art-katar-kabaddi-2026') || articles.find(a => a.isHero) || articles[0];
   const secondaryStories = articles.filter(a => a.id !== leadStory?.id).slice(0, 2);
   const fastUpdates = articles.filter(a => a.id !== leadStory?.id && !secondaryStories.some(s => s.id === a.id)).slice(0, 4);
 

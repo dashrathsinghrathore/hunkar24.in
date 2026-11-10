@@ -20,7 +20,7 @@ import {
 import { Article, BreakingNewsItem } from '../types';
 
 export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDvSh0pBO6rxxlkjnQ9K4OCu9qGZSIcn1E",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "hunkar24.firebaseapp.com",
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://hunkar24-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "hunkar24",
