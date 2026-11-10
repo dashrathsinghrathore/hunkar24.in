@@ -204,9 +204,8 @@ export function getTopicAccurateImage(
   // If a valid, non-placeholder local (/assets/...) or remote URL is already provided
   if (
     providedUrl &&
-    (providedUrl.startsWith('http') || providedUrl.startsWith('/assets/') || providedUrl.startsWith('data:image/')) &&
-    !providedUrl.includes('placeholder') &&
-    !providedUrl.includes('unsplash.com/photo-1504711434969-e33886168f5c') // default generic
+    (providedUrl.startsWith('http') || providedUrl.startsWith('/assets/') || providedUrl.startsWith('data:image/') || providedUrl.startsWith('blob:') || providedUrl.startsWith('/')) &&
+    !providedUrl.includes('placeholder')
   ) {
     // Check if this provided URL matches any known registry entry for caption & type
     const known = TOPIC_IMAGE_REGISTRY.find(r => r.imageUrl === providedUrl);

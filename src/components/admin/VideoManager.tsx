@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Video, Plus, Trash2, ExternalLink, Play } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
+import { UniversalVideoPlayer, parseVideoUrl } from '../common/UniversalVideoPlayer';
 
 export const VideoManager: React.FC = () => {
   const { videos, addVideo, deleteVideo, clearAllVideos } = useNews();
@@ -154,19 +155,32 @@ export const VideoManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold mb-1">YouTube Embed / Video URL *</label>
+                <label className="block font-bold mb-1">वीडियो URL (YouTube, Supabase, MP4, Vimeo) *</label>
                 <input
                   type="url"
                   required
-                  placeholder="https://www.youtube.com/embed/..."
+                  placeholder="https://www.youtube.com/watch?v=... या Supabase MP4 URL"
                   value={videoUrl}
-                  onChange={e => setVideoUrl(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setVideoUrl(val);
+                    // If YouTube and no thumbnail provided, extract high-res thumbnail automatically
+                    const ytMatch = val.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+                    if (ytMatch && ytMatch[1] && !thumbnailUrl) {
+                      setThumbnailUrl(`https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`);
+                    }
+                  }}
                   className="w-full px-3 py-2 border rounded-lg bg-stone-50 dark:bg-stone-800 font-mono"
                 />
+                {videoUrl && (
+                  <div className="mt-2 rounded-lg overflow-hidden border border-stone-700">
+                    <UniversalVideoPlayer url={videoUrl} title="पूर्वावलोकन" />
+                  </div>
+                )}
               </div>
 
               <div>
-                <label className="block font-bold mb-1">थंबनेल इमेज URL</label>
+                <label className="block font-bold mb-1">थंबनेल इमेज URL (वैकल्पिक)</label>
                 <input
                   type="url"
                   placeholder="https://..."

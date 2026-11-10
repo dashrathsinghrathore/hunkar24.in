@@ -129,7 +129,12 @@ export const NewsList: React.FC<NewsListProps> = ({ onEditArticle, onCreateNew }
                       <img
                         src={art.mainImage}
                         alt={art.imageAlt || art.headline}
-                        className="w-10 h-10 rounded object-cover"
+                        className="w-10 h-10 rounded object-cover bg-stone-100 dark:bg-stone-800"
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=120&q=80';
+                        }}
                       />
                       {art.imageType === 'ai_illustration' && (
                         <span

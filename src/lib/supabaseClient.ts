@@ -53,6 +53,20 @@ export function createSupabaseInstance(customUrl?: string, customKey?: string): 
 
 activeClientInstance = createSupabaseInstance();
 
+// Auto-sync configuration from server if client does not have local credentials
+if (typeof window !== 'undefined' && !getCredentials().isConfigured) {
+  fetch('/api/config/supabase')
+    .then(r => r.json())
+    .then(data => {
+      if (data?.success && data?.isConfigured && data?.url && data?.anonKey) {
+        safeLocalStorageSet('hunkar24_supabase_url', data.url);
+        safeLocalStorageSet('hunkar24_supabase_anon_key', data.anonKey);
+        activeClientInstance = createSupabaseInstance(data.url, data.anonKey);
+      }
+    })
+    .catch(() => {});
+}
+
 // Dynamic accessor ensuring current instance
 export function getSupabase(): SupabaseClient | null {
   if (!activeClientInstance) {
@@ -78,8 +92,8 @@ export function getSupabaseConfigStatus(): SupabaseConfigStatus {
     projectUrl: url ? url.replace(/^(https:\/\/[^.]+).*/, '$1.supabase.co') : 'असंयोजित (Not Connected)',
     hasAnonKey: Boolean(anonKey),
     notes: isConfigured
-      ? 'सफलतापूर्वक लाइव Supabase रियल-टाइम डेटाबेस से जुड़ा हुआ है।'
-      : 'स्थानीय डेटाबेस मोड (Local Store) सक्रिय है। Supabase प्रोजेक्ट क्रेडेंशियल दर्ज करने पर स्वतः लाइव डेटाबेस से जुड़ जाएगा।'
+      ? 'सफलतापूर्वक लाइव Supabase रियल-टाइम डेटाबेस एवं स्टोरेज से जुड़ा हुआ है।'
+      : 'स्थानीय डेटाबेस मोड (Local Store) सक्रिय है। Supabase प्रोजेक्ट क्रेडेंशियल दर्ज करने पर स्वतः लाइव डेटाबेस व स्टोरेज से जुड़ जाएगा।'
   };
 }
 
@@ -122,6 +136,14 @@ export async function saveSupabaseCredentials(url: string, anonKey: string): Pro
     safeLocalStorageSet('hunkar24_supabase_url', cleanUrl);
     safeLocalStorageSet('hunkar24_supabase_anon_key', cleanKey);
     activeClientInstance = createSupabaseInstance(cleanUrl, cleanKey);
+
+    // Synchronize to full-stack server so all server actions & other devices have it
+    fetch('/api/config/supabase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: cleanUrl, anonKey: cleanKey })
+    }).catch(() => {});
+
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message || 'Supabase से कनेक्ट करने में त्रुटि' };
@@ -132,4 +154,45 @@ export function clearSupabaseCredentials(): void {
   safeLocalStorageRemove('hunkar24_supabase_url');
   safeLocalStorageRemove('hunkar24_supabase_anon_key');
   activeClientInstance = null;
+}
+
+/**
+ * Direct client-side upload to Supabase Storage bucket 'article-images'.
+ * Returns public URL that works on all devices worldwide.
+ */
+export async function uploadImageToSupabase(file: File): Promise<{ success: boolean; url?: string; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, error: 'Supabase client not configured' };
+  }
+
+  try {
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const cleanBase = file.name.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30);
+    const filePath = `${Date.now()}-${cleanBase}.${fileExt}`;
+
+    const { data, error } = await client.storage
+      .from('article-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type || 'image/jpeg'
+      });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const { data: pubData } = client.storage
+      .from('article-images')
+      .getPublicUrl(data.path);
+
+    if (pubData?.publicUrl) {
+      return { success: true, url: pubData.publicUrl };
+    }
+
+    return { success: false, error: 'Failed to retrieve public URL from Supabase' };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Storage upload error' };
+  }
 }

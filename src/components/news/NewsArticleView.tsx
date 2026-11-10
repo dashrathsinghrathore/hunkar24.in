@@ -26,6 +26,7 @@ import { ArticleCard } from './ArticleCard';
 import { AdBanner } from '../ads/AdBanner';
 import { SITE_CONFIG } from '../../config/siteConfig';
 import { SafeImage } from '../common/SafeImage';
+import { UniversalVideoPlayer } from '../common/UniversalVideoPlayer';
 import { estimateReadingTime, sanitizeHeadline, sanitizeSummary, sanitizeContent } from '../../utils/newsUtils';
 import { updateArticleSEO } from '../../utils/seoUtils';
 
@@ -272,14 +273,13 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
         </figcaption>
       </figure>
 
-      {/* Embedded Video if present */}
+      {/* Embedded Video if present (YouTube, Supabase, MP4, etc.) */}
       {article.videoUrl && (
-        <div className="mb-6 rounded-xl overflow-hidden aspect-16/9 bg-black border border-stone-800 shadow-md">
-          <iframe
-            src={article.videoUrl}
+        <div className="mb-6">
+          <UniversalVideoPlayer
+            url={article.videoUrl}
             title={cleanTitle}
-            className="w-full h-full border-0"
-            allowFullScreen
+            poster={article.mainImage}
           />
         </div>
       )}

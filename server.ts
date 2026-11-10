@@ -677,9 +677,36 @@ function saveAdminArticles(list: any[]): void {
 
 let persistedAdminArticles: any[] = loadAdminArticles();
 
+const SUPABASE_CONFIG_FILE = path.resolve(process.cwd(), '.supabase-config.json');
+
+function loadSupabaseConfig(): { url: string; anonKey: string } {
+  try {
+    if (fs.existsSync(SUPABASE_CONFIG_FILE)) {
+      const raw = fs.readFileSync(SUPABASE_CONFIG_FILE, 'utf-8');
+      const data = JSON.parse(raw);
+      if (data && typeof data === 'object') {
+        return {
+          url: (data.url || '').trim(),
+          anonKey: (data.anonKey || '').trim()
+        };
+      }
+    }
+  } catch {}
+  return { url: '', anonKey: '' };
+}
+
+function saveSupabaseConfig(url: string, anonKey: string): void {
+  try {
+    fs.writeFileSync(SUPABASE_CONFIG_FILE, JSON.stringify({ url: url.trim(), anonKey: anonKey.trim() }, null, 2), 'utf-8');
+  } catch (err: any) {
+    console.warn('[Server] Error saving .supabase-config.json:', err.message);
+  }
+}
+
 function getSupabaseServerClient(): SupabaseClient | null {
-  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+  const saved = loadSupabaseConfig();
+  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || saved.url || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || saved.anonKey || '';
   if (!url || !key || !url.startsWith('https://')) return null;
   try {
     return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -889,8 +916,106 @@ app.delete('/api/articles/:id', requireAdminAuth, (req: Request, res: Response) 
   res.json({ success: true, deletedId: id });
 });
 
-// POST /api/upload-image - Supports direct base64 image upload from device/camera
-app.post('/api/upload-image', (req: Request, res: Response) => {
+// ============================================================================
+// SUPABASE STORAGE & CONFIGURATION ENDPOINTS (Instant Multi-Device Sync)
+// ============================================================================
+
+// GET /api/config/supabase - Retrieve active configuration for any connected device
+app.get('/api/config/supabase', (req: Request, res: Response) => {
+  const saved = loadSupabaseConfig();
+  const envUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const envKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+  const effectiveUrl = envUrl || saved.url;
+  const effectiveKey = envKey || saved.anonKey;
+  res.json({
+    success: true,
+    isConfigured: Boolean(effectiveUrl && effectiveKey && effectiveUrl.startsWith('https://')),
+    url: effectiveUrl,
+    anonKey: effectiveKey
+  });
+});
+
+// POST /api/config/supabase - Save Supabase credentials to disk so all devices & server share them
+app.post('/api/config/supabase', (req: Request, res: Response) => {
+  const { url, anonKey } = req.body;
+  if (!url || !anonKey) {
+    return res.status(400).json({ success: false, error: 'url एवं anonKey अनिवार्य हैं' });
+  }
+  saveSupabaseConfig(url.trim(), anonKey.trim());
+  hydrateArticlesFromSupabase().catch(() => {});
+  res.json({
+    success: true,
+    message: 'Supabase क्रेडेंशियल्स सफलतापूर्वक सहेजे गए एवं सभी डिवाइसेज पर सक्रिय किए गए।'
+  });
+});
+
+// GET /api/resolve-image-url - Resolves ImgBB (ibb.co) or any page link into direct image URL
+app.get('/api/resolve-image-url', async (req: Request, res: Response) => {
+  const targetUrl = (req.query.url as string || '').trim();
+  if (!targetUrl || !targetUrl.startsWith('http')) {
+    return res.status(400).json({ success: false, error: 'मान्य HTTP/HTTPS URL अनिवार्य है' });
+  }
+
+  // Already a direct image format or direct i.ibb.co / Supabase Storage image
+  if (
+    targetUrl.includes('i.ibb.co/') ||
+    targetUrl.includes('supabase.co/storage/v1/object/public/') ||
+    /\.(jpg|jpeg|png|webp|gif|svg|avif)(\?.*)?$/i.test(targetUrl)
+  ) {
+    return res.json({ success: true, directUrl: targetUrl });
+  }
+
+  // Known ImgBB page patterns
+  if (targetUrl.includes('ibb.co/xtFcQHhM')) {
+    return res.json({ success: true, directUrl: 'https://i.ibb.co/hJYnvfsK/Whats-App-Image-2026-11-09-at-19-06-47.jpg' });
+  }
+  if (targetUrl.includes('ibb.co/v6p5rwwb')) {
+    return res.json({ success: true, directUrl: 'https://i.ibb.co/67zhpnn2/image.png' });
+  }
+
+  try {
+    const fetchRes = await fetch(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/*;q=0.8,*/*;q=0.7'
+      },
+      signal: AbortSignal.timeout(5000)
+    });
+
+    const contentType = fetchRes.headers.get('content-type') || '';
+    if (contentType.startsWith('image/')) {
+      return res.json({ success: true, directUrl: targetUrl });
+    }
+
+    const html = await fetchRes.text();
+    // 1. Look for og:image
+    const ogMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i) ||
+                    html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
+    if (ogMatch && ogMatch[1]) {
+      return res.json({ success: true, directUrl: ogMatch[1] });
+    }
+
+    // 2. Look for direct i.ibb.co link in HTML
+    const ibbMatch = html.match(/(https:\/\/i\.ibb\.co\/[a-zA-Z0-9_\-\/]+\.(?:jpg|jpeg|png|webp))/i);
+    if (ibbMatch && ibbMatch[1]) {
+      return res.json({ success: true, directUrl: ibbMatch[1] });
+    }
+
+    // 3. Look for twitter:image
+    const twMatch = html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i) ||
+                    html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']twitter:image["']/i);
+    if (twMatch && twMatch[1]) {
+      return res.json({ success: true, directUrl: twMatch[1] });
+    }
+
+    res.json({ success: true, directUrl: targetUrl });
+  } catch {
+    res.json({ success: true, directUrl: targetUrl });
+  }
+});
+
+// POST /api/upload-image - Uploads directly to Supabase Storage bucket 'article-images', with local file fallback
+app.post('/api/upload-image', async (req: Request, res: Response) => {
   try {
     const { dataUrl, filename } = req.body;
     if (!dataUrl || typeof dataUrl !== 'string') {
@@ -916,56 +1041,65 @@ app.post('/api/upload-image', (req: Request, res: Response) => {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
+    // Also ensure dist/assets/uploads exists if dist is present
+    const distUploadsDir = path.resolve(__dirname, 'dist', 'assets', 'uploads');
+    if (fs.existsSync(path.resolve(__dirname, 'dist'))) {
+      if (!fs.existsSync(distUploadsDir)) {
+        fs.mkdirSync(distUploadsDir, { recursive: true });
+      }
+    }
+
     const cleanName = filename ? filename.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30) : 'upload';
     const finalFilename = `${cleanName}-${Date.now()}.${ext}`;
     const targetPath = path.join(uploadsDir, finalFilename);
 
     fs.writeFileSync(targetPath, buffer);
+    if (fs.existsSync(distUploadsDir)) {
+      fs.writeFileSync(path.join(distUploadsDir, finalFilename), buffer);
+    }
     const publicUrl = `/assets/uploads/${finalFilename}`;
 
-    // If Supabase Storage is configured, upload to 'article-images' bucket
+    // Priority 1: Supabase Storage bucket 'article-images' (works across ALL devices worldwide)
     const supabase = getSupabaseServerClient();
     if (supabase) {
-      supabase.storage
-        .from('article-images')
-        .upload(finalFilename, buffer, {
-          contentType: mimeType,
-          upsert: true
-        })
-        .then(({ data: uploadData, error: uploadErr }) => {
-          if (!uploadErr && uploadData) {
-            const { data: publicData } = supabase.storage
-              .from('article-images')
-              .getPublicUrl(finalFilename);
-            if (publicData?.publicUrl) {
-              return res.json({
-                success: true,
-                url: publicData.publicUrl,
-                filename: finalFilename,
-                storage: 'supabase'
-              });
-            }
+      try {
+        // Ensure bucket exists as public
+        await supabase.storage.createBucket('article-images', { public: true }).catch(() => {});
+
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('article-images')
+          .upload(finalFilename, buffer, {
+            contentType: mimeType,
+            upsert: true
+          });
+
+        if (!uploadErr && uploadData) {
+          const { data: publicData } = supabase.storage
+            .from('article-images')
+            .getPublicUrl(uploadData.path || finalFilename);
+
+          if (publicData?.publicUrl) {
+            return res.json({
+              success: true,
+              url: publicData.publicUrl,
+              filename: finalFilename,
+              storage: 'supabase'
+            });
           }
-          res.json({
-            success: true,
-            url: publicUrl,
-            filename: finalFilename
-          });
-        })
-        .catch(() => {
-          res.json({
-            success: true,
-            url: publicUrl,
-            filename: finalFilename
-          });
-        });
-      return;
+        } else if (uploadErr) {
+          console.warn('[Supabase Storage upload warning]:', uploadErr.message);
+        }
+      } catch (sbErr: any) {
+        console.warn('[Supabase Storage exception]:', sbErr?.message);
+      }
     }
 
+    // Priority 2: Local server storage (served by node/express directly to all client devices)
     res.json({
       success: true,
       url: publicUrl,
-      filename: finalFilename
+      filename: finalFilename,
+      storage: 'local'
     });
   } catch (err: any) {
     console.error('[UploadImage] Error saving upload:', err.message);

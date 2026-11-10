@@ -20,6 +20,8 @@ import { useNews } from '../../context/NewsContext';
 import { RAJASTHAN_DISTRICTS } from '../../config/siteConfig';
 import { Article } from '../../types';
 import { getTopicAccurateImage } from '../../utils/newsImageMatcher';
+import { uploadImageToSupabase } from '../../lib/supabaseClient';
+import { UniversalVideoPlayer } from '../common/UniversalVideoPlayer';
 
 export const ALLOWED_EDITORS = [
   { id: 'rep-bureau', name: 'हुंकार ब्यूरो', role: 'संपादक' },
@@ -71,7 +73,7 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
     setImageUploadStatus('विषय अनुसार प्रासंगिक चित्र स्वतः लिंक किया गया');
   };
 
-  // Direct device upload handler
+  // Direct device upload handler: Tries direct Supabase Storage upload, falls back to server upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -84,44 +86,97 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
     setUploadingImage(true);
     setImageUploadStatus('तस्वीर अपलोड हो रही है...');
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      try {
-        const res = await fetch('/api/upload-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dataUrl, filename: file.name })
-        });
-        const result = await res.json();
-        if (result.success && result.url) {
-          setMainImage(result.url);
-          setImageUploadStatus(`तस्वीर सफलतापूर्वक लाइव सर्वर पर अपलोड हुई: ${file.name}`);
-        } else {
-          setMainImage(dataUrl);
-          setImageUploadStatus(`तस्वीर सहेजी गई: ${file.name}`);
-        }
-      } catch {
-        setMainImage(dataUrl);
-        setImageUploadStatus(`तस्वीर सहेजी गई: ${file.name}`);
-      } finally {
+    try {
+      // 1. Direct upload to Supabase Storage bucket 'article-images' if client has credentials
+      const sbResult = await uploadImageToSupabase(file);
+      if (sbResult.success && sbResult.url) {
+        setMainImage(sbResult.url);
+        setImageUploadStatus(`तस्वीर Supabase Storage पर लाइव सेव हुई (${file.name})`);
+        setStatusMsg({ type: 'success', text: 'तस्वीर Supabase Storage में सफलतापूर्वक अपलोड हुई!' });
         setUploadingImage(false);
+        return;
       }
-    };
-    reader.readAsDataURL(file);
+
+      // 2. Upload via full-stack server endpoint (/api/upload-image)
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        try {
+          const res = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dataUrl, filename: file.name })
+          });
+          const result = await res.json();
+          if (result.success && result.url) {
+            setMainImage(result.url);
+            const storageLabel = result.storage === 'supabase' ? 'Supabase Storage' : 'लाइव सर्वर';
+            setImageUploadStatus(`तस्वीर ${storageLabel} पर सफलतापूर्वक अपलोड हुई: ${file.name}`);
+            setStatusMsg({ type: 'success', text: `तस्वीर ${storageLabel} पर सफलतापूर्वक अपलोड हुई!` });
+          } else {
+            setStatusMsg({ type: 'error', text: result.error || 'तस्वीर अपलोड विफल रही।' });
+          }
+        } catch {
+          setStatusMsg({ type: 'error', text: 'तस्वीर सर्वर पर अपलोड नहीं हो सकी। कृपया इंटरनेट कनेक्शन जांचें।' });
+        } finally {
+          setUploadingImage(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      setStatusMsg({ type: 'error', text: err?.message || 'तस्वीर अपलोड में त्रुटि हुई।' });
+      setUploadingImage(false);
+    }
   };
 
-  // Smart URL parser for direct links or ibb.co references
-  const handleImageUrlChange = (val: string) => {
+  // Smart URL parser for direct links, Supabase Storage, and ImgBB (ibb.co) references
+  const handleImageUrlChange = async (val: string) => {
     let clean = val.trim();
-    if (clean.includes('ibb.co/') && !clean.includes('i.ibb.co/')) {
-      if (clean.includes('xtFcQHhM')) {
-        clean = 'https://i.ibb.co/hJYnvfsK/Whats-App-Image-2026-11-09-at-19-06-47.jpg';
-      } else if (clean.includes('v6p5rwwb')) {
-        clean = 'https://i.ibb.co/67zhpnn2/image.png';
+    setMainImage(clean);
+
+    if (!clean) {
+      setImageUploadStatus(null);
+      return;
+    }
+
+    // Direct image formats, Supabase, or i.ibb.co link
+    if (
+      clean.includes('i.ibb.co/') ||
+      clean.includes('supabase.co/storage/') ||
+      /\.(jpg|jpeg|png|webp|gif|svg|avif)(\?.*)?$/i.test(clean)
+    ) {
+      setImageUploadStatus('सत्यापित डायरेक्ट इमेज URL सक्रिय है');
+      return;
+    }
+
+    // Known ImgBB shortcuts
+    if (clean.includes('ibb.co/xtFcQHhM')) {
+      const direct = 'https://i.ibb.co/hJYnvfsK/Whats-App-Image-2026-11-09-at-19-06-47.jpg';
+      setMainImage(direct);
+      setImageUploadStatus('डायरेक्ट ImgBB लिंक स्वतः लिंक किया गया');
+      return;
+    }
+    if (clean.includes('ibb.co/v6p5rwwb')) {
+      const direct = 'https://i.ibb.co/67zhpnn2/image.png';
+      setMainImage(direct);
+      setImageUploadStatus('डायरेक्ट ImgBB लिंक स्वतः लिंक किया गया');
+      return;
+    }
+
+    // Automatically resolve any other ibb.co page link or webpage to direct image URL
+    if (clean.includes('ibb.co/') || clean.startsWith('http')) {
+      setImageUploadStatus('इमेज लिंक का सत्यापन हो रहा है...');
+      try {
+        const res = await fetch(`/api/resolve-image-url?url=${encodeURIComponent(clean)}`);
+        const data = await res.json();
+        if (data?.success && data?.directUrl) {
+          setMainImage(data.directUrl);
+          setImageUploadStatus('डायरेक्ट इमेज लिंक स्वतः लोड किया गया');
+        }
+      } catch {
+        // preserve clean
       }
     }
-    setMainImage(clean);
   };
 
   // Auto-generate slug from headline
@@ -512,15 +567,20 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                    वीडियो URL (वैकल्पिक)
+                    वीडियो URL (वैकल्पिक - YouTube, Supabase या MP4)
                   </label>
                   <input
                     type="url"
                     value={videoUrl}
                     onChange={e => setVideoUrl(e.target.value)}
-                    placeholder="https://youtube.com/..."
+                    placeholder="https://youtube.com/... या Supabase MP4 URL"
                     className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 font-mono"
                   />
+                  {videoUrl && (
+                    <div className="mt-2 rounded-lg overflow-hidden border border-stone-700">
+                      <UniversalVideoPlayer url={videoUrl} title="वीडियो पूर्वावलोकन" />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -537,6 +597,8 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
                       src={mainImage}
                       alt={imageAlt || "पूर्वावलोकन"}
                       className="w-full h-full max-h-48 object-cover"
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80';
                       }}

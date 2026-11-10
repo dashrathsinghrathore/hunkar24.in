@@ -116,6 +116,20 @@ CREATE POLICY "Admin Manage Breaking" ON public.breaking_news FOR ALL USING (tru
 -- 5. ENABLE SUPABASE REALTIME REPLICATION (Instant Updates across all devices without refresh)
 ALTER PUBLICATION supabase_realtime ADD TABLE public.articles;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.breaking_news;
+
+-- 6. STORAGE BUCKET FOR ARTICLE IMAGES (Public read/write for all uploaded photos)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('article-images', 'article-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Public Read Article Images" ON storage.objects;
+CREATE POLICY "Public Read Article Images" ON storage.objects FOR SELECT USING (bucket_id = 'article-images');
+
+DROP POLICY IF EXISTS "Public Upload Article Images" ON storage.objects;
+CREATE POLICY "Public Upload Article Images" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'article-images');
+
+DROP POLICY IF EXISTS "Public Update Article Images" ON storage.objects;
+CREATE POLICY "Public Update Article Images" ON storage.objects FOR UPDATE USING (bucket_id = 'article-images');
 `;
     navigator.clipboard.writeText(fullSql);
     setCopiedSchema(true);

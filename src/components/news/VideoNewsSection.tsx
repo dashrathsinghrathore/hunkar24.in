@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Play, Video, X } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { VideoNewsItem } from '../../types';
+import { UniversalVideoPlayer } from '../common/UniversalVideoPlayer';
 
 export const VideoNewsSection: React.FC = () => {
   const { videos } = useNews();
@@ -85,12 +86,10 @@ export const VideoNewsSection: React.FC = () => {
             </div>
 
             <div className="aspect-16/9 w-full bg-black">
-              <iframe
-                src={`${selectedVideo.videoUrl}?autoplay=1`}
+              <UniversalVideoPlayer
+                url={selectedVideo.videoUrl}
                 title={selectedVideo.title}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
+                autoPlay={true}
               />
             </div>
           </div>

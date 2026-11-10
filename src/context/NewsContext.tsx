@@ -188,23 +188,17 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     for (const a of storedList) {
       const existing = map.get(a.id);
       if (existing) {
-        // If initial article defines an authentic local image, preserve it over stale unsplash urls from old localStorage
-        const prefersInitialImage = existing.mainImage && (existing.mainImage.startsWith('/assets/') || existing.mainImage.startsWith('data:image/'));
         map.set(a.id, {
           ...existing,
           ...a,
-          mainImage: prefersInitialImage ? existing.mainImage : (a.mainImage || existing.mainImage),
-          imageCaption: prefersInitialImage ? existing.imageCaption : (a.imageCaption || existing.imageCaption),
-          imageAlt: existing.imageAlt || a.imageAlt,
-          imageType: existing.imageType || a.imageType,
-          imageSource: existing.imageSource || a.imageSource,
-          imageGenerationStatus: existing.imageGenerationStatus || a.imageGenerationStatus
+          mainImage: a.mainImage || existing.mainImage,
+          videoUrl: a.videoUrl !== undefined ? a.videoUrl : existing.videoUrl
         });
       } else {
         map.set(a.id, a);
       }
     }
-    // Make sure latest curated articles are explicitly synchronized
+    // Make sure initial baseline articles exist if not present in storage
     const guaranteedIds = [
       'art-aadhaar-voter-id-scheme-2026',
       'art-rajasthan-panchayat-polls-chaturth-2026',
@@ -216,7 +210,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ];
     for (const id of guaranteedIds) {
       const art = INITIAL_ARTICLES.find(a => a.id === id);
-      if (art) {
+      if (art && !map.has(art.id)) {
         map.set(art.id, art);
       }
     }
@@ -756,14 +750,15 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const serverArts = res.data.articles as Article[];
           setArticles(prev => {
             const map = new Map<string, Article>();
-            // Server articles take precedence
             for (const a of serverArts) {
               map.set(a.id, a);
             }
-            // Existing local articles
             for (const a of prev) {
-              if (!map.has(a.id)) {
+              const existing = map.get(a.id);
+              if (!existing) {
                 map.set(a.id, a);
+              } else if (a.updatedAt && existing.updatedAt && new Date(a.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+                map.set(a.id, { ...existing, ...a });
               }
             }
             const merged = Array.from(map.values());
@@ -777,8 +772,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Immediate sync on component mount
     syncServerArticles();
-    // Poll every 12 seconds so admin submissions are live across different phones and laptops
-    const serverSyncInterval = setInterval(syncServerArticles, 12000);
+    // Poll every 6 seconds so admin submissions are live across different phones and laptops
+    const serverSyncInterval = setInterval(syncServerArticles, 6000);
 
     return () => {
       isMounted = false;
