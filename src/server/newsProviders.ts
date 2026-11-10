@@ -339,19 +339,12 @@ export async function fetchFromGoogleNewsRss(): Promise<RawNewsArticle[]> {
           let rawDesc = String(item.description || '').replace(/<[^>]*>/g, '').replace(/^[|\s]+|[|\s]+$/g, '').trim();
           // Filter out snippets that are just the publisher name or a pipe
           if (!rawDesc || rawDesc === '|' || rawDesc.length < 20 || rawDesc === cleanTitle) {
-            rawDesc = `${cleanTitle} को लेकर महत्वपूर्ण अपडेट सामने आया है। हुंकार 24 न्यूज़ डेस्क द्वारा प्राप्त आधिकारिक सूचना के अनुसार संबंधित विभाग और प्रशासन द्वारा इस मामले में आवश्यक दिशा-निर्देश जारी किए गए हैं।`;
+            rawDesc = cleanTitle;
           }
 
-          const fullBody = `${cleanTitle}
-
-${rawDesc}
-
-**मुख्य बिंदु एवं विस्तृत पृष्ठभूमि:**
-- राज्य एवं स्थानीय प्रशासन द्वारा घटनाक्रम की निरंतर निगरानी की जा रही है।
-- आम जनता एवं पाठकों के हित में हुंकार 24 इस समाचार के हर पहलू पर पैनी नज़र बनाए हुए है।
-- संबंधित अधिकारियों से वार्ता के आधार पर अग्रिम जानकारी यथासमय उपलब्ध कराई जाएगी।
-
-[प्राथमिक स्रोत संदर्भ: ${sourceName} | हुंकार 24 डिजिटल न्यूज़ नेटवर्क]`;
+          const fullBody = rawDesc.length > cleanTitle.length
+            ? `${cleanTitle}\n\n${rawDesc}`
+            : cleanTitle;
 
           results.push({
             sourceId: 'google_news_rss',

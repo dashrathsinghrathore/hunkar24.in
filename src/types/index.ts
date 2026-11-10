@@ -13,8 +13,12 @@ export interface Article {
   tehsil?: string;
   village?: string;
   mainImage: string;
+  featuredImage?: string;
   imageCaption?: string;
   imageSource?: string;
+  imageAlt?: string;
+  imageType?: 'photo' | 'ai_illustration' | 'document' | 'graphic';
+  imageGenerationStatus?: 'completed' | 'generating' | 'pending' | 'failed' | 'manual';
   reporterId?: string;
   reporterName: string;
   reporterRole?: string;

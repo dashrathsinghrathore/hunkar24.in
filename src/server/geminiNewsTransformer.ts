@@ -50,22 +50,41 @@ export async function transformRawNewsWithGemini(
   // Try Gemini AI generation
   if (aiInstance) {
     try {
-      const prompt = `You are the Chief Editor and Senior Journalist for 'Hunkar 24' (हुंकार 24), Rajasthan's leading digital news network.
-Transform the following raw news story into a professional, grammatically pure, engaging, and authoritative Hindi news report.
+      const prompt = `You are a Senior Editor and Fact-Checking Journalist for 'HUNKAR 24' (हुंकार 24), Rajasthan's leading digital news network.
+Transform the following raw news story into an authentic, natural, professional Hindi news report.
 
-STRICT INSTRUCTIONS:
-1. headline: Craft a compelling, punchy, and original Hindi headline (max 15-20 words).
-2. summary: Write a crisp 2-sentence summary in pure Hindi.
-3. content: Write a comprehensive, detailed Hindi news article (300 to 500 words) divided into clear sections with Markdown headings:
-   - ### मुख्य समाचार एवं ताज़ा अपडेट
-   - ### विस्तृत घटनाक्रम व पृष्ठभूमि
-   - ### किसान, छात्र और आम जनता के लिए मुख्य बिंदु (use bullet points)
-   - ### आधिकारिक बयान एवं आगामी कार्रवाई
-   - Add a closing attribution: "**हुंकार 24 ग्राउंड रिपोर्ट डेस्क**\\n*निष्पक्ष, निर्भीक और जनसरोकार की आवाज़*"
-4. category: Choose exactly one: 'agriculture' | 'jobs' | 'schemes' | 'rajasthan' | 'national' | 'education' | 'sports' | 'weather'
-5. district: If related to a specific Rajasthan district, select: 'jaipur' | 'sikar' | 'churu' | 'bikaner' | 'jodhpur' | 'kota' | 'udaipur' | 'barmer' | 'nagaur' | 'ajmer' | null
-6. isBreaking: true if urgent (agriculture, jobs, major court/government announcement, disaster), else false.
-7. tags: Array of 3-5 relevant Hindi tags.
+NON-NEGOTIABLE JOURNALISTIC RULES:
+1. STRICT NEWS-RELATED CONTENT ONLY: Every word must directly relate to this specific news event.
+2. COMPLETELY PROHIBITED FILLER — NEVER USE THESE PHRASES:
+   - "संबंधित विभागों में व्यापक हलचल देखी जा रही है"
+   - "प्रशासन स्थिति पर पैनी नज़र रख रहा है"
+   - "आने वाले समय में सकारात्मक परिणाम सामने आएंगे"
+   - "आम जनता को किसी भी प्रकार की भ्रामक सूचनाओं से बचने का आग्रह किया गया है"
+   - "हुंकार 24 की टीम लगातार नज़र बनाए रखेगी"
+   - "यह घटनाक्रम बेहद महत्वपूर्ण माना जा रहा है"
+   - "इस मामले में आगे क्या होगा, यह देखना महत्वपूर्ण होगा"
+3. DO NOT INVENT FACTS: Never invent quotes, reactions, statistics, expert opinions, official statements, or future consequences.
+4. NATURAL ARTICLE LENGTH: Length depends ONLY on available facts. If the source provides only 2-3 facts, write a concise 2-paragraph report. Do not force 5 paragraphs or inject filler.
+5. SUBJECT ACCURACY:
+   - Panchayat election: Focus on voting dates, phases, candidates, polling arrangements.
+   - Education: Focus on exams, dates, syllabus, official notices.
+   - Agriculture: Focus on mandi prices, crop arrivals, quality, market conditions.
+   - Politics: Focus on statements, allegations with source attribution, election developments.
+   - Schemes: Focus on eligibility, benefits, application procedures, official orders.
+   - Crime: Focus strictly on confirmed police details.
+   - Viral news: Clearly distinguish verified facts from social media claims.
+
+Format JSON Response:
+{
+  "headline": "Punchy, factual Hindi headline (12-18 words)",
+  "summary": "Crisp 2-sentence summary of the actual facts",
+  "content": "Professional Hindi news report (pure facts, Markdown headings only if logical)",
+  "category": "agriculture" | "jobs" | "schemes" | "rajasthan" | "national" | "education" | "sports" | "politics" | "crime" | "weather",
+  "district": "jaipur" | "sikar" | "churu" | "bikaner" | "jodhpur" | "kota" | "udaipur" | "barmer" | "nagaur" | "ajmer" | null,
+  "isBreaking": boolean,
+  "tags": ["tag1", "tag2", "tag3"],
+  "imageDescription": "Detailed visual description of a realistic photo or symbolic illustration that directly represents this specific news subject"
+}
 
 Raw News Item:
 Title: ${cleanTitle}
@@ -107,7 +126,7 @@ Respond ONLY with valid JSON.`;
 }
 
 /**
- * Resilient deterministic journalistic copy generator
+ * Resilient deterministic journalistic copy generator — strictly fact-based, zero filler
  */
 function fallbackJournalisticCopy(cleanTitle: string, cleanDesc: string, sourceName: string): TransformedHindiArticle {
   const lower = `${cleanTitle} ${cleanDesc}`.toLowerCase();
@@ -125,41 +144,25 @@ function fallbackJournalisticCopy(cleanTitle: string, cleanDesc: string, sourceN
   else if (lower.includes('अजमेर') || lower.includes('ajmer')) district = 'ajmer';
 
   let category = 'rajasthan';
-  if (lower.includes('किसान') || lower.includes('कृषि') || lower.includes('मंडी') || lower.includes('सरसों') || lower.includes('फसल') || lower.includes('ग्वार') || lower.includes('चना')) {
+  if (lower.includes('किसान') || lower.includes('कृषि') || lower.includes('मंडी') || lower.includes('सरसों') || lower.includes('फसल') || lower.includes('ग्वार') || lower.includes('चना') || lower.includes('मूंगफली')) {
     category = 'agriculture';
   } else if (lower.includes('भर्ती') || lower.includes('नौकरी') || lower.includes('rpsc') || lower.includes('reet') || lower.includes('कांस्टेबल') || lower.includes('पद')) {
     category = 'jobs';
-  } else if (lower.includes('योजना') || lower.includes('सब्सिडी') || lower.includes('अनुदान') || lower.includes('पेंशन') || lower.includes('पीएम किसान') || lower.includes('कुसुम')) {
+  } else if (lower.includes('योजना') || lower.includes('सब्सिडी') || lower.includes('अनुदान') || lower.includes('पेंशन') || lower.includes('पीएम किसान') || lower.includes('कुसुम') || lower.includes('आधार')) {
     category = 'schemes';
   } else if (lower.includes('शिक्षा') || lower.includes('स्कूल') || lower.includes('कॉलेज') || lower.includes('परीक्षा') || lower.includes('बोर्ड')) {
     category = 'education';
+  } else if (lower.includes('चुनाव') || lower.includes('सरपंच') || lower.includes('पार्टी') || lower.includes('कांग्रेस') || lower.includes('भाजपा') || lower.includes('बेनीवाल')) {
+    category = 'politics';
   } else if (lower.includes('भारत') || lower.includes('प्रधानमंत्री') || lower.includes('सुप्रीम कोर्ट') || lower.includes('संसद') || lower.includes('रेलवे')) {
     category = 'national';
   }
 
   const isBreaking = category === 'agriculture' || category === 'jobs';
-  const summary = cleanDesc.length > 30 ? cleanDesc : `${cleanTitle} के संबंध में संपूर्ण जानकारी और आधिकारिक विवरण सामने आया है।`;
+  const summary = cleanDesc.length > 20 ? cleanDesc : `${cleanTitle}। इस विषय पर प्राप्त प्राथमिक सूचनाएं।`;
 
-  const content = `### मुख्य समाचार एवं ताज़ा अपडेट
-${cleanTitle}
-
-${summary}
-
-### विस्तृत घटनाक्रम व पृष्ठभूमि
-राज्य और राष्ट्रीय स्तर पर घटित इस महत्वपूर्ण घटनाक्रम के बाद संबंधित विभागों में व्यापक हलचल देखी जा रही है। हुंकार 24 द्वारा जुटाई गई प्रामाणिक जानकारी के अनुसार, प्रशासनिक मशीनरी और नीति-निर्माताओं द्वारा स्थिति पर निरंतर पैनी नज़र रखी जा रही है। जमीनी स्तर पर इसके दूरगामी परिणाम देखने को मिल सकते हैं।
-
-### किसान, छात्र और आम जनता के लिए मुख्य बिंदु
-- **सीधा सरोकार:** इस निर्णय/घटनाक्रम का सीधा प्रभाव स्थानीय नागरिकों, किसानों और परीक्षार्थियों की दैनिक गतिविधियों पर पड़ेगा।
-- **विभागीय निगरानी:** जमीनी स्तर पर नीतियों के निष्पक्ष क्रियान्वयन हेतु जिला प्रशासन एवं निगरानी दलों को सक्रिय किया गया है।
-- **पारदर्शिता व राहत:** आमजन को किसी भी प्रकार की भ्रामक सूचनाओं से बचने और आधिकारिक माध्यमों से ही पुष्टि करने का आग्रह किया गया है।
-
-### आधिकारिक बयान एवं आगामी कार्रवाई
-संबंधित प्रशासनिक अधिकारियों और विषय विशेषज्ञों का मानना है कि आने वाले समय में इसके सकारात्मक परिणाम सामने आएंगे। हुंकार 24 की रिपोर्टिंग टीम जनहित के हर मुद्दे को प्राथमिकता से उठाते हुए इस प्रकरण पर लगातार नज़र बनाए रखेगी।
-
----
-**हुंकार 24 ग्राउंड रिपोर्ट डेस्क**  
-*निष्पक्ष, निर्भीक और जनसरोकार की सशक्त आवाज़*  
-[समाचार स्रोत: ${sourceName}]`;
+  // Clean, factual content without forced fake paragraphs
+  const content = `${cleanTitle}\n\n${summary}`;
 
   return {
     headline: cleanTitle,

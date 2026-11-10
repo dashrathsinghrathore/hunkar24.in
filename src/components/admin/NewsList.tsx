@@ -125,11 +125,21 @@ export const NewsList: React.FC<NewsListProps> = ({ onEditArticle, onCreateNew }
               >
                 <td className="p-3 max-w-sm">
                   <div className="flex items-center gap-2">
-                    <img
-                      src={art.mainImage}
-                      alt=""
-                      className="w-10 h-10 rounded object-cover shrink-0"
-                    />
+                    <div className="relative shrink-0">
+                      <img
+                        src={art.mainImage}
+                        alt={art.imageAlt || art.headline}
+                        className="w-10 h-10 rounded object-cover"
+                      />
+                      {art.imageType === 'ai_illustration' && (
+                        <span
+                          className="absolute -bottom-1 -right-1 bg-indigo-600 text-[8px] text-white px-1 rounded font-bold shadow-xs"
+                          title="प्रतीकात्मक AI इलस्ट्रेशन"
+                        >
+                          AI
+                        </span>
+                      )}
+                    </div>
                     <div className="truncate">
                       <h4 className="font-bold text-stone-900 dark:text-stone-100 truncate">
                         {art.headline}

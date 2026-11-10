@@ -143,9 +143,12 @@ export const INITIAL_ARTICLES: Article[] = [
 *निष्पक्ष, निर्भीक और जनसरोकार की सशक्त आवाज़*`,
     category: 'schemes',
     district: 'jaipur',
-    mainImage: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80',
-    imageCaption: 'सरकारी योजनाओं में आधार व वोटर आईडी प्रमाणीकरण पर मंत्रालय का स्पष्टीकरण',
-    imageSource: 'हुंकार 24 विशेष डेस्क',
+    mainImage: '/assets/images/aadhaar_voter_id_news_1794310123938.jpg',
+    imageCaption: 'सरकारी योजनाओं में आधार व वोटर आईडी सत्यापन पर मंत्रालय का स्पष्टीकरण (प्रतीकात्मक AI इलस्ट्रेशन)',
+    imageAlt: 'आधार कार्ड और वोटर आईडी सत्यापन इलस्ट्रेशन',
+    imageSource: 'हुंकार 24 AI इलस्ट्रेशन डेस्क',
+    imageType: 'ai_illustration',
+    imageGenerationStatus: 'completed',
     reporterId: 'rep-bureau',
     reporterName: 'हुंकार ब्यूरो',
     reporterRole: 'संपादक (राष्ट्रीय डेस्क)',
@@ -159,7 +162,7 @@ export const INITIAL_ARTICLES: Article[] = [
     isBreaking: true,
     isHero: false,
     isExclusive: false,
-    tags: ['सरकारी योजनाएं', 'आधार कार्ड', 'वoter ID', 'पंचायती राज', 'हुंकार 24']
+    tags: ['सरकारी योजनाएं', 'आधार कार्ड', 'वोटर ID', 'पंचायती राज', 'हुंकार 24']
   },
   // --------------------------------------------------------------------------
   // DRAFT ARTICLE 2 (Phase 12: Rajasthan Panchayat Elections - Incomplete Draft)
@@ -190,9 +193,12 @@ export const INITIAL_ARTICLES: Article[] = [
 *निष्पक्ष, निर्भीक और जनसरोकार की सशक्त आवाज़*`,
     category: 'rajasthan',
     district: 'jaipur',
-    mainImage: 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&w=1200&q=80',
-    imageCaption: 'राजस्थान पंचायत चुनाव 2026: मतदान केंद्रों पर तैयारियां तेज',
-    imageSource: 'हुंकार 24 इलेक्शन डेस्क',
+    mainImage: '/assets/images/panchayat_election_rajasthan_1794310144701.jpg',
+    imageCaption: 'राजस्थान पंचायत चुनाव: ग्रामीण मतदान केंद्र पर तैयारियों का दृश्य (प्रतीकात्मक AI इलस्ट्रेशन)',
+    imageAlt: 'राजस्थान पंचायत चुनाव ग्रामीण मतदान केंद्र दृश्य',
+    imageSource: 'हुंकार 24 AI इलस्ट्रेशन डेस्क',
+    imageType: 'ai_illustration',
+    imageGenerationStatus: 'completed',
     reporterId: 'rep-dashrath',
     reporterName: 'दशरथ सिंह',
     reporterRole: 'संपादक (पंचायत चुनाव)',
@@ -239,9 +245,12 @@ export const INITIAL_ARTICLES: Article[] = [
 *निष्पक्ष, निर्भीक और जनसरोकार की सशक्त आवाज़*`,
     category: 'politics',
     district: 'sikar',
-    mainImage: 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&w=1200&q=80',
-    imageCaption: 'सीकर जिला परिषद चुनाव: नामांकन रद्द होने के बाद राजनीतिक हलचल',
-    imageSource: 'हुंकार 24 सीकर डेस्क',
+    mainImage: '/assets/images/sikar_political_meeting_1794310160327.jpg',
+    imageCaption: 'सीकर जिला परिषद चुनाव: नामांकन रद्द होने के बाद राजनीतिक हलचल (प्रतीकात्मक AI इलस्ट्रेशन)',
+    imageAlt: 'सीकर जिला परिषद राजनीतिक बैठक व चुनावी विमर्श',
+    imageSource: 'हुंकार 24 AI इलस्ट्रेशन डेस्क',
+    imageType: 'ai_illustration',
+    imageGenerationStatus: 'completed',
     reporterId: 'rep-dashrath',
     reporterName: 'दशरथ सिंह',
     reporterRole: 'संपादक (शेखावाटी ब्यूरो)',
@@ -256,6 +265,58 @@ export const INITIAL_ARTICLES: Article[] = [
     isHero: false,
     isExclusive: false,
     tags: ['सीकर राजनीति', 'जिला परिषद', 'हनुमान बेनीवाल', 'RLP', 'हुंकार 24']
+  },
+  // --------------------------------------------------------------------------
+  // DRAFT ARTICLE 4 (Phase 12: Nagaur Lakshmi Puja Viral Video - Fact Check)
+  // --------------------------------------------------------------------------
+  {
+    id: 'art-nagaur-lakshmi-puja-viral-video-2026',
+    headline: 'नागौर में लक्ष्मी पूजन पर नोटों के बंडल सजाने का वीडियो वायरल, सोशल मीडिया दावों पर पुलिस व प्रशासन ने शुरू की जांच',
+    slug: 'nagaur-lakshmi-puja-viral-currency-video-police-fact-check',
+    summary: 'नागौर। दीपावली पर लक्ष्मी पूजन के दौरान बड़ी संख्या में नोटों के बंडल सजाने का वीडियो सोशल मीडिया पर वायरल होने के बाद पुलिस व प्रशासन ने संज्ञान लिया है। वीडियो की सत्यता, स्थान और राशि को लेकर जांच जारी है।',
+    content: `नागौर। दीपावली पर्व के अवसर पर लक्ष्मी पूजन के दौरान बड़ी मात्रा में भारतीय मुद्रा (करेंसी नोटों के बंडल) सजाए जाने का एक वीडियो सोशल मीडिया के विभिन्न मंचों पर तेजी से प्रसारित हो रहा है। वीडियो को लेकर दावा किया जा रहा है कि यह दृश्य नागौर जिले के किसी स्थानीय व्यापारी अथवा परिवार के पूजन का है।
+
+### सोशल मीडिया पर वायरल दावा और वीडियो फुटेज
+वायरल हो रहे वीडियो में पूजा स्थल पर देवी लक्ष्मी की प्रतिमा के समक्ष 500-500 रुपये के नोटों के अनगिनत बंडल दीवार और फर्श पर सजाए दिखाई दे रहे हैं। वीडियो के साथ लाखों-करोड़ों रुपये की नकदी होने के दावे किए जा रहे हैं।
+
+### पुलिस एवं प्रशासनिक पड़ताल
+हुंकार 24 द्वारा की गई प्रारंभिक पड़ताल के अनुसार, जिला पुलिस एवं स्थानीय प्रशासन ने सोशल मीडिया पर वायरल इस वीडियो का संज्ञान लिया है। पुलिस अधिकारियों का कहना है कि:
+- वीडियो की रिकॉर्डिंग की सही तिथि और सटीक लोकेशन की तकनीकी जांच की जा रही है।
+- क्या यह वीडियो नागौर क्षेत्र का ही है अथवा किसी अन्य राज्य या जिले का पुराना वीडियो नागौर के नाम से भ्रामक रूप से शेयर किया जा रहा है, इसकी पुष्टि की जा रही है।
+- आयकर विभाग और संबंधित वित्तीय एजेंसियों को भी नियमानुसार सूचना प्रेषित करने पर विचार किया जा रहा है।
+
+### संपादकीय तथ्य-सत्यापन एवं चेतावनी
+**हुंकार 24 फैक्ट-चेक दिशानिर्देश:** सोशल मीडिया पर वायरल किसी भी वीडियो या दावे को बिना आधिकारिक पुष्टि के सत्य नहीं माना जा सकता। हुंकार 24 पाठकों से अपील करता है कि किसी भी असत्यापित वीडियो को आगे प्रसारित न करें।
+
+---
+⚠️ **संपादकीय टिप्पणी (Editorial Draft Note):** यह रिपोर्ट सोशल मीडिया पर वायरल घटनाक्रम और पुलिस द्वारा शुरू की गई प्राथमिक जांच पर आधारित ड्राफ्ट है। पुलिस अधीक्षक या अधिकृत जांच अधिकारी की औपचारिक पुष्टि मिलने के उपरांत ही इस खबर को अंतिम रूप दिया जाएगा।
+
+---
+**हुंकार 24 नागौर डेस्क**  
+*निष्पक्ष, निर्भीक और जनसरोकार की सशक्त आवाज़*`,
+    category: 'crime',
+    district: 'nagaur',
+    tehsil: 'नागौर',
+    mainImage: '/assets/images/nagaur_lakshmi_puja_currency_1794310177707.jpg',
+    imageCaption: 'लक्ष्मी पूजन एवं मुद्रा सजावट का प्रतीकात्मक इलस्ट्रेशन (यह वास्तविक वीडियो फुटेज नहीं है)',
+    imageAlt: 'दिवाली लक्ष्मी पूजन एवं मुद्रा सजावट प्रतीकात्मक इलस्ट्रेशन',
+    imageSource: 'हुंकार 24 AI इलस्ट्रेशन डेस्क (प्रतीकात्मक)',
+    imageType: 'ai_illustration',
+    imageGenerationStatus: 'completed',
+    reporterId: 'rep-dashrath',
+    reporterName: 'दशरथ सिंह',
+    reporterRole: 'संपादक (विशेष अपराध व वायरल सेल)',
+    reporterPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+    status: 'draft',
+    publishedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    views: 0,
+    likesCount: 0,
+    readingTimeMinutes: 2,
+    isBreaking: false,
+    isHero: false,
+    isExclusive: true,
+    tags: ['नागौर', 'लक्ष्मी पूजन', 'वायरल वीडियो', 'फैक्ट चेक', 'हुंकार 24']
   },
   {
     id: 'art-board-exam-course-incomplete-2027',
@@ -1114,9 +1175,12 @@ export const INITIAL_ARTICLES: Article[] = [
     category: 'agriculture',
     district: 'bikaner',
     tehsil: 'नोखा',
-    mainImage: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1200&q=80',
-    imageCaption: 'नोखा कृषि उपज मंडी में नई मूंगफली की नीलामी के दौरान किसानों और व्यापारियों की भीड़',
-    imageSource: 'हुंकार 24 कृषि डेस्क',
+    mainImage: '/assets/images/bikaner_mandi_groundnuts_1794310192901.jpg',
+    imageCaption: 'नोखा व बीकानेर कृषि उपज मंडी में नई मूंगफली आवक, तौल व नीलामी का दृश्य',
+    imageAlt: 'बीकानेर नोखा कृषि उपज मंडी में मूंगफली आवक और तौल कांटे का दृश्य',
+    imageSource: 'हुंकार 24 कृषि फोटो डेस्क',
+    imageType: 'photo',
+    imageGenerationStatus: 'completed',
     reporterId: 'rep-bureau',
     reporterName: 'हुंकार कृषि प्रतिनिधि',
     reporterRole: 'मंडी विश्लेषक',

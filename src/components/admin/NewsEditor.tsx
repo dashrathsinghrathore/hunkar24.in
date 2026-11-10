@@ -13,11 +13,13 @@ import {
   AlertCircle,
   HelpCircle,
   X,
-  Loader2
+  Loader2,
+  Wand2
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { RAJASTHAN_DISTRICTS } from '../../config/siteConfig';
 import { Article } from '../../types';
+import { getTopicAccurateImage } from '../../utils/newsImageMatcher';
 
 export const ALLOWED_EDITORS = [
   { id: 'rep-bureau', name: 'हुंकार ब्यूरो', role: 'संपादक' },
@@ -44,6 +46,9 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
   const [mainImage, setMainImage] = useState(initialArticle?.mainImage || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80');
   const [imageCaption, setImageCaption] = useState(initialArticle?.imageCaption || '');
   const [imageSource, setImageSource] = useState(initialArticle?.imageSource || 'हुंकार ब्यूरो');
+  const [imageAlt, setImageAlt] = useState(initialArticle?.imageAlt || '');
+  const [imageType, setImageType] = useState<'photo' | 'ai_illustration'>((initialArticle?.imageType as any) || 'photo');
+  const [imageGenerationStatus, setImageGenerationStatus] = useState<Article['imageGenerationStatus']>(initialArticle?.imageGenerationStatus || 'completed');
   const [videoUrl, setVideoUrl] = useState(initialArticle?.videoUrl || '');
   const [reporterId, setReporterId] = useState(initialArticle?.reporterId || 'rep-bureau');
   const [isBreaking, setIsBreaking] = useState(initialArticle?.isBreaking || false);
@@ -55,6 +60,16 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageUploadStatus, setImageUploadStatus] = useState<string | null>(null);
+
+  const handleAutoMatchImage = () => {
+    const matched = getTopicAccurateImage(headline, summary, category);
+    setMainImage(matched.imageUrl);
+    if (matched.caption) setImageCaption(matched.caption);
+    if (matched.imageAlt) setImageAlt(matched.imageAlt);
+    if (matched.imageType) setImageType(matched.imageType === 'ai_illustration' ? 'ai_illustration' : 'photo');
+    setImageGenerationStatus('completed');
+    setImageUploadStatus('विषय अनुसार प्रासंगिक चित्र स्वतः लिंक किया गया');
+  };
 
   // Direct device upload handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,6 +172,9 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
         mainImage,
         imageCaption,
         imageSource,
+        imageAlt: imageAlt.trim() || undefined,
+        imageType,
+        imageGenerationStatus,
         videoUrl: videoUrl.trim() || undefined,
         reporterId: assignedEditor.id,
         reporterName: assignedEditor.name,
@@ -183,6 +201,9 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
         mainImage,
         imageCaption,
         imageSource,
+        imageAlt: imageAlt.trim() || undefined,
+        imageType,
+        imageGenerationStatus,
         videoUrl: videoUrl.trim() || undefined,
         reporterId: assignedEditor.id,
         reporterName: assignedEditor.name,
@@ -422,9 +443,20 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                  विकल्प 2: या वेब इमेज / ibb.co लिंक दर्ज करें (Image URL)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                    विकल्प 2: या वेब इमेज / ibb.co लिंक दर्ज करें (Image URL)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAutoMatchImage}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-[11px] font-bold transition-colors"
+                    title="शीर्षक व श्रेणी के आधार पर सत्यापित प्रासंगिक चित्र चुनें"
+                  >
+                    <Wand2 className="w-3 h-3 text-amber-600" />
+                    <span>प्रासंगिक चित्र स्वतः लिंक करें</span>
+                  </button>
+                </div>
                 <div className="relative">
                   <input
                     type="url"
@@ -434,6 +466,34 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
                     className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 font-mono"
                   />
                   <Link className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    तस्वीर का प्रकार (Image Type)
+                  </label>
+                  <select
+                    value={imageType}
+                    onChange={e => setImageType(e.target.value as any)}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 font-medium"
+                  >
+                    <option value="photo">📷 वास्तविक फ़ोटो (Field / Mandi / Event Photo)</option>
+                    <option value="ai_illustration">🎨 प्रतीकात्मक AI इलस्ट्रेशन (Symbolic Illustration)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    तस्वीर विवरण / Alt Text (SEO व विषय सटीकता हेतु)
+                  </label>
+                  <input
+                    type="text"
+                    value={imageAlt}
+                    onChange={e => setImageAlt(e.target.value)}
+                    placeholder="उदा. बीकानेर मंडी मूंगफली आवक व तौल"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800"
+                  />
                 </div>
               </div>
 
@@ -475,12 +535,23 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
                   <>
                     <img
                       src={mainImage}
-                      alt="पूर्वावलोकन"
+                      alt={imageAlt || "पूर्वावलोकन"}
                       className="w-full h-full max-h-48 object-cover"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80';
                       }}
                     />
+                    <div className="absolute top-2 left-2">
+                      {imageType === 'ai_illustration' ? (
+                        <span className="bg-indigo-900/90 border border-indigo-500/40 text-indigo-100 text-[10px] px-2 py-0.5 rounded-md font-bold shadow-xs">
+                          🎨 प्रतीकात्मक AI इलस्ट्रेशन
+                        </span>
+                      ) : (
+                        <span className="bg-emerald-900/90 border border-emerald-500/40 text-emerald-100 text-[10px] px-2 py-0.5 rounded-md font-bold shadow-xs">
+                          📷 वास्तविक फ़ील्ड फ़ोटो
+                        </span>
+                      )}
+                    </div>
                     <div className="absolute top-2 right-2 flex items-center gap-1">
                       <button
                         type="button"

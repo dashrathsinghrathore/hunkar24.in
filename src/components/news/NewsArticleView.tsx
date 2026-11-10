@@ -193,55 +193,13 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
           <p>{cleanDesc}</p>
         </div>
 
-        {/* Reporter Byline & Metadata Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 py-3 border-y border-stone-200 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400">
-          <div className="flex items-center gap-3">
-            {article.reporterPhoto ? (
-              <img
-                src={article.reporterPhoto}
-                alt={article.reporterName}
-                className="w-10 h-10 rounded-full object-cover border border-stone-300 dark:border-stone-700 shrink-0"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 flex items-center justify-center font-bold text-sm">
-                {(article.reporterName || 'हुंकार').slice(0, 1)}
-              </div>
-            )}
-            <div>
-              <div className="flex items-center gap-1 font-bold text-stone-900 dark:text-stone-100 text-sm">
-                <span>{article.reporterName || 'हुंकार 24 विशेष डेस्क'}</span>
-                <span title="सत्यापित संपादकीय स्रोत">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 inline" />
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-stone-500">
-                <span>{article.reporterRole || 'डिजिटल न्यूज़ नेटवर्क'}</span>
-                {article.district && (
-                  <>
-                    <span aria-hidden="true">·</span>
-                    <span className="capitalize">{article.district}</span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-stone-600 dark:text-stone-400">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>{formatDate(article.publishedAt)}</span>
-            </span>
-            <span aria-hidden="true">·</span>
-            {/* Dynamic Content Length Read-Time */}
-            <span className="flex items-center gap-1.5 font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded">
-              <Clock className="w-3.5 h-3.5" />
-              <span>{readTimeMinutes} मिनट पठन</span>
-            </span>
-          </div>
-        </div>
-
         {/* Action Ribbon: Audio Reader, Print, Share */}
-        <div className="flex items-center justify-between gap-3 py-2.5 my-2 border-b border-stone-200 dark:border-stone-800 text-xs no-print">
+        <div className="flex items-center justify-between gap-3 py-2.5 my-2 border-y border-stone-200 dark:border-stone-800 text-xs no-print">
+          <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
+            <span className="font-semibold text-stone-800 dark:text-stone-200">{article.reporterName || 'हुंकार डेस्क'}</span>
+            <span>·</span>
+            <span>{formatDate(article.publishedAt)}</span>
+          </div>
           {/* Audio Listen */}
           <button
             onClick={handleToggleAudio}
@@ -300,9 +258,10 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
       <figure className="mb-6 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-800">
         <SafeImage
           src={article.mainImage}
-          alt={cleanTitle}
+          alt={article.imageAlt || cleanTitle}
           category={article.category}
           district={article.district}
+          imageType={article.imageType}
           className="w-full max-h-[500px]"
         />
         <figcaption className="p-3 text-xs text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-900 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row justify-between gap-1">
@@ -353,81 +312,22 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
             </p>
           );
         })}
-      </article>
-
-      {/* Transparent Source Attribution & Fact-Check Metadata */}
-      <div className="my-6 p-4 rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 space-y-2 text-xs no-print">
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-200 dark:border-stone-800">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span className="font-bold text-stone-900 dark:text-stone-100">
-              समाचार स्रोत एवं संपादकीय विवरण (Source Attribution & Journalistic Verification)
-            </span>
-          </div>
-          <span className="bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2 py-0.5 rounded text-[10px] font-bold">
-            {article.verificationStatus === 'verified' ? 'सत्यापित स्रोत' : 'संपादकीय संपादन'}
-          </span>
-        </div>
-
-        <div className="text-stone-600 dark:text-stone-400 text-xs leading-relaxed space-y-1">
-          <p>
-            <strong>संवाददाता / प्राथमिक स्रोत:</strong> {article.sourceName || article.reporterName || 'हुंकार 24 ग्राउंड नेटवर्क (राजस्थान)'}
-          </p>
-          <p>
-            <strong>प्रकाशक:</strong> हुंकार 24 डिजिटल न्यूज़ नेटवर्क (Hunkar 24) · निष्पक्ष एवं जनसरोकार की आवाज़
-          </p>
-        </div>
 
         {article.sourceUrl && (
-          <div className="pt-2 flex flex-wrap items-center gap-2">
-            <span className="font-bold text-stone-700 dark:text-stone-300">मूल संदर्भ लिंक:</span>
+          <div className="pt-3 border-t border-stone-200 dark:border-stone-800 text-xs text-stone-500 flex items-center gap-1.5">
+            <span>मूल समाचार संदर्भ:</span>
             <a
               href={article.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-red-700 dark:text-red-400 font-semibold hover:underline bg-stone-100 dark:bg-stone-800 px-2.5 py-1 rounded"
+              className="text-red-700 dark:text-red-400 font-semibold hover:underline inline-flex items-center gap-1"
             >
-              <span>{article.sourceName || 'स्रोत दस्तावेज़ देखें'}</span>
+              <span>{article.sourceName || 'स्रोत दस्तावेज़'}</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         )}
-      </div>
-
-      {/* Engagement & Reaction Box */}
-      <div className="my-6 p-4 rounded-xl bg-stone-100 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 flex flex-wrap items-center justify-between gap-4 no-print">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleLike}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
-              liked
-                ? 'bg-red-700 text-white'
-                : 'bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-200 hover:bg-stone-200'
-            }`}
-          >
-            <ThumbsUp className="w-4 h-4" />
-            <span>सराहना करें ({((article.likesCount || 0) + (liked ? 1 : 0)).toLocaleString()})</span>
-          </button>
-
-          <button
-            onClick={() => setIsReportIssueOpen(true)}
-            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 underline cursor-pointer"
-          >
-            <Flag className="w-3.5 h-3.5 text-red-600" />
-            <span>सुधार या आपत्ति दर्ज करें</span>
-          </button>
-        </div>
-
-        {/* Tags */}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
-          <span className="font-bold">टैग्स:</span>
-          {(article.tags && article.tags.length > 0 ? article.tags : ['राजस्थान', 'हुंकार24', 'ताज़ा खबर']).map((tag, i) => (
-            <span key={i} className="hover:underline text-red-700 dark:text-red-400">
-              #{tag}
-            </span>
-          ))}
-        </div>
-      </div>
+      </article>
 
       {/* Bottom Article Banner */}
       <AdBanner placement="middle_feed" className="my-6 no-print" />

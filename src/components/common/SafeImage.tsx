@@ -7,6 +7,7 @@ interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   district?: string;
   className?: string;
   aspectRatio?: string;
+  imageType?: 'photo' | 'ai_illustration' | 'document' | 'graphic';
 }
 
 // Category and district-specific high-resolution verified visual fallbacks
@@ -38,6 +39,7 @@ export const SafeImage: React.FC<SafeImageProps> = ({
   district,
   className = '',
   loading = 'lazy',
+  imageType,
   ...rest
 }) => {
   const [hasError, setHasError] = useState(false);
@@ -46,6 +48,7 @@ export const SafeImage: React.FC<SafeImageProps> = ({
   // Compute topic-accurate image
   const topicVisual = getTopicAccurateImage(alt, category, district, src);
   const imageSrc = (!src || hasError) ? topicVisual.imageUrl : src;
+  const effectiveImageType = imageType || topicVisual.imageType;
 
   return (
     <div className={`relative overflow-hidden bg-stone-100 dark:bg-stone-800 ${className}`}>
@@ -56,7 +59,7 @@ export const SafeImage: React.FC<SafeImageProps> = ({
       )}
       <img
         src={imageSrc}
-        alt={alt || 'हुंकार 24 समाचार'}
+        alt={alt || topicVisual.imageAlt || 'हुंकार 24 समाचार'}
         loading={loading}
         onLoad={() => setIsLoaded(true)}
         onError={() => {
@@ -67,6 +70,13 @@ export const SafeImage: React.FC<SafeImageProps> = ({
         className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         {...rest}
       />
+      {effectiveImageType === 'ai_illustration' && (
+        <div className="absolute top-2 left-2 z-10 pointer-events-none">
+          <span className="bg-stone-900/80 backdrop-blur-xs text-amber-300 border border-amber-400/40 text-[10px] font-bold px-2 py-0.5 rounded shadow-xs">
+            🎨 प्रतीकात्मक AI इलस्ट्रेशन
+          </span>
+        </div>
+      )}
     </div>
   );
 };

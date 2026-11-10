@@ -187,16 +187,38 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     for (const a of storedList) {
       const existing = map.get(a.id);
-      map.set(a.id, existing ? { ...existing, ...a } : a);
+      if (existing) {
+        // If initial article defines an authentic local image, preserve it over stale unsplash urls from old localStorage
+        const prefersInitialImage = existing.mainImage && (existing.mainImage.startsWith('/assets/') || existing.mainImage.startsWith('data:image/'));
+        map.set(a.id, {
+          ...existing,
+          ...a,
+          mainImage: prefersInitialImage ? existing.mainImage : (a.mainImage || existing.mainImage),
+          imageCaption: prefersInitialImage ? existing.imageCaption : (a.imageCaption || existing.imageCaption),
+          imageAlt: existing.imageAlt || a.imageAlt,
+          imageType: existing.imageType || a.imageType,
+          imageSource: existing.imageSource || a.imageSource,
+          imageGenerationStatus: existing.imageGenerationStatus || a.imageGenerationStatus
+        });
+      } else {
+        map.set(a.id, a);
+      }
     }
-    // Make sure Board Exam & Katar Kabaddi articles are explicitly present and active
-    const boardExamArt = INITIAL_ARTICLES.find(a => a.id === 'art-board-exam-course-incomplete-2027');
-    if (boardExamArt) {
-      map.set(boardExamArt.id, boardExamArt);
-    }
-    const katarArt = INITIAL_ARTICLES.find(a => a.id === 'art-katar-kabaddi-2026');
-    if (katarArt) {
-      map.set(katarArt.id, katarArt);
+    // Make sure latest curated articles are explicitly synchronized
+    const guaranteedIds = [
+      'art-aadhaar-voter-id-scheme-2026',
+      'art-rajasthan-panchayat-polls-chaturth-2026',
+      'art-sikar-zila-parishad-politics-2026',
+      'art-nagaur-lakshmi-puja-viral-video-2026',
+      'art-22',
+      'art-board-exam-course-incomplete-2027',
+      'art-katar-kabaddi-2026'
+    ];
+    for (const id of guaranteedIds) {
+      const art = INITIAL_ARTICLES.find(a => a.id === id);
+      if (art) {
+        map.set(art.id, art);
+      }
     }
 
     const list = Array.from(map.values());

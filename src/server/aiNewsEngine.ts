@@ -11,6 +11,30 @@ const SENSITIVE_KEYWORDS = [
   'defamation', 'allegation', 'scam', 'election fraud', 'conspiracy', 'unverified'
 ];
 
+export function validateArticleQuality(title: string, content: string): { isValid: boolean; reason?: string } {
+  const prohibited = [
+    'संबंधित विभागों में व्यापक हलचल देखी जा रही है',
+    'प्रशासन स्थिति पर पैनी नज़र रख रहा है',
+    'आने वाले समय में सकारात्मक परिणाम सामने आएंगे',
+    'आम जनता को किसी भी प्रकार की भ्रामक सूचनाओं से बचने का आग्रह किया गया है',
+    'हुंकार 24 की टीम लगातार नज़र बनाए रखेगी',
+    'यह घटनाक्रम बेहद महत्वपूर्ण माना जा रहा है',
+    'इस मामले में आगे क्या होगा, यह देखना महत्वपूर्ण होगा'
+  ];
+  for (const phrase of prohibited) {
+    if (content.includes(phrase) || title.includes(phrase)) {
+      return { isValid: false, reason: `Contains generic filler: "${phrase}"` };
+    }
+  }
+  if (!title || title.trim().length < 8) {
+    return { isValid: false, reason: 'Headline is too short or empty' };
+  }
+  if (!content || content.trim().length < 15) {
+    return { isValid: false, reason: 'Content is insufficient' };
+  }
+  return { isValid: true };
+}
+
 // Rajasthan districts dictionary for keyword extraction
 const RAJASTHAN_DISTRICT_KEYWORDS: Record<string, string[]> = {
   jaipur: ['जयपुर', 'jaipur', 'सांगानेर', 'आमेर', 'विद्याधर नगर'],
@@ -87,13 +111,14 @@ export async function processArticleWithAI(
           }
         }
       });
-      const prompt = `You are the lead Hindi editor for 'HUNKAR 24 (हुंकार 24)'.
+      const prompt = `You are the lead Hindi editor for 'HUNKAR 24 (हुंकार 24)', Rajasthan's premier digital news network.
 Task: Process this news item into authentic, natural, neutral, accurate Hindi journalism.
-Rules:
-- Generate a natural, punchy Hindi headline (under 20 words).
-- If English, translate faithfully into clear Hindi. Do not change facts or invent quotes.
-- Generate an original, concise Hindi summary (60-90 words).
-- Generate a detailed, professional Hindi news article content (250-400 words) with clear headings and bullet points.
+STRICT RULES:
+- Never use generic filler (no "संबंधित विभागों में व्यापक हलचल", no "प्रशासन पैनी नज़र रख रहा है", no "आने वाले समय में सकारात्मक परिणाम", no "भ्रामक सूचनाओं से बचने का आग्रह", no "हुंकार 24 टीम नज़र बनाए रखेगी").
+- Factual only: Do not invent quotes, reactions, statements, or statistics.
+- Length strictly respects available facts. If the source only provides 2 facts, write a concise report.
+- Generate a natural, factual Hindi headline (under 20 words).
+- If English, translate faithfully into clear Hindi.
 - Extract 4-6 relevant Hindi tags.
 - Suggest a category strictly from: rajasthan, national, international, politics, education, jobs, schemes, business, agriculture, tech, sports, entertainment, weather.
 
@@ -123,6 +148,13 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
       const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
 
+      const accurateVisual = getTopicAccurateImage(
+        `${parsed.titleHindi || raw.title} ${parsed.summaryHindi || raw.description || ''}`,
+        parsed.category || raw.categorySuggestion || (detectedDistrict ? 'rajasthan' : 'national'),
+        parsed.district || detectedDistrict,
+        raw.imageUrl
+      );
+
       return {
         id: `auto-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         sourceArticles: allSources,
@@ -134,8 +166,8 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
         originalLanguage: isEnglish ? 'en' : 'hi',
         category: parsed.category || raw.categorySuggestion || (detectedDistrict ? 'rajasthan' : 'national'),
         district: parsed.district || detectedDistrict || undefined,
-        imageUrl: getTopicAccurateImage(raw.title, parsed.category || 'rajasthan', parsed.district || detectedDistrict, raw.imageUrl).imageUrl,
-        imageSource: raw.sourceName,
+        imageUrl: accurateVisual.imageUrl,
+        imageSource: accurateVisual.caption ? `${raw.sourceName} / ${accurateVisual.caption}` : raw.sourceName,
         publishedAt: raw.publishedAt,
         verificationLevel,
         sensitiveFlags,

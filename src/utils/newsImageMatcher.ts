@@ -10,27 +10,83 @@ export interface TopicVisual {
   keywords: string[];
   imageUrl: string;
   caption: string;
+  imageAlt?: string;
+  imageType?: 'photo' | 'ai_illustration' | 'document' | 'graphic';
 }
 
 // Master contextual topic image registry
 export const TOPIC_IMAGE_REGISTRY: TopicVisual[] = [
+  // 0A. Bikaner / Nokha Mandi & Groundnuts (मूंगफली भाव, नोखा मंडी)
+  {
+    keywords: ['मूंगफली', 'ग्राउंडनट', 'peanuts', 'नोखा मंडी', 'बीकानेर मंडी', 'मूंगफली भाव', '6,520'],
+    imageUrl: '/assets/images/bikaner_mandi_groundnuts_1794310192901.jpg',
+    caption: 'बीकानेर व नोखा कृषि उपज मंडी में नई मूंगफली आवक एवं तौल नीलामी',
+    imageAlt: 'बीकानेर नोखा मंडी में मूंगफली के ढेर और तौल कांटे का दृश्य',
+    imageType: 'photo'
+  },
+  // 0B. Aadhaar & Voter ID Verification (आधार, वोटर आईडी, बायोमेट्रिक)
+  {
+    keywords: ['आधार', 'voter id', 'वोटर', 'बायोमेट्रिक', 'epic', 'aadhaar', 'पहचान सत्यापन'],
+    imageUrl: '/assets/images/aadhaar_voter_id_news_1794310123938.jpg',
+    caption: 'सरकारी योजनाओं में आधार व वोटर आईडी पहचान सत्यापन का विज़ुअल संदर्भ',
+    imageAlt: 'आधार कार्ड एवं वोटर आईडी बायोमेट्रिक प्रमाणीकरण चित्र',
+    imageType: 'ai_illustration'
+  },
+  // 0C. Rajasthan Panchayat Elections (पंचायत चुनाव, सरपंच, मतदान)
+  {
+    keywords: ['पंचायत चुनाव', 'सरपंच', 'चतुर्थ चरण', 'पंचायती राज', 'मतदान केंद्र', 'panchayat'],
+    imageUrl: '/assets/images/panchayat_election_rajasthan_1794310144701.jpg',
+    caption: 'राजस्थान में पंचायती राज चुनाव: ग्रामीण मतदान केंद्र पर मतदाताओं की कतार',
+    imageAlt: 'राजस्थान ग्रामीण मतदान केंद्र पंचायत चुनाव दृश्य',
+    imageType: 'ai_illustration'
+  },
+  // 0D. Sikar Politics & Zila Parishad (सीकर जिला परिषद, बेनीवाल, टिकट)
+  {
+    keywords: ['सीकर जिला परिषद', 'बेनीवाल', 'हनुमान बेनीवाल', 'नामांकन रद्द', 'सिटिंग', 'शेखावाटी राजनीति'],
+    imageUrl: '/assets/images/sikar_political_meeting_1794310160327.jpg',
+    caption: 'सीकर जिला परिषद चुनाव एवं राजनीतिक बैठकों का प्रतीकात्मक दृश्य',
+    imageAlt: 'सीकर शेखावाटी राजनीतिक बैठक एवं चुनावी विमर्श चित्र',
+    imageType: 'ai_illustration'
+  },
+  // 0E. Nagaur Lakshmi Puja & Currency (लक्ष्मी पूजन, नोट, करेंसी, नागौर)
+  {
+    keywords: ['लक्ष्मी पूजन', 'लक्ष्मी पूजा', 'नोटों की गड्डी', 'करेंसी वीडियो', 'नागौर वायरल', 'lakshmi puja'],
+    imageUrl: '/assets/images/nagaur_lakshmi_puja_currency_1794310177707.jpg',
+    caption: 'लक्ष्मी पूजन एवं मुद्रा सजावट का प्रतीकात्मक इलस्ट्रेशन (यह वास्तविक वीडियो फुटेज नहीं है)',
+    imageAlt: 'दिवाली लक्ष्मी पूजन एवं मुद्रा सजावट प्रतीकात्मक इलस्ट्रेशन',
+    imageType: 'ai_illustration'
+  },
+  // 0F. Katar Chhoti Kabaddi Gold & Silver Champions
+  {
+    keywords: ['कातर छोटी', 'कबड्डी', 'पवन कुमार प्रजापत', 'करण प्रजापत', 'जयवीर सिंह', 'kabaddi'],
+    imageUrl: '/assets/katar-kabaddi-champions.jpg',
+    caption: 'कातर छोटी (चूरू) में 52वीं जूनियर नेशनल कबड्डी पदक विजेताओं का अभिनंदन',
+    imageAlt: 'कातर छोटी के पदक विजेता कबड्डी खिलाड़ी',
+    imageType: 'photo'
+  },
   // 1. Agriculture: Mustard (सरसों) & Oilseeds
   {
     keywords: ['सरसों', 'mustard', 'तिलहन', 'तेल', 'सरसों भाव', 'सरसों आवक'],
     imageUrl: 'https://images.unsplash.com/photo-1508873696983-2df5293cb325?auto=format&fit=crop&w=1200&q=80',
-    caption: 'राजस्थान कृषि मंडी में सरसों की बंपर आवक एवं नीलामी'
+    caption: 'राजस्थान कृषि मंडी में सरसों की बंपर आवक एवं नीलामी',
+    imageAlt: 'राजस्थान कृषि मंडी में सरसों की आवक',
+    imageType: 'photo'
   },
   // 2. Agriculture: Wheat (गेहूं) & Harvesting
   {
     keywords: ['गेहूं', 'wheat', 'अनाज', 'फसल', 'खरीफ', 'रबी', 'एमएसपी', 'msp'],
     imageUrl: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80',
-    caption: 'खेतों में लहराती रबी फसल एवं समर्थन मूल्य खरीद'
+    caption: 'खेतों में लहराती रबी फसल एवं समर्थन मूल्य खरीद',
+    imageAlt: 'खेतों में गेहूं की फसल',
+    imageType: 'photo'
   },
   // 3. Agriculture: Mandi Bhav & Grain Bags (मंडी भाव, बोरियां, नीलामी)
   {
     keywords: ['मंडी', 'mandi', 'बोरी', 'नीलामी', 'व्यापारी', 'मंडी भाव', 'अनाज मंडी'],
     imageUrl: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1200&q=80',
-    caption: 'कृषि उपज मंडी में अनाज की बोरियां एवं नीलामी दृश्य'
+    caption: 'कृषि उपज मंडी में अनाज की बोरियां एवं नीलामी दृश्य',
+    imageAlt: 'कृषि उपज मंडी में अनाज बोरियां',
+    imageType: 'photo'
   },
   // 4. Agriculture: Chickpea, Moong, Guar, Cumin (चना, ग्वार, जीरा, मूंग)
   {
@@ -144,17 +200,21 @@ export function getTopicAccurateImage(
   category = 'rajasthan',
   district?: string,
   providedUrl?: string
-): { imageUrl: string; caption: string } {
-  // If a valid, non-placeholder remote URL is already provided and not broken
+): { imageUrl: string; caption: string; imageAlt?: string; imageType?: 'photo' | 'ai_illustration' | 'document' | 'graphic' } {
+  // If a valid, non-placeholder local (/assets/...) or remote URL is already provided
   if (
     providedUrl &&
-    providedUrl.startsWith('http') &&
+    (providedUrl.startsWith('http') || providedUrl.startsWith('/assets/') || providedUrl.startsWith('data:image/')) &&
     !providedUrl.includes('placeholder') &&
     !providedUrl.includes('unsplash.com/photo-1504711434969-e33886168f5c') // default generic
   ) {
+    // Check if this provided URL matches any known registry entry for caption & type
+    const known = TOPIC_IMAGE_REGISTRY.find(r => r.imageUrl === providedUrl);
     return {
       imageUrl: providedUrl,
-      caption: 'हुंकार 24 समाचार संदर्भ दृश्य'
+      caption: known?.caption || 'हुंकार 24 समाचार संदर्भ दृश्य',
+      imageAlt: known?.imageAlt || 'हुंकार 24 समाचार दृश्य',
+      imageType: known?.imageType || 'photo'
     };
   }
 
@@ -168,7 +228,7 @@ export function getTopicAccurateImage(
     let score = 0;
     for (const kw of item.keywords) {
       if (textToScan.includes(kw.toLowerCase())) {
-        score += kw.length > 4 ? 3 : 1; // Longer matching keywords score higher
+        score += kw.length > 4 ? 4 : 2; // Specific keywords score higher
       }
     }
     if (score > highestScore) {
@@ -180,7 +240,9 @@ export function getTopicAccurateImage(
   if (bestMatch && highestScore > 0) {
     return {
       imageUrl: bestMatch.imageUrl,
-      caption: bestMatch.caption
+      caption: bestMatch.caption,
+      imageAlt: bestMatch.imageAlt,
+      imageType: bestMatch.imageType
     };
   }
 
@@ -189,13 +251,17 @@ export function getTopicAccurateImage(
   if (catMatch) {
     return {
       imageUrl: catMatch.imageUrl,
-      caption: catMatch.caption
+      caption: catMatch.caption,
+      imageAlt: catMatch.imageAlt,
+      imageType: catMatch.imageType
     };
   }
 
   // Default Rajasthan Landmark Visual
   return {
     imageUrl: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=80',
-    caption: 'हुंकार 24 — राजस्थान की बुलंद आवाज़'
+    caption: 'हुंकार 24 — राजस्थान की बुलंद आवाज़',
+    imageAlt: 'राजस्थान गौरव दृश्य',
+    imageType: 'photo'
   };
 }

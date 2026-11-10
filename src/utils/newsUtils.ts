@@ -35,56 +35,110 @@ export function sanitizeHeadline(headline?: string, fallback = 'राजस्�
 }
 
 /**
- * Sanitizes summaries and descriptions.
- * Guarantees that no article renders a lonely '|' or empty box.
+/**
+ * Prohibited generic AI-filler phrases to completely ban across all articles.
  */
-export function sanitizeSummary(summary?: string, headline?: string, category = 'राजस्थान'): string {
-  const clean = (summary || '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/^\|\s*|\s*\|\s*$/g, '')
+export const PROHIBITED_GENERIC_FILLER = [
+  'संबंधित विभागों में व्यापक हलचल देखी जा रही है',
+  'प्रशासन स्थिति पर पैनी नज़र रख रहा है',
+  'आने वाले समय में सकारात्मक परिणाम सामने आएंगे',
+  'आम जनता को किसी भी प्रकार की भ्रामक सूचनाओं से बचने का आग्रह किया गया है',
+  'हुंकार 24 की टीम लगातार नज़र बनाए रखेगी',
+  'यह घटनाक्रम बेहद महत्वपूर्ण माना जा रहा है',
+  'इस मामले में आगे क्या होगा, यह देखना महत्वपूर्ण होगा',
+  'राज्य और राष्ट्रीय स्तर पर घटित इस महत्वपूर्ण घटनाक्रम के बाद संबंधित विभागों में व्यापक हलचल देखी जा रही है',
+  'हुंकार 24 द्वारा जुटाई गई प्रामाणिक जानकारी के अनुसार, प्रशासनिक मशीनरी और नीति-निर्माताओं द्वारा स्थिति पर निरंतर पैनी नज़र रखी जा रही है',
+  'जमीनी स्तर पर इसके दूरगामी परिणाम देखने को मिल सकते हैं',
+  'हुंकार 24 की ग्राउंड रिपोर्टिंग टीम आमजन और पाठकों तक सबसे सटीक व निष्पक्ष तथ्य पहुंचाने के लिए निरंतर कार्यरत है',
+  'मामले से संबंधित विस्तृत आधिकारिक दिशानिर्देश जारी होते ही बुलेटिन को अपडेट किया जाएगा'
+];
+
+/**
+ * Strips prohibited filler phrases and boilerplate blocks from text.
+ */
+export function stripGenericFiller(text: string): string {
+  if (!text) return '';
+  let cleaned = text;
+
+  // Remove full boilerplate heading blocks if they were artificially injected
+  cleaned = cleaned.replace(/### विस्तृत घटनाक्रम व पृष्ठभूमि[\s\S]*?(?=###|---|$)/g, (match) => {
+    if (match.includes('संबंधित विभागों में व्यापक हलचल') || match.includes('पैनी नज़र रखी जा रही')) {
+      return '';
+    }
+    return match;
+  });
+
+  cleaned = cleaned.replace(/### किसान, छात्र और आम जनता के लिए मुख्य बिंदु[\s\S]*?(?=###|---|$)/g, (match) => {
+    if (match.includes('सीधा सरोकार') && match.includes('विभागीय निगरानी') && match.includes('पारदर्शिता व राहत')) {
+      return '';
+    }
+    return match;
+  });
+
+  cleaned = cleaned.replace(/### आधिकारिक बयान एवं आगामी कार्रवाई[\s\S]*?(?=###|---|$)/g, (match) => {
+    if (match.includes('सकारात्मक परिणाम सामने आएंगे') || match.includes('लगातार नज़र बनाए रखेगी')) {
+      return '';
+    }
+    return match;
+  });
+
+  cleaned = cleaned.replace(/\*\*महत्वपूर्ण विवरण एवं पृष्ठभूमि:\*\*[\s\S]*?(?=\n\n|$)/g, '');
+
+  for (const filler of PROHIBITED_GENERIC_FILLER) {
+    const escaped = filler.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    cleaned = cleaned.replace(new RegExp(escaped, 'gi'), '');
+  }
+
+  // Remove empty bullets or dangling headers
+  cleaned = cleaned
+    .replace(/^[-*]\s*$/gm, '')
+    .replace(/^###?\s*$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  // If description is empty or just a symbol or pipe
-  if (!clean || clean === '|' || clean.length < 15) {
-    const head = headline ? headline.trim() : 'इस महत्वपूर्ण घटनाक्रम';
-    return `${head} के संबंध में विस्तृत रिपोर्ट। हुंकार 24 डिजिटल डेस्क द्वारा प्राप्त जानकारी के अनुसार इस विषय पर आधिकारिक पुष्टि और जमीनी विवरण जुटाए गए हैं।`;
+  return cleaned;
+}
+
+/**
+ * Sanitizes summaries and descriptions.
+ * Guarantees fact-based journalism without meaningless filler.
+ */
+export function sanitizeSummary(summary?: string, headline?: string, category = 'राजस्थान'): string {
+  const clean = stripGenericFiller(
+    (summary || '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/^\|\s*|\s*\|\s*$/g, '')
+      .trim()
+  );
+
+  if (!clean || clean === '|' || clean.length < 10) {
+    return headline ? headline.trim() : 'ताज़ा समाचार रिपोर्ट।';
   }
 
   return clean;
 }
 
 /**
- * Sanitizes full content, ensuring deeply structured, readable journalistic paragraphs.
+ * Sanitizes full content, ensuring clean factual news without generic filler.
+ * Length strictly respects available facts.
  */
 export function sanitizeContent(content?: string, summary?: string, headline?: string, sourceName?: string): string {
-  const clean = (content || '').trim();
-  if (clean && clean !== '|' && clean.length > 250) {
+  const clean = stripGenericFiller((content || '').trim());
+  if (clean && clean !== '|' && clean.length > 30) {
     return clean;
   }
 
   const baseSummary = sanitizeSummary(summary, headline);
-  const head = headline || 'प्रमुख समाचार';
-  const source = sourceName || 'हुंकार 24 डिजिटल डेस्क';
+  const head = headline ? headline.trim() : '';
 
-  return `### मुख्य समाचार एवं ताज़ा अपडेट
-${head}
+  if (clean && clean.length > 0 && clean !== '|') {
+    return clean;
+  }
 
-${baseSummary}
+  if (baseSummary && baseSummary !== head) {
+    return baseSummary;
+  }
 
-### विस्तृत घटनाक्रम व पृष्ठभूमि
-राज्य और राष्ट्रीय स्तर पर घटित इस महत्वपूर्ण घटनाक्रम के बाद संबंधित विभागों में व्यापक हलचल देखी जा रही है। हुंकार 24 द्वारा जुटाई गई प्रामाणिक जानकारी के अनुसार, प्रशासनिक मशीनरी और नीति-निर्माताओं द्वारा स्थिति पर निरंतर पैनी नज़र रखी जा रही है। जमीनी स्तर पर इसके दूरगामी परिणाम देखने को मिल सकते हैं।
-
-### किसान, छात्र और आम जनता के लिए मुख्य बिंदु
-- **सीधा सरोकार:** इस निर्णय/घटनाक्रम का सीधा प्रभाव स्थानीय नागरिकों, किसानों और परीक्षार्थियों की दैनिक गतिविधियों पर पड़ेगा।
-- **विभागीय निगरानी:** जमीनी स्तर पर नीतियों के निष्पक्ष क्रियान्वयन हेतु जिला प्रशासन एवं निगरानी दलों को सक्रिय किया गया है।
-- **पारदर्शिता व राहत:** आमजन को किसी भी प्रकार की भ्रामक सूचनाओं से बचने और आधिकारिक माध्यमों से ही पुष्टि करने का आग्रह किया गया है।
-
-### आधिकारिक बयान एवं आगामी कार्रवाई
-संबंधित प्रशासनिक अधिकारियों और विषय विशेषज्ञों का मानना है कि आने वाले समय में इसके सकारात्मक परिणाम सामने आएंगे। हुंकार 24 की रिपोर्टिंग टीम जनहित के हर मुद्दे को प्राथमिकता से उठाते हुए इस प्रकरण पर लगातार नज़र बनाए रखेगी।
-
----
-**हुंकार 24 ग्राउंड रिपोर्ट डेस्क**  
-*निष्पक्ष, निर्भीक और जनसरोकार की सशक्त आवाज़*  
-[समाचार स्रोत: ${source}]`;
+  return head || 'विस्तृत विवरण संकलित किया जा रहा है।';
 }
 
