@@ -22,6 +22,7 @@ ALTER TABLE public.articles ALTER COLUMN id SET DEFAULT gen_random_uuid();
 CREATE INDEX IF NOT EXISTS idx_articles_status_published ON public.articles(status, published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_articles_slug ON public.articles(slug);
 CREATE INDEX IF NOT EXISTS idx_articles_category_slug ON public.articles(category_slug);
+CREATE INDEX IF NOT EXISTS idx_articles_original_url ON public.articles(original_url);
 
 -- 3. Automation Logs Table (For real-time admin monitoring of auto-news jobs)
 CREATE TABLE IF NOT EXISTS public.automation_logs (
@@ -41,13 +42,24 @@ CREATE INDEX IF NOT EXISTS idx_automation_logs_created ON public.automation_logs
 ALTER TABLE public.automation_logs ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public can view automation logs" ON public.automation_logs;
-CREATE POLICY "Public can view automation logs"
+DROP POLICY IF EXISTS "Staff can view automation logs" ON public.automation_logs;
+CREATE POLICY "Staff can view automation logs"
   ON public.automation_logs FOR SELECT
-  USING (true);
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role IN ('super_admin', 'admin', 'editor')
+    )
+  );
 
 DROP POLICY IF EXISTS "Service role can insert automation logs" ON public.automation_logs;
-CREATE POLICY "Service role can insert automation logs"
-  ON public.automation_logs FOR INSERT
+DROP POLICY IF EXISTS "Service role can manage automation logs" ON public.automation_logs;
+CREATE POLICY "Service role can manage automation logs"
+  ON public.automation_logs FOR ALL
+  TO service_role
+  USING (true)
   WITH CHECK (true);
 
 -- 4. Enable Realtime Replication for instant multi-device sync

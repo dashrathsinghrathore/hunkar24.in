@@ -176,6 +176,8 @@ async function transformWithGemini(
       const prompt = `You are the chief Hindi editor for 'HUNKAR 24 (हुंकार 24)', Rajasthan's premier independent digital news network.
 Task: Transform this raw news item into authentic, natural, neutral, accurate Hindi journalism.
 Rules:
+- NEVER invent facts, names, quotes, statistics, or events missing from the raw source material.
+- Translate and summarize strictly based on the verifiable facts provided in the raw input.
 - Generate a punchy, factual Hindi headline (under 20 words).
 - Write a 2-sentence concise Hindi summary (50-70 words).
 - Write a detailed 250-350 word Hindi news body with markdown section headers:
@@ -184,13 +186,14 @@ Rules:
   ### प्रशासनिक दिशानिर्देश एवं आगामी कार्रवाई
   End with: "**हुंकार 24 ग्राउंड रिपोर्ट डेस्क**\\n*राजस्थान की बुलंद आवाज़*\\n[मूल समाचार संदर्भ: [${sourceName}](${sourceUrl})]"
 - Choose category strictly from: agriculture, jobs, schemes, rajasthan, national, education, sports, weather, business, technology.
-- Detect Rajasthan district if relevant ('jaipur', 'churu', 'sikar', 'bikaner', 'jodhpur', 'kota', 'udaipur', 'barmer', 'nagaur', 'ajmer', null).
+- Detect Rajasthan district if explicitly mentioned in the story ('jaipur', 'churu', 'sikar', 'bikaner', 'jodhpur', 'kota', 'udaipur', 'barmer', 'nagaur', 'ajmer', null).
 - isBreaking: true if urgent news (e.g. major exam result, cabinet decision, mandi rate swing, emergency), else false.
 
 Raw News:
 Title: ${cleanTitle}
 Description: ${cleanDesc}
 Source: ${sourceName}
+URL: ${sourceUrl}
 
 Respond strictly with valid JSON only:
 {
@@ -262,19 +265,40 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     const cronSecret = Deno.env.get('CRON_SECRET') || '';
 
-    // Security Gate: Authenticate scheduled cron or authorized admin invocation
+    const supabase = createClient(supabaseUrl, supabaseServiceKey || Deno.env.get('SUPABASE_ANON_KEY') || '');
+
+    // Strict Security Gate: Authenticate scheduled cron or authorized admin invocation
     const authHeader = req.headers.get('authorization') || '';
     const xCronSecret = req.headers.get('x-cron-secret') || '';
     const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
-    const isAuthorized =
-      (cronSecret && (token === cronSecret || xCronSecret === cronSecret)) ||
-      (supabaseServiceKey && token === supabaseServiceKey) ||
-      (token && token.length > 20 && !token.includes('anon'));
+    let isAuthorized = false;
+    if (cronSecret && (token === cronSecret || xCronSecret === cronSecret)) {
+      isAuthorized = true;
+    } else if (supabaseServiceKey && token === supabaseServiceKey) {
+      isAuthorized = true;
+    } else if (token && token.length > 30) {
+      // Validate Supabase JWT token and check admin role in profiles
+      try {
+        const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
+        if (user && !userErr) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          if (profile && ['super_admin', 'admin', 'editor'].includes(profile.role)) {
+            isAuthorized = true;
+          }
+        }
+      } catch {
+        isAuthorized = false;
+      }
+    }
 
     if (!isAuthorized) {
       return new Response(
-        JSON.stringify({ success: false, error: 'अनधिकृत प्रवेश: अमान्य प्रमाणीकरण टोकन' }),
+        JSON.stringify({ success: false, error: 'अनधिकृत प्रवेश: अमान्य प्रमाणीकरण टोकन (CRON_SECRET या एडमिन टोकन आवश्यक)' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       );
     }
@@ -287,9 +311,7 @@ serve(async (req) => {
     const mediastackKey = Deno.env.get('MEDIASTACK_API_KEY') || '';
     const firebaseRtdbUrl = Deno.env.get('FIREBASE_DATABASE_URL') || '';
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey || Deno.env.get('SUPABASE_ANON_KEY') || '');
-
-    // 1. Fetch existing headlines for strict deduplication
+    // 1. Fetch existing headlines, slugs and original URLs for strict deduplication
     const existingHeadlines: string[] = [];
     const existingSlugs = new Set<string>();
     const existingUrls = new Set<string>();
@@ -305,15 +327,6 @@ serve(async (req) => {
         if (a.headline) existingHeadlines.push(a.headline);
         if (a.slug) existingSlugs.add(a.slug);
         if (a.original_url) existingUrls.add(canonicalizeUrl(a.original_url));
-      }
-    }
-
-    // Supabase Free Tier Protection: Auto-prune oldest articles if count > 800
-    const { count: totalCount } = await supabase.from('articles').select('id', { count: 'exact', head: true });
-    if (totalCount && totalCount > 800) {
-      const { data: oldest } = await supabase.from('articles').select('id').order('published_at', { ascending: true }).limit(50);
-      if (oldest && oldest.length > 0) {
-        await supabase.from('articles').delete().in('id', oldest.map((o: any) => o.id));
       }
     }
 

@@ -193,11 +193,11 @@ export async function approveClientArticle(
   saveClientPendingArticles(pendingQueue);
 
   const headline = customData?.headline || item.hindiHeadline || item.originalHeadline;
-  const slugBase = headline
+  const slug = headline
     .toLowerCase()
     .replace(/[^\w\u0900-\u097F]+/g, '-')
-    .slice(0, 60);
-  const slug = `${slugBase}-${Math.random().toString(36).substring(2, 6)}`;
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 65) || `news-${Date.now()}`;
   const now = new Date().toISOString();
 
   // MANDATORY DATABASE COMPATIBILITY: Omit 'id' on insert so Postgres generates UUID!

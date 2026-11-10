@@ -36,7 +36,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     id: 'newsapi',
     name: 'NewsAPI.org',
     type: 'api',
-    apiKey: process.env.NEWSAPI_KEY || 'a4d4a6c75ffe4ec89945f7630c6def51',
+    apiKey: process.env.NEWSAPI_KEY || '',
     endpoint: 'https://newsapi.org/v2',
     isEnabled: true,
     rateLimitPerDay: 100,
@@ -47,7 +47,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     id: 'newsdata',
     name: 'NewsData.io',
     type: 'api',
-    apiKey: process.env.NEWSDATA_KEY || 'pub_eb74f86ee8034c1aa709628311675476',
+    apiKey: process.env.NEWSDATA_KEY || '',
     endpoint: 'https://newsdata.io/api/1/latest',
     isEnabled: true,
     rateLimitPerDay: 200,
@@ -58,7 +58,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     id: 'gnews',
     name: 'GNews.io',
     type: 'api',
-    apiKey: process.env.GNEWS_KEY || 'f545e6f443b432ec4297d0aef0f930e6',
+    apiKey: process.env.GNEWS_KEY || '',
     endpoint: 'https://gnews.io/api/v4',
     isEnabled: true,
     rateLimitPerDay: 100,
@@ -79,7 +79,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     id: 'currents',
     name: 'Currents API (Hindi & Regional)',
     type: 'api',
-    apiKey: process.env.CURRENTS_API_KEY || 'WSwpDXRL_luUkRYPZVr-coodFbKfC7ij19cERx5UGMZYy2lF',
+    apiKey: process.env.CURRENTS_API_KEY || '',
     endpoint: 'https://api.currentsapi.services/v1/latest-news',
     isEnabled: true,
     rateLimitPerDay: 600,
@@ -90,7 +90,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     id: 'mediastack',
     name: 'Mediastack API (India & Rajasthan)',
     type: 'api',
-    apiKey: process.env.MEDIASTACK_API_KEY || '226599a190faa3799ad5bdc110352087',
+    apiKey: process.env.MEDIASTACK_API_KEY || '',
     endpoint: 'http://api.mediastack.com/v1/news',
     isEnabled: true,
     rateLimitPerDay: 500,
@@ -148,7 +148,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
 // PROVIDER 1: NewsAPI.org
 // ----------------------------------------------------------------------------
 export async function fetchFromNewsApi(config: ProviderConfig): Promise<RawNewsArticle[]> {
-  const apiKey = config.apiKey || process.env.NEWSAPI_KEY || 'a4d4a6c75ffe4ec89945f7630c6def51';
+  const apiKey = config.apiKey || process.env.NEWSAPI_KEY || '';
   if (!apiKey) return [];
 
   // Query Rajasthan and Hindi news keywords
@@ -195,7 +195,7 @@ export async function fetchFromNewsApi(config: ProviderConfig): Promise<RawNewsA
 // PROVIDER 2: NewsData.io
 // ----------------------------------------------------------------------------
 export async function fetchFromNewsData(config: ProviderConfig): Promise<RawNewsArticle[]> {
-  const apiKey = config.apiKey || process.env.NEWSDATA_KEY || 'pub_eb74f86ee8034c1aa709628311675476';
+  const apiKey = config.apiKey || process.env.NEWSDATA_KEY || '';
   if (!apiKey) return [];
 
   const url = `https://newsdata.io/api/1/latest?apikey=${apiKey}&country=in&language=hi&size=10`;
@@ -234,7 +234,7 @@ export async function fetchFromNewsData(config: ProviderConfig): Promise<RawNews
 // PROVIDER 3: GNews.io
 // ----------------------------------------------------------------------------
 export async function fetchFromGNews(config: ProviderConfig): Promise<RawNewsArticle[]> {
-  const apiKey = config.apiKey || process.env.GNEWS_KEY || 'f545e6f443b432ec4297d0aef0f930e6';
+  const apiKey = config.apiKey || process.env.GNEWS_KEY || '';
   if (!apiKey) return [];
 
   const url = `https://gnews.io/api/v4/top-headlines?category=general&lang=hi&country=in&max=10&apikey=${apiKey}`;
@@ -429,7 +429,7 @@ export async function fetchFromCustomProvider(config: ProviderConfig): Promise<R
 // PROVIDER: Currents API
 // ----------------------------------------------------------------------------
 export async function fetchFromCurrents(config: ProviderConfig): Promise<RawNewsArticle[]> {
-  const apiKey = config.apiKey || process.env.CURRENTS_API_KEY || 'WSwpDXRL_luUkRYPZVr-coodFbKfC7ij19cERx5UGMZYy2lF';
+  const apiKey = config.apiKey || process.env.CURRENTS_API_KEY || '';
   if (!apiKey) return [];
 
   // Try Hindi regional first, then fallback to general India news
@@ -469,7 +469,7 @@ export async function fetchFromCurrents(config: ProviderConfig): Promise<RawNews
 // PROVIDER: Mediastack API
 // ----------------------------------------------------------------------------
 export async function fetchFromMediastack(config: ProviderConfig): Promise<RawNewsArticle[]> {
-  const apiKey = config.apiKey || process.env.MEDIASTACK_API_KEY || '226599a190faa3799ad5bdc110352087';
+  const apiKey = config.apiKey || process.env.MEDIASTACK_API_KEY || '';
   if (!apiKey) return [];
 
   const url = `http://api.mediastack.com/v1/news?access_key=${apiKey}&countries=in&languages=hi,en&limit=12`;
