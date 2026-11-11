@@ -156,43 +156,165 @@ export function clearSupabaseCredentials(): void {
   activeClientInstance = null;
 }
 
+// Supabase Storage Bucket Names
+export const STORAGE_BUCKETS = {
+  IMAGES: 'hunkar-news-images',
+  VIDEOS: 'hunkar-news-videos',
+  THUMBNAILS: 'hunkar-media-thumbnails',
+  LEGACY_IMAGES: 'article-images'
+} as const;
+
+export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+
+export const ALLOWED_IMAGE_MIME_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+  'image/gif'
+];
+
+export const ALLOWED_VIDEO_MIME_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/ogg',
+  'video/x-matroska'
+];
+
+export interface UploadMediaResult {
+  success: boolean;
+  url?: string;
+  bucket?: string;
+  storagePath?: string;
+  filename?: string;
+  fileSize?: number;
+  mimeType?: string;
+  error?: string;
+}
+
 /**
- * Direct client-side upload to Supabase Storage bucket 'article-images'.
- * Returns public URL that works on all devices worldwide.
+ * Universal media upload to Supabase Storage with size (up to 50MB) and MIME validation
  */
-export async function uploadImageToSupabase(file: File): Promise<{ success: boolean; url?: string; error?: string }> {
+export async function uploadMediaFileToSupabase(
+  file: File,
+  type: 'image' | 'video' | 'thumbnail' = 'image'
+): Promise<UploadMediaResult> {
   const client = getSupabase();
   if (!client) {
     return { success: false, error: 'Supabase client not configured' };
   }
 
-  try {
-    const fileExt = file.name.split('.').pop() || 'jpg';
-    const cleanBase = file.name.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30);
-    const filePath = `${Date.now()}-${cleanBase}.${fileExt}`;
+  // 1. Validate File Size (Maximum 50 MB)
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    return {
+      success: false,
+      error: `फ़ाइल का आकार (${sizeMb} MB) अधिकतम अनुमत सीमा 50 MB से अधिक है।`
+    };
+  }
 
-    const { data, error } = await client.storage
-      .from('article-images')
+  // 2. Validate MIME Type
+  const mime = file.type.toLowerCase();
+  if (type === 'image') {
+    const isAllowedImage = ALLOWED_IMAGE_MIME_TYPES.some(t => mime.includes(t.replace('image/', ''))) || mime.startsWith('image/');
+    if (!isAllowedImage) {
+      return { success: false, error: 'अमान्य इमेज प्रारूप। केवल JPG, PNG, WEBP, AVIF अनुमत हैं।' };
+    }
+  } else if (type === 'video') {
+    const isAllowedVideo = ALLOWED_VIDEO_MIME_TYPES.some(t => mime.includes(t.replace('video/', ''))) || mime.startsWith('video/');
+    if (!isAllowedVideo) {
+      return { success: false, error: 'अमान्य वीडियो प्रारूप। केवल MP4, WebM, MOV अनुमत हैं।' };
+    }
+  }
+
+  // 3. Determine bucket and unique safe path
+  const targetBucket =
+    type === 'video'
+      ? STORAGE_BUCKETS.VIDEOS
+      : type === 'thumbnail'
+      ? STORAGE_BUCKETS.THUMBNAILS
+      : STORAGE_BUCKETS.IMAGES;
+
+  const rawExt = file.name.split('.').pop() || (type === 'video' ? 'mp4' : 'jpg');
+  const cleanExt = rawExt.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cleanBase = file.name
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .slice(0, 32);
+  const filePath = `${Date.now()}_${cleanBase}.${cleanExt}`;
+
+  try {
+    // Attempt upload to primary target bucket
+    let uploadRes = await client.storage
+      .from(targetBucket)
       .upload(filePath, file, {
-        cacheControl: '3600',
+        cacheControl: '31536000',
         upsert: true,
-        contentType: file.type || 'image/jpeg'
+        contentType: file.type || (type === 'video' ? 'video/mp4' : 'image/jpeg')
       });
 
-    if (error) {
-      return { success: false, error: error.message };
+    let effectiveBucket: string = targetBucket;
+
+    // Fallback to legacy bucket if new bucket does not exist yet
+    if (uploadRes.error && type === 'image') {
+      const fallbackRes = await client.storage
+        .from(STORAGE_BUCKETS.LEGACY_IMAGES)
+        .upload(filePath, file, {
+          cacheControl: '31536000',
+          upsert: true,
+          contentType: file.type || 'image/jpeg'
+        });
+
+      if (!fallbackRes.error) {
+        uploadRes = fallbackRes;
+        effectiveBucket = STORAGE_BUCKETS.LEGACY_IMAGES;
+      }
+    }
+
+    if (uploadRes.error) {
+      return { success: false, error: uploadRes.error.message };
     }
 
     const { data: pubData } = client.storage
-      .from('article-images')
-      .getPublicUrl(data.path);
+      .from(effectiveBucket)
+      .getPublicUrl(uploadRes.data.path);
 
     if (pubData?.publicUrl) {
-      return { success: true, url: pubData.publicUrl };
+      return {
+        success: true,
+        url: pubData.publicUrl,
+        bucket: effectiveBucket,
+        storagePath: uploadRes.data.path,
+        filename: file.name,
+        fileSize: file.size,
+        mimeType: file.type
+      };
     }
 
-    return { success: false, error: 'Failed to retrieve public URL from Supabase' };
+    return { success: false, error: 'पब्लिक URL प्राप्त करने में असमर्थ' };
   } catch (err: any) {
-    return { success: false, error: err?.message || 'Storage upload error' };
+    return { success: false, error: err?.message || 'स्टोरेज अपलोड त्रुटि' };
   }
 }
+
+/**
+ * Direct client-side upload to Supabase Storage (Backward-compatible helper)
+ */
+export async function uploadImageToSupabase(file: File): Promise<{ success: boolean; url?: string; error?: string }> {
+  const result = await uploadMediaFileToSupabase(file, 'image');
+  return {
+    success: result.success,
+    url: result.url,
+    error: result.error
+  };
+}
+
+/**
+ * Video upload to Supabase Storage (hunkar-news-videos, up to 50MB)
+ */
+export async function uploadVideoToSupabase(file: File): Promise<UploadMediaResult> {
+  return uploadMediaFileToSupabase(file, 'video');
+}
+

@@ -438,12 +438,14 @@ export function getDynamicMandiRates(): MandiRecord[] {
   // 6-hour blocks: 0-5 (रात), 6-11 (प्रातः), 12-17 (दोपहर), 18-23 (सायं)
   const windowIndex = Math.floor(hour / 6);
   const timeLabels = [
-    'आज रात्रि 01:00',
-    'आज प्रातः 07:30',
-    'आज दोपहर 01:15',
-    'आज सायं 06:45'
+    'रात्रि 01:00',
+    'प्रातः 08:30',
+    'दोपहर 01:15',
+    'सायं 06:45'
   ];
-  const lastUpdated = timeLabels[windowIndex] || 'आज ताज़ा भाव';
+  const months = ['जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'];
+  const dateStr = `${now.getDate()} ${months[now.getMonth()]}`;
+  const lastUpdated = `${dateStr} · ${timeLabels[windowIndex] || 'ताज़ा'}`;
 
   // Day & 6-hour seed for deterministic dynamic rate fluctuation
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));

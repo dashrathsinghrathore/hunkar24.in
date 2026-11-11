@@ -56,7 +56,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
             हुंकार 24 मास्टर एडमिन पोर्टल
           </span>
           <h1 className="text-2xl sm:text-3xl font-black font-newspaper-headline">
-            नमस्ते, संपादकीय कक्ष में आपका स्वागत है
+            नमस्ते, हुंकार 24 डिजिटल न्यूज़रूम में आपका स्वागत है
           </h1>
           <p className="text-xs text-stone-300 mt-1">
             प्रमाणित, निष्पक्ष एवं तीव्र डिजिटल पत्रकारिता का केंद्रीय नियंत्रण कक्ष

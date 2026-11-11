@@ -35,7 +35,7 @@ export const SubmitNewsModal: React.FC = () => {
       return;
     }
     if (!submitterName.trim() || !mobile.trim()) {
-      setErrorMsg('कृपया अपना नाम एवं वैध मोबाइल नंबर प्रदान करें ताकि संपादकीय टीम पुष्टि कर सके।');
+      setErrorMsg('कृपया अपना नाम एवं वैध मोबाइल नंबर प्रदान करें ताकि हुंकार 24 टीम पुष्टि कर सके।');
       return;
     }
     if (!consentGiven) {
@@ -121,7 +121,7 @@ export const SubmitNewsModal: React.FC = () => {
                 समाचार सफलतापूर्वक प्राप्त हुआ!
               </h4>
               <p className="text-sm text-stone-600 dark:text-stone-300 max-w-md mx-auto mb-4">
-                आपकी खबर हुंकार 24 के संपादकीय डेस्क को प्रेषित कर दी गई है। सत्यापन उपरांत इसे पोर्टल पर प्रकाशित किया जाएगा।
+                आपकी खबर हुंकार 24 के न्यूज़ डेस्क को प्रेषित कर दी गई है। सत्यापन उपरांत इसे पोर्टल पर प्रकाशित किया जाएगा।
               </p>
 
               <div className="bg-stone-100 dark:bg-stone-800 p-3 rounded-lg inline-block border border-stone-200 dark:border-stone-700 font-mono font-bold text-red-700 dark:text-red-400 text-sm mb-6">
@@ -328,7 +328,7 @@ export const SubmitNewsModal: React.FC = () => {
                   className="flex items-center gap-1.5 px-6 py-2.5 rounded-lg bg-red-700 hover:bg-red-800 text-white font-bold text-sm shadow-md transition-colors"
                 >
                   <Send className="w-4 h-4" />
-                  <span>संपादकीय डेस्क को भेजें</span>
+                  <span>समाचार भेजें (Submit News)</span>
                 </button>
               </div>
             </form>

@@ -17,14 +17,21 @@ import {
   Database,
   DataSnapshot
 } from 'firebase/database';
-import { Article, BreakingNewsItem } from '../types';
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+  FirebaseStorage
+} from 'firebase/storage';
+import { Article, BreakingNewsItem, MediaAsset } from '../types';
 
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || (import.meta.env.VITE_FIREBASE_PROJECT_ID ? `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com` : ""),
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ""
@@ -32,17 +39,23 @@ export const firebaseConfig = {
 
 export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey &&
-  firebaseConfig.databaseURL &&
-  !firebaseConfig.databaseURL.includes('your-project')
+  (firebaseConfig.databaseURL || firebaseConfig.projectId) &&
+  !firebaseConfig.databaseURL?.includes('your-project')
 );
 
 let appInstance: FirebaseApp | null = null;
 let dbInstance: Database | null = null;
+let storageInstance: FirebaseStorage | null = null;
 
 if (isFirebaseConfigured) {
   try {
     appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    dbInstance = getDatabase(appInstance);
+    if (firebaseConfig.databaseURL) {
+      dbInstance = getDatabase(appInstance);
+    }
+    if (firebaseConfig.storageBucket || firebaseConfig.projectId) {
+      storageInstance = getStorage(appInstance);
+    }
   } catch (err) {
     console.warn('[Firebase] App initialization notice:', err);
   }
@@ -50,6 +63,68 @@ if (isFirebaseConfigured) {
 
 export const firebaseApp = appInstance;
 export const firebaseDb = dbInstance;
+export const firebaseStorage = storageInstance;
+
+export function isFirebaseStorageConfigured(): boolean {
+  return Boolean(storageInstance && (firebaseConfig.storageBucket || firebaseConfig.projectId));
+}
+
+// Admin toggle setting for secondary media backup
+const SECONDARY_BACKUP_STORAGE_KEY = 'hunkar24_secondary_firebase_backup_enabled';
+
+export function getSecondaryBackupEnabled(): boolean {
+  if (typeof window === 'undefined') return true;
+  const stored = localStorage.getItem(SECONDARY_BACKUP_STORAGE_KEY);
+  return stored !== null ? stored === 'true' : true;
+}
+
+export function setSecondaryBackupEnabled(enabled: boolean): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(SECONDARY_BACKUP_STORAGE_KEY, enabled ? 'true' : 'false');
+  }
+}
+
+/**
+ * Upload a media blob to Firebase Storage as secondary backup
+ * Paths: hunkar24/news/images/, hunkar24/news/videos/, hunkar24/news/thumbnails/, hunkar24/backups/
+ */
+export async function uploadToFirebaseStorageBackup(
+  data: Blob | Uint8Array | ArrayBuffer,
+  category: 'images' | 'videos' | 'thumbnails' | 'backups',
+  filename: string,
+  contentType?: string
+): Promise<{ success: boolean; url?: string; path?: string; error?: string }> {
+  if (!getSecondaryBackupEnabled()) {
+    return { success: false, error: 'Secondary Firebase backup is disabled in admin settings' };
+  }
+
+  if (!storageInstance) {
+    return { success: false, error: 'Firebase Storage not configured' };
+  }
+
+  try {
+    const cleanFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `hunkar24/news/${category}/${Date.now()}_${cleanFilename}`;
+    const fileRef = storageRef(storageInstance, storagePath);
+
+    const metadata = contentType ? { contentType } : undefined;
+    const uploadResult = await uploadBytes(fileRef, data, metadata);
+    const downloadUrl = await getDownloadURL(uploadResult.ref);
+
+    return {
+      success: true,
+      url: downloadUrl,
+      path: storagePath
+    };
+  } catch (err: any) {
+    console.warn('[Firebase Storage Backup Error]:', err?.message);
+    return {
+      success: false,
+      error: err?.message || 'Firebase storage backup failed'
+    };
+  }
+}
+
 
 // Optional Analytics initialization (browser only)
 if (typeof window !== 'undefined' && firebaseConfig.measurementId && firebaseApp) {

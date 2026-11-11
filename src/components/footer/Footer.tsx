@@ -160,16 +160,16 @@ export const Footer: React.FC<FooterProps> = ({ onSelectPolicy }) => {
             </ul>
           </div>
 
-          {/* Col 3: Editorial & Statutory Policies */}
+          {/* Col 3: Journalistic Ethics & Statutory Policies */}
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-red-700/60 pb-1.5 inline-block">
-              संपादकीय व विधिक नीतियां
+              नीति एवं विधिक नियम
             </h3>
             <ul className="space-y-2 text-xs text-stone-400">
               <li>
                 <button onClick={() => onSelectPolicy('editorial')} className="hover:text-stone-100 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-red-500" />
-                  <span>संपादकीय नीति (Editorial Policy)</span>
+                  <span>पत्रकारिता आचार संहिता (Code of Ethics)</span>
                 </button>
               </li>
               <li>
@@ -211,11 +211,6 @@ export const Footer: React.FC<FooterProps> = ({ onSelectPolicy }) => {
               न्यूज़रूम एवं सहायता संपर्क
             </h3>
             
-            <div className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-              <span>{SITE_CONFIG.contact.officeAddress}</span>
-            </div>
-
             {/* Only WhatsApp Mobile Number */}
             <a
               href="https://wa.me/917726084809"
@@ -257,11 +252,6 @@ export const Footer: React.FC<FooterProps> = ({ onSelectPolicy }) => {
                 <Send className="w-4 h-4" />
                 <span>टेलीग्राम चैनल (@HUNKAR24)</span>
               </a>
-            </div>
-
-            <div className="flex items-center gap-2 pt-1 text-stone-300">
-              <Mail className="w-4 h-4 text-red-500 shrink-0" />
-              <span>ईमेल: {SITE_CONFIG.contact.email}</span>
             </div>
 
             <div className="pt-2 flex flex-col gap-2">

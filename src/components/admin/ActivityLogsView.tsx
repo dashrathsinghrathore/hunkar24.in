@@ -11,7 +11,7 @@ export const ActivityLogsView: React.FC = () => {
         <div>
           <h2 className="text-xl font-black font-newspaper-headline text-stone-900 dark:text-stone-100 flex items-center gap-2">
             <Activity className="w-5 h-5 text-red-600" />
-            <span>ऑडिट लॉग्स एवं संपादकीय कार्यवाहियां (Audit Trail)</span>
+            <span>ऑडिट लॉग्स एवं प्रशासनिक कार्यवाहियां (Audit Trail)</span>
           </h2>
           <p className="text-xs text-stone-500">
             हुंकार 24 एडमिन पैनल पर किए गए प्रत्येक संपादन, प्रकाशन व अनुमोदन का रिकॉर्ड

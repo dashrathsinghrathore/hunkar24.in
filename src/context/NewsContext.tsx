@@ -545,7 +545,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
               tags: Array.isArray(d.tags) ? d.tags : ['राजस्थान', 'हुंकार24'],
               readingTimeMinutes: d.reading_time_minutes || 2,
               likesCount: d.likes_count || 0,
-              videoUrl: d.video_url
+              videoUrl: d.video_url,
+              galleryImages: Array.isArray(d.gallery_images) && d.gallery_images.length > 0 ? d.gallery_images : (d.main_image ? [d.main_image] : [])
             }));
 
             setArticles(prev => {
@@ -633,6 +634,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
               isBreaking: Boolean(d.is_breaking),
               isHero: Boolean(d.is_hero),
               isExclusive: Boolean(d.is_exclusive),
+              videoUrl: d.video_url || undefined,
+              galleryImages: Array.isArray(d.gallery_images) && d.gallery_images.length > 0 ? d.gallery_images : (d.main_image ? [d.main_image] : []),
               tags: d.tags || []
             };
             setArticles(prev => [newArt, ...prev.filter(a => a.id !== newArt.id && a.slug !== newArt.slug)]);
@@ -650,6 +653,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
                       category: d.category_slug || a.category,
                       district: d.district !== undefined ? d.district : a.district,
                       mainImage: d.main_image || a.mainImage,
+                      videoUrl: d.video_url !== undefined ? d.video_url : a.videoUrl,
+                      galleryImages: Array.isArray(d.gallery_images) ? d.gallery_images : a.galleryImages,
                       status: d.status || a.status,
                       isBreaking: d.is_breaking !== undefined ? Boolean(d.is_breaking) : a.isBreaking,
                       isHero: d.is_hero !== undefined ? Boolean(d.is_hero) : a.isHero,
@@ -973,6 +978,32 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     setArticles(prev => [newArticle, ...prev]);
 
+    // 2. Automatically publish to bulletin board / ticker immediately
+    const autoBulletin: BreakingNewsItem = {
+      id: `brk-${Date.now()}`,
+      text: newArticle.headline,
+      category: newArticle.category,
+      linkArticleId: newArticle.id,
+      priority: 1,
+      isActive: true,
+      createdAt: now
+    };
+    setBreakingNews(prev => [autoBulletin, ...prev.filter(b => b.text !== autoBulletin.text)]);
+    saveBreakingNewsToFirebase(autoBulletin);
+    const clientB = getSupabase();
+    if (clientB) {
+      Promise.resolve(
+        clientB.from('breaking_news').upsert([{
+          id: autoBulletin.id,
+          text: autoBulletin.text,
+          category_slug: autoBulletin.category,
+          link_article_id: autoBulletin.linkArticleId,
+          is_active: true,
+          priority: 1
+        }], { onConflict: 'id' })
+      ).catch(() => {});
+    }
+
     // Push to Supabase Real-Time (Phase 2 & 3: Database as single source of truth)
     const client = getSupabase();
     if (client) {
@@ -1002,6 +1033,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           reading_time_minutes: newArticle.readingTimeMinutes || 3,
           tags: newArticle.tags || [],
           video_url: newArticle.videoUrl,
+          gallery_images: newArticle.galleryImages || (newArticle.mainImage ? [newArticle.mainImage] : []),
           published_at: newArticle.publishedAt
         };
 
@@ -1063,28 +1095,32 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const client = getSupabase();
     if (client) {
       try {
+        const updatePayload: any = {
+          headline: updates.headline,
+          slug: updates.slug,
+          summary: updates.summary,
+          content: updates.content,
+          category_slug: updates.category,
+          district: updates.district,
+          tehsil: updates.tehsil,
+          village: updates.village,
+          main_image: updates.mainImage,
+          image_caption: updates.imageCaption,
+          image_source: updates.imageSource,
+          status: updates.status,
+          is_breaking: updates.isBreaking,
+          is_hero: updates.isHero,
+          is_exclusive: updates.isExclusive,
+          tags: updates.tags,
+          video_url: updates.videoUrl,
+          updated_at: new Date().toISOString()
+        };
+        if (updates.galleryImages !== undefined) {
+          updatePayload.gallery_images = updates.galleryImages;
+        }
         client
           .from('articles')
-          .update({
-            headline: updates.headline,
-            slug: updates.slug,
-            summary: updates.summary,
-            content: updates.content,
-            category_slug: updates.category,
-            district: updates.district,
-            tehsil: updates.tehsil,
-            village: updates.village,
-            main_image: updates.mainImage,
-            image_caption: updates.imageCaption,
-            image_source: updates.imageSource,
-            status: updates.status,
-            is_breaking: updates.isBreaking,
-            is_hero: updates.isHero,
-            is_exclusive: updates.isExclusive,
-            tags: updates.tags,
-            video_url: updates.videoUrl,
-            updated_at: new Date().toISOString()
-          })
+          .update(updatePayload)
           .eq('id', id)
           .then(({ error }) => {
             if (error) console.warn('[Supabase Realtime] Article update notice:', error);
@@ -1473,7 +1509,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginAs = (role: UserRole, email: string = 'admin@hunkar24.in') => {
     const user: CurrentUser = {
       id: `usr-${role}-${Date.now()}`,
-      name: role === 'super_admin' ? 'प्रशासक (Super Admin)' : role === 'editor' ? 'संपादक (Editor)' : 'संवाददाता (Reporter)',
+      name: role === 'super_admin' ? 'मुख्य प्रशासक (Super Admin)' : role === 'admin' ? 'प्रशासक (Admin)' : 'संवाददाता (Reporter)',
       email,
       role,
       avatarUrl: ''

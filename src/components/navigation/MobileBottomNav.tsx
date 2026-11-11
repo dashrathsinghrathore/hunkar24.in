@@ -157,18 +157,17 @@ export const MobileBottomNav: React.FC = () => {
             {/* Direct Official Desk Contact */}
             <div className="p-3 bg-stone-100 dark:bg-stone-800/80 rounded-2xl text-xs space-y-1.5 text-stone-700 dark:text-stone-300">
               <p className="font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-orange-600" />
-                संपादकीय डेस्क ईमेल:
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                <span>हुंकार 24 सहायता (WhatsApp):</span>
               </p>
               <a
-                href="mailto:contact@hunkar24.in"
-                className="block text-orange-600 dark:text-orange-400 font-mono text-xs hover:underline"
+                href="https://wa.me/917726084809"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs hover:underline"
               >
-                contact@hunkar24.in
+                7726084809
               </a>
-              <p className="text-[11px] text-stone-500 pt-1">
-                आधिकारिक पता: हुंकार 24 डिजिटल मीडिया, सीकर रोड, जयपुर (राज.) 302013
-              </p>
             </div>
           </div>
         </div>

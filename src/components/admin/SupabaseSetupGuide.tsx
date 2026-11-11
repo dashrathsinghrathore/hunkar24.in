@@ -117,19 +117,45 @@ CREATE POLICY "Admin Manage Breaking" ON public.breaking_news FOR ALL USING (tru
 ALTER PUBLICATION supabase_realtime ADD TABLE public.articles;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.breaking_news;
 
--- 6. STORAGE BUCKET FOR ARTICLE IMAGES (Public read/write for all uploaded photos)
-INSERT INTO storage.buckets (id, name, public) 
-VALUES ('article-images', 'article-images', true)
+-- 6. MEDIA ASSETS TABLE (Single Source of Truth for Images & Videos)
+CREATE TABLE IF NOT EXISTS public.media_assets (
+  id TEXT PRIMARY KEY,
+  news_id TEXT REFERENCES public.articles(id) ON DELETE SET NULL,
+  media_type TEXT NOT NULL CHECK (media_type IN ('image', 'video', 'thumbnail')),
+  source_type TEXT NOT NULL DEFAULT 'upload' CHECK (source_type IN ('upload', 'external_url', 'imported')),
+  storage_provider TEXT NOT NULL DEFAULT 'supabase',
+  storage_bucket TEXT,
+  storage_path TEXT,
+  media_url TEXT NOT NULL,
+  firebase_storage_path TEXT,
+  firebase_backup_url TEXT,
+  mime_type TEXT,
+  file_size BIGINT,
+  thumbnail_url TEXT,
+  display_order INT NOT NULL DEFAULT 0,
+  backup_status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.media_assets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Media Assets" ON public.media_assets FOR SELECT USING (true);
+CREATE POLICY "Admin Manage Media Assets" ON public.media_assets FOR ALL USING (true);
+ALTER PUBLICATION supabase_realtime ADD TABLE public.media_assets;
+
+-- 7. STORAGE BUCKETS (Max 50MB per Image & Video)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES 
+  ('hunkar-news-images', 'hunkar-news-images', true, 52428800, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']::text[]),
+  ('hunkar-news-videos', 'hunkar-news-videos', true, 52428800, ARRAY['video/mp4', 'video/webm', 'video/quicktime', 'video/ogg']::text[]),
+  ('hunkar-media-thumbnails', 'hunkar-media-thumbnails', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp']::text[]),
+  ('article-images', 'article-images', true, 52428800, ARRAY['image/jpeg', 'image/png', 'image/webp']::text[])
 ON CONFLICT (id) DO UPDATE SET public = true;
 
-DROP POLICY IF EXISTS "Public Read Article Images" ON storage.objects;
-CREATE POLICY "Public Read Article Images" ON storage.objects FOR SELECT USING (bucket_id = 'article-images');
-
-DROP POLICY IF EXISTS "Public Upload Article Images" ON storage.objects;
-CREATE POLICY "Public Upload Article Images" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'article-images');
-
-DROP POLICY IF EXISTS "Public Update Article Images" ON storage.objects;
-CREATE POLICY "Public Update Article Images" ON storage.objects FOR UPDATE USING (bucket_id = 'article-images');
+-- Storage Policies for Public Reading & Uploads
+CREATE POLICY "Public Read News Images" ON storage.objects FOR SELECT USING (bucket_id IN ('hunkar-news-images', 'hunkar-news-videos', 'hunkar-media-thumbnails', 'article-images'));
+CREATE POLICY "Admin Upload News Images" ON storage.objects FOR INSERT WITH CHECK (bucket_id IN ('hunkar-news-images', 'hunkar-news-videos', 'hunkar-media-thumbnails', 'article-images'));
+CREATE POLICY "Admin Update News Images" ON storage.objects FOR UPDATE USING (bucket_id IN ('hunkar-news-images', 'hunkar-news-videos', 'hunkar-media-thumbnails', 'article-images'));
 `;
     navigator.clipboard.writeText(fullSql);
     setCopiedSchema(true);

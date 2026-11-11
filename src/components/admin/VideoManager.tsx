@@ -154,27 +154,69 @@ export const VideoManager: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block font-bold mb-1">वीडियो URL (YouTube, Supabase, MP4, Vimeo) *</label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://www.youtube.com/watch?v=... या Supabase MP4 URL"
-                  value={videoUrl}
-                  onChange={e => {
-                    const val = e.target.value;
-                    setVideoUrl(val);
-                    // If YouTube and no thumbnail provided, extract high-res thumbnail automatically
-                    const ytMatch = val.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
-                    if (ytMatch && ytMatch[1] && !thumbnailUrl) {
-                      setThumbnailUrl(`https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`);
-                    }
-                  }}
-                  className="w-full px-3 py-2 border rounded-lg bg-stone-50 dark:bg-stone-800 font-mono"
-                />
+              <div className="space-y-2 p-3 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200 dark:border-stone-700">
+                <span className="block font-bold text-stone-700 dark:text-stone-300">वीडियो चयन (अपलोड अथवा URL):</span>
+                
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-stone-900 hover:bg-black text-white rounded-lg cursor-pointer font-bold transition-colors">
+                    <Video className="w-3.5 h-3.5 text-red-500" />
+                    <span>सीधी वीडियो फ़ाइल अपलोड करें (Max 50MB)</span>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 52428800) {
+                          alert(`फ़ाइल 50 MB से अधिक है (${(file.size / (1024 * 1024)).toFixed(1)} MB)`);
+                          return;
+                        }
+                        if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ''));
+                        try {
+                          const { captureVideoThumbnail, uploadSingleMedia } = await import('../../lib/mediaService');
+                          const thumb = await captureVideoThumbnail(file);
+                          if (thumb?.dataUrl && !thumbnailUrl) {
+                            setThumbnailUrl(thumb.dataUrl);
+                          }
+                          const res = await uploadSingleMedia(file, 'video');
+                          if (res.success && res.url) {
+                            setVideoUrl(res.url);
+                          } else {
+                            alert(res.error || 'वीडियो अपलोड नहीं हो सका');
+                          }
+                        } catch (err: any) {
+                          alert('अपलोड त्रुटि: ' + err.message);
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className="pt-1">
+                  <label className="block font-bold mb-1 text-[11px] text-stone-500">
+                    या वीडियो URL दर्ज करें (YouTube, Shorts, Instagram Reels, Facebook, MP4)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://www.youtube.com/watch?v=... या Supabase MP4 URL"
+                    value={videoUrl}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setVideoUrl(val);
+                      const ytMatch = val.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+                      if (ytMatch && ytMatch[1] && !thumbnailUrl) {
+                        setThumbnailUrl(`https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-stone-800 font-mono"
+                  />
+                </div>
+
                 {videoUrl && (
                   <div className="mt-2 rounded-lg overflow-hidden border border-stone-700">
-                    <UniversalVideoPlayer url={videoUrl} title="पूर्वावलोकन" />
+                    <UniversalVideoPlayer url={videoUrl} title="पूर्वावलोकन" poster={thumbnailUrl} />
                   </div>
                 )}
               </div>

@@ -463,7 +463,7 @@ export const AutoNewsControlCenter: React.FC = () => {
               onChange={e => handleUpdateConfig({ autoApproveSafe: e.target.value === 'auto_safe' })}
               className="bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:ring-1 focus:ring-red-600"
             >
-              <option value="manual">1. संपादकीय समीक्षा अनिवार्य (Manual Review - Default)</option>
+              <option value="manual">1. समाचार समीक्षा अनिवार्य (Manual Review - Default)</option>
               <option value="auto_safe">2. सुरक्षित स्वतः प्रकाशन (Auto Publish Safe Content)</option>
               <option value="paused">3. प्रकाशन स्थगित (Pause Publishing)</option>
               <option value="emergency_stop">4. आपातकालीन रोक (Emergency Stop)</option>
@@ -686,7 +686,7 @@ export const AutoNewsControlCenter: React.FC = () => {
           <div>
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold font-newspaper-headline text-stone-900 dark:text-stone-100">
-                संपादकीय समीक्षा एवं समाचार नियंत्रण (Editorial Queue)
+                समाचार नियंत्रण एवं प्रकाशन कतार (News Queue)
               </h2>
               <span className="bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 text-xs font-bold px-2.5 py-0.5 rounded-full">
                 {pendingArticles.length} समीक्षा हेतु शेष
@@ -1043,7 +1043,7 @@ export const AutoNewsControlCenter: React.FC = () => {
                 <option value="अस्पष्ट या अप्रासंगिक खबर">अस्पष्ट या अप्रासंगिक खबर</option>
                 <option value="संवेदनशील या अप्रमाणित दावा">संवेदनशील या अप्रमाणित दावा</option>
                 <option value="डुप्लिकेट विषय (पहले से मौजूद)">डुप्लिकेट विषय (पहले से मौजूद)</option>
-                <option value="निम्न संपादकीय गुणवत्ता">निम्न संपादकीय गुणवत्ता</option>
+                <option value="निम्न गुणवत्ता व तथ्यहीन">निम्न गुणवत्ता व तथ्यहीन</option>
                 <option value="कॉपीराइट / लाइसेंस नीति उल्लंघन">कॉपीराइट / लाइसेंस नीति उल्लंघन</option>
               </select>
             </div>

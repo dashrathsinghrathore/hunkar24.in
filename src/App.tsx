@@ -356,10 +356,7 @@ const NewsAppContent: React.FC = () => {
   // Public News Portal View — STRICTLY ZERO ADMIN BUTTONS OR LINKS
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 transition-colors pb-16 sm:pb-0">
-      {/* 1. Top Utility Ribbon */}
-      <TopUtilityBar />
-
-      {/* 2. Main Desktop / Mobile Header — Clean public presentation */}
+      {/* Main Desktop / Mobile Header — Clean public presentation */}
       <MainHeader onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
 
       {/* 3. Primary Sticky Categories Navigation Bar */}

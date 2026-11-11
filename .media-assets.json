@@ -1,0 +1,31 @@
+[
+  {
+    "id": "med-1794367057742-82fpu",
+    "mediaType": "video",
+    "sourceType": "upload",
+    "storageProvider": "local",
+    "mediaUrl": "/assets/uploads/test-bulletin-videomp4-1794367057742.mp4",
+    "mimeType": "video/mp4",
+    "fileSize": 44,
+    "displayOrder": 0,
+    "backupStatus": "pending",
+    "createdAt": "2026-11-11T03:17:37.742Z",
+    "updatedAt": "2026-11-11T03:17:37.743Z",
+    "caption": "परीक्षण वीडियो बुलेटिन"
+  },
+  {
+    "id": "med-1794367057736-4l1jq",
+    "mediaType": "image",
+    "sourceType": "upload",
+    "storageProvider": "local",
+    "mediaUrl": "/assets/uploads/test-ground-report-photojpg-1794367057736.jpg",
+    "mimeType": "image/jpeg",
+    "fileSize": 134,
+    "displayOrder": 0,
+    "backupStatus": "pending",
+    "createdAt": "2026-11-11T03:17:37.736Z",
+    "updatedAt": "2026-11-11T03:17:37.736Z",
+    "altText": "हुंकार 24 ग्राउंड रिपोर्ट",
+    "caption": "परीक्षण ग्राउंड रिपोर्ट तस्वीर"
+  }
+]

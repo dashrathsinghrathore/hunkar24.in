@@ -36,7 +36,7 @@ export const SITE_CONFIG = {
     email: 'news@hunkar24.in',
     officeAddress: 'हुंकार 24 मीडिया भवन, सिविल लाइन्स, जयपुर, राजस्थान - 302006',
     grievanceEmail: 'grievance@hunkar24.in',
-    grievanceOfficer: 'संपादकीय शिकायत निवारण अधिकारी (Hunkar 24)'
+    grievanceOfficer: 'विधिक नोडल अधिकारी (Hunkar 24)'
   },
 
   // Official Social Media Channels

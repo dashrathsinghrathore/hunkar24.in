@@ -78,7 +78,7 @@ export const AIViralAssistant: React.FC = () => {
       <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
         <div>
-          <strong>संपादकीय आचार संहिता निर्देश:</strong> AI द्वारा सुझाए गए सभी शीर्षक और कैप्शन केवल विचार व प्रारूप के लिए हैं। किसी भी सामग्री को प्रकाशित करने से पहले संपादक द्वारा तथ्यों की सत्यता की पुष्टि अनिवार्य है।
+          <strong>पत्रकारिता आचार संहिता निर्देश:</strong> AI द्वारा सुझाए गए सभी शीर्षक और कैप्शन केवल विचार व प्रारूप के लिए हैं। किसी भी सामग्री को प्रकाशित करने से पहले तथ्यों की सत्यता की पुष्टि अनिवार्य है।
         </div>
       </div>
 

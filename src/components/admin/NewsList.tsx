@@ -112,7 +112,7 @@ export const NewsList: React.FC<NewsListProps> = ({ onEditArticle, onCreateNew }
             <tr className="bg-stone-50 dark:bg-stone-800/80 border-b border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-300 font-bold">
               <th className="p-3">शीर्षक व विवरण</th>
               <th className="p-3">श्रेणी / ज़िला</th>
-              <th className="p-3">संपादक / ब्यूरो</th>
+              <th className="p-3">ब्यूरो / रिपोर्टर</th>
               <th className="p-3">स्थिति</th>
               <th className="p-3 text-right">कार्यवाहियां</th>
             </tr>

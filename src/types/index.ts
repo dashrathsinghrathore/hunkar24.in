@@ -32,6 +32,8 @@ export interface Article {
   isExclusive?: boolean;
   tags: string[];
   videoUrl?: string;
+  galleryImages?: string[]; // Up to 5 images per article
+  mediaAssets?: MediaAsset[];
   readingTimeMinutes: number;
   likesCount?: number;
   // Automated News Integration fields
@@ -44,6 +46,46 @@ export interface Article {
   riskFlags?: string[];
   entities?: { names?: string[]; locations?: string[]; dates?: string[] };
 }
+
+export type MediaType = 'image' | 'video' | 'thumbnail';
+export type MediaSourceType = 'upload' | 'external_url' | 'imported';
+export type StorageProvider = 'supabase' | 'firebase' | 'external' | 'local';
+export type BackupStatus = 'pending' | 'backed_up' | 'failed' | 'disabled';
+
+export interface MediaAsset {
+  id: string;
+  newsId?: string;
+  mediaType: MediaType;
+  sourceType: MediaSourceType;
+  storageProvider: StorageProvider;
+  storageBucket?: string;
+  storagePath?: string;
+  mediaUrl: string;
+  firebaseStoragePath?: string;
+  firebaseBackupUrl?: string;
+  mimeType?: string;
+  fileSize?: number;
+  thumbnailUrl?: string;
+  displayOrder?: number;
+  backupStatus: BackupStatus;
+  createdAt: string;
+  updatedAt: string;
+  altText?: string;
+  caption?: string;
+}
+
+export interface SyncEvent {
+  eventId: string;
+  entityId: string;
+  eventType: 'article_publish' | 'article_update' | 'article_delete' | 'media_backup' | 'media_import';
+  payload: any;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  retryCount: number;
+  createdAt: string;
+  processedAt?: string;
+  errorMessage?: string;
+}
+
 
 export interface AutoNewsArticleItem {
   id: string;
@@ -74,6 +116,7 @@ export interface AutoNewsArticleItem {
 export interface BreakingNewsItem {
   id: string;
   text: string;
+  category?: string;
   linkArticleId?: string;
   linkUrl?: string;
   isActive: boolean;

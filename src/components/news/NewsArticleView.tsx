@@ -197,7 +197,7 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
         {/* Action Ribbon: Audio Reader, Print, Share */}
         <div className="flex items-center justify-between gap-3 py-2.5 my-2 border-y border-stone-200 dark:border-stone-800 text-xs no-print">
           <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
-            <span className="font-semibold text-stone-800 dark:text-stone-200">{article.reporterName || 'हुंकार डेस्क'}</span>
+            <span className="font-semibold text-stone-800 dark:text-stone-200">{article.reporterName || 'हुंकार 24 ब्यूरो'}</span>
             <span>·</span>
             <span>{formatDate(article.publishedAt)}</span>
           </div>
@@ -255,25 +255,71 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
         </div>
       </header>
 
-      {/* Main Featured Image */}
-      <figure className="mb-6 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-800">
-        <SafeImage
-          src={article.mainImage}
-          alt={article.imageAlt || cleanTitle}
-          category={article.category}
-          district={article.district}
-          imageType={article.imageType}
-          className="w-full max-h-[500px]"
-        />
-        <figcaption className="p-3 text-xs text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-900 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row justify-between gap-1">
-          <span className="font-medium">{article.imageCaption || `${cleanTitle} की प्रासंगिक ग्राउंड विज़ुअल तस्वीर`}</span>
-          <span className="text-stone-400 shrink-0">
-            स्रोत: {article.imageSource || article.sourceName || 'हुंकार 24 फोटो डेस्क'}
-          </span>
-        </figcaption>
-      </figure>
+      {/* Main Featured Image & Gallery (Up to 5 images) */}
+      {(() => {
+        const allImages = (article.galleryImages && article.galleryImages.length > 0)
+          ? article.galleryImages
+          : (article.mainImage ? [article.mainImage] : []);
+        const [activeImgIdx, setActiveImgIdx] = React.useState(0);
+        const currentSrc = allImages[activeImgIdx] || article.mainImage;
 
-      {/* Embedded Video if present (YouTube, Supabase, MP4, etc.) */}
+        return (
+          <div className="mb-6 space-y-2">
+            <figure className="rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-800">
+              <SafeImage
+                src={currentSrc}
+                alt={article.imageAlt || cleanTitle}
+                category={article.category}
+                district={article.district}
+                imageType={article.imageType}
+                allowFullscreen={true}
+                className="w-full max-h-[520px]"
+              />
+              <figcaption className="p-3 text-xs text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-900 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row justify-between gap-1">
+                <span className="font-medium">
+                  {article.imageCaption || `${cleanTitle} की प्रासंगिक ग्राउंड विज़ुअल तस्वीर`}
+                  {allImages.length > 1 && ` [फोटो ${activeImgIdx + 1} / ${allImages.length}]`}
+                </span>
+                <span className="text-stone-400 shrink-0">
+                  स्रोत: {article.imageSource || article.sourceName || 'हुंकार 24 फोटो डेस्क'}
+                </span>
+              </figcaption>
+            </figure>
+
+            {/* Multi-image thumbnail gallery strip if > 1 image */}
+            {allImages.length > 1 && (
+              <div className="flex items-center gap-2 px-1 overflow-x-auto py-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 shrink-0">
+                  फोटो गैलरी:
+                </span>
+                {allImages.map((imgUrl, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveImgIdx(idx)}
+                    className={`relative w-16 h-12 rounded-lg overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                      activeImgIdx === idx
+                        ? 'border-red-600 ring-2 ring-red-600/30'
+                        : 'border-stone-300 dark:border-stone-700 opacity-65 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`फोटो ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-[8px] font-bold px-1 rounded">
+                      {idx + 1}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Embedded Video if present (YouTube, Supabase, MP4, Instagram, Facebook) */}
       {article.videoUrl && (
         <div className="mb-6">
           <UniversalVideoPlayer

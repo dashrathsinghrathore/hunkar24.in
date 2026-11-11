@@ -10,7 +10,7 @@ export const ReporterManager: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
-  const [role, setRole] = useState<'reporter' | 'editor'>('reporter');
+  const role = 'reporter';
   const [district, setDistrict] = useState('jaipur');
   const [tehsil, setTehsil] = useState('');
 

@@ -10,7 +10,8 @@ import {
   Sun,
   ShieldCheck,
   HelpCircle,
-  Clock
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { ArticleCard } from './ArticleCard';
@@ -33,22 +34,34 @@ export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps>
   const [selectedMandi, setSelectedMandi] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [mandiRates, setMandiRates] = useState<MandiRecord[]>(() => getDynamicMandiRates());
+  const [isRefreshingRates, setIsRefreshingRates] = useState(false);
+  const [lastSyncLabel, setLastSyncLabel] = useState('आज दैनिक अद्यतित');
 
-  React.useEffect(() => {
-    fetch('/api/mandi-rates')
+  const fetchRates = (forceRefresh = false) => {
+    setIsRefreshingRates(true);
+    fetch(`/api/mandi-rates${forceRefresh ? '?refresh=true' : ''}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.success && Array.isArray(data.rates)) {
           setMandiRates(data.rates);
+          if (data.rates[0]?.lastUpdated) {
+            setLastSyncLabel(data.rates[0].lastUpdated);
+          }
         }
       })
       .catch(() => {
         setMandiRates(getDynamicMandiRates());
+      })
+      .finally(() => {
+        setTimeout(() => setIsRefreshingRates(false), 500);
       });
+  };
 
+  React.useEffect(() => {
+    fetchRates(false);
     const interval = setInterval(() => {
-      setMandiRates(getDynamicMandiRates());
-    }, 30 * 60 * 1000);
+      fetchRates(false);
+    }, 15 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -152,9 +165,20 @@ export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps>
               राजस्थान कृषि उपज मंडी आज के भाव (Mandi Bhav Live 12 फसलें):
             </h3>
           </div>
-          <div className="flex items-center gap-2 text-[11px] font-bold text-stone-500">
+          <div className="flex items-center gap-2 text-[11px] font-bold text-stone-600 dark:text-stone-300">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>दैनिक लाइव दरें | स्रोत: राजस्थान कृषि विपणन बोर्ड</span>
+            <span className="bg-amber-100 dark:bg-stone-800 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded font-mono text-[10px]">
+              {lastSyncLabel}
+            </span>
+            <button
+              onClick={() => fetchRates(true)}
+              disabled={isRefreshingRates}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+              title="ताज़ा मंडी भाव रिफ्रेश करें"
+            >
+              <RefreshCw className={`w-3 h-3 ${isRefreshingRates ? 'animate-spin' : ''}`} />
+              <span>रिफ्रेश</span>
+            </button>
           </div>
         </div>
 

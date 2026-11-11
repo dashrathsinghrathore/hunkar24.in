@@ -58,7 +58,7 @@ export const ReportIssueModal: React.FC = () => {
                 आपकी शिकायत दर्ज कर ली गई है
               </h4>
               <p className="text-xs text-stone-600 dark:text-stone-300 mt-2 max-w-sm mx-auto">
-                हुंकार 24 की संपादकीय व फैक्ट-चेक टीम 24 घंटे के भीतर इसकी समीक्षा कर उचित संशोधन करेगी।
+                हुंकार 24 फैक्ट-चेक टीम 24 घंटे के भीतर इसकी समीक्षा कर उचित संशोधन करेगी।
               </p>
               <button
                 onClick={handleClose}

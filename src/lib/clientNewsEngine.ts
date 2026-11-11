@@ -213,8 +213,8 @@ export async function approveClientArticle(
           category_slug: customData?.category || item.category || 'rajasthan',
           district: customData?.district || item.district || null,
           main_image: item.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
-          reporter_name: 'हुंकार 24 संपादकीय डेस्क',
-          reporter_role: 'संपादक',
+          reporter_name: 'हुंकार 24 ब्यूरो',
+          reporter_role: 'हुंकार ब्यूरो',
           status: 'published',
           published_at: now
         }])
@@ -231,8 +231,8 @@ export async function approveClientArticle(
           category: inserted.category_slug,
           district: inserted.district,
           mainImage: inserted.main_image,
-          reporterName: inserted.reporter_name,
-          reporterRole: inserted.reporter_role || 'संपादक',
+          reporterName: inserted.reporter_name || 'हुंकार 24 ब्यूरो',
+          reporterRole: inserted.reporter_role || 'हुंकार ब्यूरो',
           status: 'published',
           publishedAt: inserted.published_at,
           updatedAt: now,

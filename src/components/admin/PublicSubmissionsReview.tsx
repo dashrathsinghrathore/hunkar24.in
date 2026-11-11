@@ -26,7 +26,7 @@ export const PublicSubmissionsReview: React.FC = () => {
   );
 
   const handleApprove = (id: string) => {
-    approveSubmission(id, 'संपादकीय पुष्टि उपरांत स्वीकृत व प्रकाशित।');
+    approveSubmission(id, 'सत्यापन उपरांत स्वीकृत व पोर्टल पर प्रकाशित।');
   };
 
   const handleReject = (id: string) => {
@@ -44,7 +44,7 @@ export const PublicSubmissionsReview: React.FC = () => {
             <span>नागरिक समाचार समीक्षा कक्ष (Citizen Journalism Submissions)</span>
           </h2>
           <p className="text-xs text-stone-500">
-            आम पाठकों व जन-रिपोर्टरों द्वारा भेजी गई खबरों का संपादकीय सत्यापन व प्रकाशन
+            आम पाठकों व जन-रिपोर्टरों द्वारा भेजी गई खबरों का सत्यापन व प्रकाशन
           </p>
         </div>
 
