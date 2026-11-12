@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Wheat,
-  TrendingUp,
-  MapPin,
   CheckCircle2,
   Calendar,
   ExternalLink,
@@ -10,60 +8,17 @@ import {
   Sun,
   ShieldCheck,
   HelpCircle,
-  Clock,
-  RefreshCw
+  Clock
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { ArticleCard } from './ArticleCard';
-
-import {
-  INITIAL_MANDI_DATA,
-  RAJASTHAN_MANDIS,
-  COMMODITIES_HI,
-  MandiRecord,
-  getDynamicMandiRates
-} from '../../data/mandiData';
 
 interface AgricultureFarmersSectionProps {
   excludeIds?: Set<string>;
 }
 
 export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps> = ({ excludeIds }) => {
-  const { articles, setSelectedCategory, setActiveArticle, incrementArticleViews } = useNews();
-  const [selectedCommodity, setSelectedCommodity] = useState<string>('all');
-  const [selectedMandi, setSelectedMandi] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  const [mandiRates, setMandiRates] = useState<MandiRecord[]>(() => getDynamicMandiRates());
-  const [isRefreshingRates, setIsRefreshingRates] = useState(false);
-  const [lastSyncLabel, setLastSyncLabel] = useState('आज दैनिक अद्यतित');
-
-  const fetchRates = (forceRefresh = false) => {
-    setIsRefreshingRates(true);
-    fetch(`/api/mandi-rates${forceRefresh ? '?refresh=true' : ''}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.success && Array.isArray(data.rates)) {
-          setMandiRates(data.rates);
-          if (data.rates[0]?.lastUpdated) {
-            setLastSyncLabel(data.rates[0].lastUpdated);
-          }
-        }
-      })
-      .catch(() => {
-        setMandiRates(getDynamicMandiRates());
-      })
-      .finally(() => {
-        setTimeout(() => setIsRefreshingRates(false), 500);
-      });
-  };
-
-  React.useEffect(() => {
-    fetchRates(false);
-    const interval = setInterval(() => {
-      fetchRates(false);
-    }, 15 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const { articles, setSelectedCategory } = useNews();
 
   // Filter agriculture, farmer and rural articles, excluding stories shown in previous sections
   const candidateArticles = excludeIds && excludeIds.size > 0
@@ -73,13 +28,6 @@ export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps>
   const agriArticles = candidateArticles.filter(
     a => a.category === 'agriculture' || a.tags?.some(t => ['किसान', 'कृषि', 'मंडी भाव', 'ग्रामीण', 'कुसुम योजना'].includes(t))
   );
-
-  const filteredMandiRates = mandiRates.filter(item => {
-    const matchCrop = selectedCommodity === 'all' || item.cropHi.includes(selectedCommodity);
-    const matchMandi = selectedMandi === 'all' || item.mandi.includes(selectedMandi) || item.district === selectedMandi;
-    return matchCrop && matchMandi;
-  });
-
 
   const farmerSchemes = [
     {
@@ -139,7 +87,7 @@ export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps>
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-stone-100 font-newspaper-headline tracking-tight mt-0.5">
-              कृषि, किसान एवं राजस्थान मंडी भाव
+              कृषि, किसान एवं ग्रामीण विकास
             </h2>
           </div>
         </div>
@@ -151,137 +99,9 @@ export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps>
           }}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer self-start md:self-center"
         >
-          <span>सभी कृषि व मंडी समाचार देखें</span>
+          <span>सभी कृषि व ग्रामीण समाचार देखें</span>
           <ArrowRight className="w-4 h-4" />
         </button>
-      </div>
-
-      {/* Live Mandi Rates Interactive Control & Rates Grid */}
-      <div className="mb-8 bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-amber-50/90 dark:from-stone-900 dark:via-stone-900/90 dark:to-stone-900 rounded-2xl border border-amber-200 dark:border-amber-900/50 p-4 sm:p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-amber-200/80 dark:border-amber-900/40">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            <h3 className="text-sm font-black text-stone-900 dark:text-stone-100 uppercase tracking-wide">
-              राजस्थान कृषि उपज मंडी आज के भाव (Mandi Bhav Live 12 फसलें):
-            </h3>
-          </div>
-          <div className="flex items-center gap-2 text-[11px] font-bold text-stone-600 dark:text-stone-300">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="bg-amber-100 dark:bg-stone-800 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded font-mono text-[10px]">
-              {lastSyncLabel}
-            </span>
-            <button
-              onClick={() => fetchRates(true)}
-              disabled={isRefreshingRates}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-              title="ताज़ा मंडी भाव रिफ्रेश करें"
-            >
-              <RefreshCw className={`w-3 h-3 ${isRefreshingRates ? 'animate-spin' : ''}`} />
-              <span>रिफ्रेश</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Commodity Filter Pills */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-            <span className="text-stone-400 font-bold shrink-0 text-[11px]">फसल चुनें:</span>
-            <button
-              onClick={() => setSelectedCommodity('all')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition-colors cursor-pointer ${
-                selectedCommodity === 'all'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200'
-              }`}
-            >
-              सभी 12 फसलें
-            </button>
-            {COMMODITIES_HI.map(crop => (
-              <button
-                key={crop}
-                onClick={() => setSelectedCommodity(crop)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-colors cursor-pointer ${
-                  selectedCommodity === crop
-                    ? 'bg-amber-600 text-white font-bold shadow-xs'
-                    : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200'
-                }`}
-              >
-                {crop}
-              </button>
-            ))}
-          </div>
-
-          {/* Mandi Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-            <span className="text-stone-400 font-bold shrink-0 text-[11px]">मंडी चुनें:</span>
-            <button
-              onClick={() => setSelectedMandi('all')}
-              className={`px-2 py-0.5 rounded text-[11px] font-bold shrink-0 transition-colors cursor-pointer ${
-                selectedMandi === 'all'
-                  ? 'bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900'
-                  : 'bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-400'
-              }`}
-            >
-              सभी मंडियां (10)
-            </button>
-            {RAJASTHAN_MANDIS.map(m => (
-              <button
-                key={m.name}
-                onClick={() => setSelectedMandi(m.district)}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold shrink-0 transition-colors cursor-pointer ${
-                  selectedMandi === m.district
-                    ? 'bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 font-bold'
-                    : 'bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
-                }`}
-              >
-                {m.name.split(' ')[0]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Mandi Cards Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {filteredMandiRates.slice(0, 12).map((m) => (
-            <div
-              key={m.id}
-              className="bg-white dark:bg-stone-800/90 rounded-xl p-3 border border-stone-200 dark:border-stone-700/80 shadow-2xs hover:border-amber-400 transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div className="text-xs font-black text-stone-900 dark:text-stone-100 truncate">
-                  {m.cropHi}
-                </div>
-                <div className="text-[11px] text-stone-500 dark:text-stone-400 truncate flex items-center gap-0.5 mt-0.5">
-                  <MapPin className="w-2.5 h-2.5 shrink-0 text-amber-600" />
-                  <span>{m.mandi}</span>
-                </div>
-              </div>
-
-              <div className="mt-2.5 pt-2 border-t border-stone-100 dark:border-stone-700/50">
-                <div className="flex items-baseline justify-between">
-                  <div className="text-sm font-black text-amber-700 dark:text-amber-400 font-mono">
-                    ₹{m?.modalPrice != null ? Number(m.modalPrice).toLocaleString('hi-IN') : Number(m?.maxPrice || m?.minPrice || 0).toLocaleString('hi-IN')}
-                  </div>
-                  <span
-                    className={`text-[10px] font-bold px-1 py-0.5 rounded ${
-                      m.trend === 'up'
-                        ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40'
-                        : m.trend === 'down'
-                        ? 'text-red-600 bg-red-50 dark:bg-red-950/40'
-                        : 'text-stone-500 bg-stone-100 dark:bg-stone-800'
-                    }`}
-                  >
-                    {m.changeAmount}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-stone-400 mt-1">
-                  <span>रेंज: {m.minPrice}-{m.maxPrice}</span>
-                  <span>{m.arrivalQuintal}q आवक</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Main Grid: Articles on Left (8 cols) + Farmer Schemes on Right (4 cols) */}

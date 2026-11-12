@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Menu, ChevronDown, MapPin, X, Flame } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Menu, ChevronDown, MapPin, X, Flame, Bookmark } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { RAJASTHAN_DISTRICTS } from '../../config/siteConfig';
 
@@ -18,6 +18,27 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenMobileMenu }) => {
   } = useNews();
 
   const [isDistrictMenuOpen, setIsDistrictMenuOpen] = useState(false);
+  const [savedCount, setSavedCount] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem('hunkar24_saved_articles');
+      const ids = raw ? JSON.parse(raw) : [];
+      return Array.isArray(ids) ? ids.length : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  useEffect(() => {
+    const updateCount = () => {
+      try {
+        const raw = localStorage.getItem('hunkar24_saved_articles');
+        const ids = raw ? JSON.parse(raw) : [];
+        setSavedCount(Array.isArray(ids) ? ids.length : 0);
+      } catch {}
+    };
+    window.addEventListener('hunkar24_bookmarks_updated', updateCount);
+    return () => window.removeEventListener('hunkar24_bookmarks_updated', updateCount);
+  }, []);
 
   const handleCategoryClick = (slug: string) => {
     const target = (slug === 'home' || slug === 'all') ? 'all' : slug;
@@ -132,8 +153,26 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenMobileMenu }) => {
               })}
           </div>
 
-          {/* Right Live Ticker Highlight Pill */}
-          <div className="flex items-center shrink-0 py-1">
+          {/* Right Live Ticker Highlight Pill & Saved Bookmarks */}
+          <div className="flex items-center gap-1.5 shrink-0 py-1">
+            <button
+              onClick={() => handleCategoryClick('saved')}
+              className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded transition-all cursor-pointer ${
+                selectedCategory === 'saved'
+                  ? 'bg-red-950 text-white shadow-inner'
+                  : 'bg-red-800 hover:bg-red-900 text-stone-100'
+              }`}
+              title="सहेजे गए समाचार (Bookmarks)"
+            >
+              <Bookmark className="w-3.5 h-3.5 fill-current" />
+              <span className="hidden sm:inline">सहेजे गए</span>
+              {savedCount > 0 && (
+                <span className="bg-amber-400 text-stone-950 text-[10px] font-black rounded-full px-1.5 py-0.2">
+                  {savedCount}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={() => handleCategoryClick('latest')}
               className="flex items-center gap-1 bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-extrabold px-3 py-1.5 rounded uppercase tracking-wider transition-all"

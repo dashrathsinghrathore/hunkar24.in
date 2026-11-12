@@ -64,6 +64,22 @@ export const TOPIC_IMAGE_REGISTRY: TopicVisual[] = [
     imageAlt: 'कातर छोटी के पदक विजेता कबड्डी खिलाड़ी',
     imageType: 'photo'
   },
+  // 0G. Katar Chhoti Bus Stand Mud & Highway 20
+  {
+    keywords: ['बस स्टैंड पर कीचड़', 'कीचड़ का जमाव', 'स्टेट हाईवे-20', 'कातर बस स्टैंड', 'जलभराव तिराहा'],
+    imageUrl: 'https://mriytnwinrjiurzedama.supabase.co/storage/v1/object/public/hunkar-news-images/WhatsApp%20Image%202026-11-12%20at%2012.43.14.jpeg',
+    caption: 'कातर छोटी मुख्य बस स्टैंड एवं स्टेट हाईवे 20 तिराहे पर जलभराव व कीचड़ का दृश्य',
+    imageAlt: 'कातर छोटी मुख्य बस स्टैंड पर कीचड़ का जमाव',
+    imageType: 'photo'
+  },
+  // 0H. Amarsar Road Bike Collision
+  {
+    keywords: ['अमरसर रोड', 'दो बाइकों की भिड़ंत', 'नरेंद्र सिंह', 'सांडवा अमरसर', 'पीबीएम अस्पताल'],
+    imageUrl: 'https://mriytnwinrjiurzedama.supabase.co/storage/v1/object/public/hunkar-news-images/WhatsApp%20Image%202026-11-10%20at%2019.01.59.jpeg',
+    caption: 'सांडवा-अमरसर मार्ग पर दो बाइकों की भिड़ंत दुर्घटना संदर्भ',
+    imageAlt: 'सांडवा अमरसर मार्ग पर बाइक दुर्घटना संदर्भ',
+    imageType: 'photo'
+  },
   // 1. Agriculture: Mustard (सरसों) & Oilseeds
   {
     keywords: ['सरसों', 'mustard', 'तिलहन', 'तेल', 'सरसों भाव', 'सरसों आवक'],

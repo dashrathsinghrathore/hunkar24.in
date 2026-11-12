@@ -200,6 +200,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     // Make sure initial baseline articles exist if not present in storage
     const guaranteedIds = [
+      'art-katar-chhoti-bus-stand-20261112',
+      'art-amarsar-road-bike-accident-20261110',
       'art-aadhaar-voter-id-scheme-2026',
       'art-rajasthan-panchayat-polls-chaturth-2026',
       'art-sikar-zila-parishad-politics-2026',

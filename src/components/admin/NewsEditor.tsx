@@ -400,9 +400,9 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
 
     // Save up to 5 images in galleryImages
     const finalGalleryImages = imagesList.map(img => img.url).filter(Boolean).slice(0, 5);
-    const chosenMainImage = (imagesList.find(img => img.isMain) || imagesList[0])?.url || finalGalleryImages[0] || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80';
-    const mainCaption = (imagesList.find(img => img.isMain) || imagesList[0])?.caption || '';
-    const mainAlt = (imagesList.find(img => img.isMain) || imagesList[0])?.altText || '';
+    const chosenMainImage = (imagesList.find(img => img.isMain) || imagesList[0])?.url || finalGalleryImages[0] || initialArticle?.mainImage || '';
+    const mainCaption = (imagesList.find(img => img.isMain) || imagesList[0])?.caption || initialArticle?.imageCaption || '';
+    const mainAlt = (imagesList.find(img => img.isMain) || imagesList[0])?.altText || initialArticle?.imageAlt || '';
 
     const payloadData: any = {
       headline: headline.trim(),

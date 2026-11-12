@@ -1,5 +1,5 @@
-import React from 'react';
-import { Clock, Share2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Clock, Share2, Bookmark } from 'lucide-react';
 import { Article } from '../../types';
 import { useNews } from '../../context/NewsContext';
 import { SITE_CONFIG } from '../../config/siteConfig';
@@ -18,6 +18,55 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   showSummary = true
 }) => {
   const { setActiveArticle } = useNews();
+
+  // Save for Later (Local Bookmark) state
+  const [isSaved, setIsSaved] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem('hunkar24_saved_articles');
+      if (!raw) return false;
+      const ids: string[] = JSON.parse(raw);
+      return Array.isArray(ids) && ids.includes(article.id);
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const handleBookmarkChange = () => {
+      try {
+        const raw = localStorage.getItem('hunkar24_saved_articles');
+        if (!raw) {
+          setIsSaved(false);
+          return;
+        }
+        const ids: string[] = JSON.parse(raw);
+        setIsSaved(Array.isArray(ids) && ids.includes(article.id));
+      } catch {}
+    };
+
+    window.addEventListener('hunkar24_bookmarks_updated', handleBookmarkChange);
+    return () => window.removeEventListener('hunkar24_bookmarks_updated', handleBookmarkChange);
+  }, [article.id]);
+
+  const handleToggleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const raw = localStorage.getItem('hunkar24_saved_articles');
+      const savedIds: string[] = raw ? JSON.parse(raw) : [];
+      let updated: string[];
+      if (savedIds.includes(article.id)) {
+        updated = savedIds.filter(id => id !== article.id);
+        setIsSaved(false);
+      } else {
+        updated = [...savedIds, article.id];
+        setIsSaved(true);
+      }
+      localStorage.setItem('hunkar24_saved_articles', JSON.stringify(updated));
+      window.dispatchEvent(new Event('hunkar24_bookmarks_updated'));
+    } catch (err) {
+      console.warn('Could not update bookmarks in localStorage:', err);
+    }
+  };
 
   const handleOpen = () => {
     setActiveArticle(article);
@@ -51,19 +100,35 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
         onClick={handleOpen}
         className="group cursor-pointer py-2.5 border-b border-stone-200 dark:border-stone-800 last:border-0 hover:bg-stone-50 dark:hover:bg-stone-800/40 px-2 rounded transition-colors"
       >
-        <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mb-1">
-          {article.district && (
-            <>
-              <span className="font-semibold text-red-700 dark:text-red-400 capitalize">{article.district}</span>
-              <span aria-hidden="true">·</span>
-            </>
-          )}
-          <span>{formatPublishedDate(article.publishedAt)}</span>
-          <span aria-hidden="true">·</span>
-          <span className="inline-flex items-center gap-1 text-[11px] text-stone-500 dark:text-stone-400">
-            <Clock className="w-3 h-3 text-stone-400" />
-            <span>{readTimeMinutes} मिनट पठन</span>
-          </span>
+        <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 mb-1">
+          <div className="flex items-center gap-2">
+            {article.district && (
+              <>
+                <span className="font-semibold text-red-700 dark:text-red-400 capitalize">{article.district}</span>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
+            <span>{formatPublishedDate(article.publishedAt)}</span>
+            <span aria-hidden="true">·</span>
+            <span className="inline-flex items-center gap-1 text-[11px] text-stone-500 dark:text-stone-400">
+              <Clock className="w-3 h-3 text-stone-400" />
+              <span>{readTimeMinutes} मिनट</span>
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleToggleSave}
+            className={`p-1 rounded transition-colors ${
+              isSaved
+                ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40'
+                : 'text-stone-400 hover:text-red-700 dark:hover:text-red-400'
+            }`}
+            title={isSaved ? 'सहेजा गया (हटाएं)' : 'बाद में पढ़ें (सहेजें)'}
+            aria-label="Save for later"
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
+          </button>
         </div>
         <h4 className="text-sm font-semibold text-stone-900 dark:text-stone-100 group-hover:text-red-700 dark:group-hover:text-red-400 font-newspaper-headline leading-snug line-clamp-2">
           {cleanTitle}
@@ -91,6 +156,19 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
               बड़ी खबर
             </span>
           )}
+          <button
+            type="button"
+            onClick={handleToggleSave}
+            className={`absolute top-2 right-2 p-1.5 rounded-md backdrop-blur-xs transition-colors shadow-xs ${
+              isSaved
+                ? 'bg-red-700 text-white'
+                : 'bg-black/60 text-white hover:bg-black/80'
+            }`}
+            title={isSaved ? 'सहेजा गया (हटाएं)' : 'बाद में पढ़ें (सहेजें)'}
+            aria-label="Save for later"
+          >
+            <Bookmark className={`w-3 h-3 ${isSaved ? 'fill-current' : ''}`} />
+          </button>
         </div>
 
         <div className="flex-1 flex flex-col justify-between">
@@ -128,8 +206,21 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
             <span className="font-medium truncate max-w-[160px]">{article.reporterName || 'हुंकार 24 ब्यूरो'}</span>
             <div className="flex items-center gap-2">
               <button
+                type="button"
+                onClick={handleToggleSave}
+                className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                  isSaved
+                    ? 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400'
+                    : 'text-stone-500 hover:text-red-700 dark:hover:text-red-400'
+                }`}
+                title={isSaved ? 'सहेजा गया (हटाएं)' : 'बाद में पढ़ें'}
+              >
+                <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
+                <span>{isSaved ? 'सहेजा गया' : 'सहेजें'}</span>
+              </button>
+              <button
                 onClick={handleWhatsAppShare}
-                className="hover:text-emerald-600 transition-colors"
+                className="hover:text-emerald-600 transition-colors p-1"
                 title="व्हाट्सऐप पर शेयर करें"
               >
                 <Share2 className="w-3.5 h-3.5" />
@@ -161,10 +252,24 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           </span>
         )}
         {article.isExclusive && (
-          <span className="absolute top-2 right-2 bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs">
+          <span className="absolute top-2 left-16 bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs">
             एक्सक्लूसिव
           </span>
         )}
+        {/* Quick Save for Later Button */}
+        <button
+          type="button"
+          onClick={handleToggleSave}
+          className={`absolute top-2 right-2 p-1.5 rounded-md backdrop-blur-xs transition-colors shadow-xs ${
+            isSaved
+              ? 'bg-red-700 text-white'
+              : 'bg-black/60 text-white hover:bg-black/80'
+          }`}
+          title={isSaved ? 'सहेजा गया (हटाएं)' : 'बाद में पढ़ें (सहेजें)'}
+          aria-label="Save for later"
+        >
+          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
+        </button>
         {/* Read-time pill overlay */}
         <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-xs text-stone-100 text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-1 shadow-xs">
           <Clock className="w-2.5 h-2.5 text-amber-400" />
@@ -204,8 +309,21 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           </span>
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              onClick={handleToggleSave}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                isSaved
+                  ? 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400'
+                  : 'text-stone-500 hover:text-red-700 dark:hover:text-red-400'
+              }`}
+              title={isSaved ? 'सहेजा गया (हटाएं)' : 'बाद में पढ़ें'}
+            >
+              <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
+              <span>{isSaved ? 'सहेजा गया' : 'सहेजें'}</span>
+            </button>
+            <button
               onClick={handleWhatsAppShare}
-              className="text-stone-400 hover:text-emerald-600 transition-colors"
+              className="text-stone-400 hover:text-emerald-600 transition-colors p-1"
               title="व्हाट्सऐप पर शेयर करें"
             >
               <Share2 className="w-3.5 h-3.5" />

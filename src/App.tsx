@@ -56,6 +56,7 @@ import { ArrowLeft, RefreshCw, Layers } from 'lucide-react';
 const CATEGORY_NAMES_HI: Record<string, string> = {
   all: 'सभी समाचार',
   latest: 'ताज़ा समाचार',
+  saved: 'सहेजे गए समाचार (Bookmarks)',
   rajasthan: 'राजस्थान',
   national: 'राष्ट्रीय',
   politics: 'राजनीति',
@@ -314,6 +315,15 @@ const NewsAppContent: React.FC = () => {
   // Filtered Articles for Category Feed
   const filteredCategoryArticles = articles.filter(a => {
     if (selectedCategory === 'all' || selectedCategory === 'home') return true;
+    if (selectedCategory === 'saved') {
+      try {
+        const raw = localStorage.getItem('hunkar24_saved_articles');
+        const ids: string[] = raw ? JSON.parse(raw) : [];
+        return Array.isArray(ids) && ids.includes(a.id);
+      } catch {
+        return false;
+      }
+    }
     if (selectedCategory === 'latest') return a.status === 'published';
     const matchCategory = a.category?.toLowerCase() === selectedCategory.toLowerCase();
     const matchDistrict = a.district?.toLowerCase() === selectedCategory.toLowerCase();

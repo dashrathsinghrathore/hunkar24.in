@@ -110,7 +110,6 @@ export const SafeImage: React.FC<SafeImageProps> = ({
           alt={alt || topicVisual.imageAlt || 'हुंकार 24 समाचार'}
           loading={loading}
           referrerPolicy="no-referrer"
-          crossOrigin="anonymous"
           onLoad={() => setIsLoaded(true)}
           onError={() => {
             if (!hasError) {

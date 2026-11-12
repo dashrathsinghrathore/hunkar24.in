@@ -13,8 +13,25 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+process.on('uncaughtException', (err) => {
+  console.error('[Hunkar24 Process] Uncaught exception:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[Hunkar24 Process] Unhandled rejection:', reason);
+});
+
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+// AI Studio requires port 3000. In Cloud Run container environments, process.env.PORT is 8080 (which is internally reserved).
+// We check CLI args for --port if provided, otherwise strictly bind to 3000.
+function resolvePort(): number {
+  const portArgIndex = process.argv.indexOf('--port');
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    const val = parseInt(process.argv[portArgIndex + 1], 10);
+    if (!isNaN(val)) return val;
+  }
+  return 3000;
+}
+const PORT = resolvePort();
 const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(express.json({ limit: '50mb' }));
@@ -2068,10 +2085,34 @@ async function startServer() {
   if (!isProduction) {
     const { createServer } = await import('vite');
     const vite = await createServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false
+      },
       appType: 'spa'
     });
     app.use(vite.middlewares);
+
+    // Development SPA HTML fallback handler for direct navigation and deep links
+    app.use('*', async (req: Request, res: Response, next: NextFunction) => {
+      const url = req.originalUrl;
+      if (req.method !== 'GET' || url.startsWith('/api') || url.startsWith('/assets')) {
+        return next();
+      }
+      try {
+        const templatePath = path.resolve(__dirname, 'index.html');
+        if (fs.existsSync(templatePath)) {
+          let template = fs.readFileSync(templatePath, 'utf-8');
+          template = await vite.transformIndexHtml(url, template);
+          res.status(200).set({ 'Content-Type': 'text/html; charset=utf-8' }).end(template);
+          return;
+        }
+      } catch (e: any) {
+        vite.ssrFixStacktrace(e);
+        return next(e);
+      }
+      next();
+    });
   } else {
     app.use(express.static(path.resolve(__dirname, 'dist')));
     app.get('*', (req: Request, res: Response) => {
@@ -2079,12 +2120,15 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[Hunkar24 Server] Running at http://localhost:${PORT}`);
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[Hunkar24 Server] Running at http://0.0.0.0:${PORT}`);
+  });
+
+  server.on('error', (err: any) => {
+    console.error('[Hunkar24 Server] Server listen error:', err);
   });
 }
 
 startServer().catch(err => {
   console.error('Failed to start server:', err);
-  process.exit(1);
 });

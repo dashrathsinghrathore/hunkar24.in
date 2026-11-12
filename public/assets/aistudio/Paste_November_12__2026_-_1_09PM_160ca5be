@@ -1,0 +1,1009 @@
+# PROJECT: HUNKAR 24 (हुंकार 24)
+## ULTIMATE PRODUCTION ENGINEERING, MEDIA MANAGEMENT & DATA PERSISTENCE UPGRADE
+
+You are acting as a Principal Software Architect, Senior Full-Stack Engineer, Supabase Database Specialist, Storage Infrastructure Engineer, and Production Reliability Engineer.
+
+Your responsibility is to thoroughly inspect, repair, optimize, and upgrade the EXISTING HUNKAR 24 project.
+
+This is NOT a request to create a new website.
+
+This is NOT a request to redesign the entire application.
+
+This is a mission-critical production repair involving two major problems:
+
+1. News image uploading, external image URL handling, permanent image storage, and image rendering.
+2. Permanent news data persistence across GitHub updates, Google AI Studio development sessions, and Netlify deployments.
+
+Both problems must be solved at the architectural level, not hidden through temporary frontend workarounds.
+
+==================================================
+SECTION 1 — PROJECT ENVIRONMENT
+==================================================
+
+Project Name: HUNKAR 24
+Hindi Brand: हुंकार 24
+Tagline: राजस्थान की बुलंद आवाज़!
+
+Existing Project:
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Supabase
+- Supabase Authentication
+- Supabase Database
+- Supabase Storage
+- Netlify Hosting
+- GitHub Repository
+- Google AI Studio Development Environment
+- Existing Admin Dashboard
+- Existing News Publishing System
+- Existing Realtime Features
+
+IMPORTANT:
+
+First inspect the entire existing project.
+
+Understand:
+- Existing folder structure.
+- Existing application architecture.
+- Supabase client initialization.
+- Environment variables.
+- Existing database tables.
+- Database relationships.
+- Existing storage buckets.
+- Existing Row Level Security policies.
+- Existing authentication system.
+- Existing admin permissions.
+- Existing news publishing workflows.
+- Existing image upload functions.
+- Existing image URL handling.
+- Existing Netlify deployment configuration.
+- Existing GitHub integration.
+
+Do not assume that the existing database or tables are empty.
+
+Do not create duplicate tables, buckets, or authentication systems.
+
+Do not destroy existing working functionality.
+
+Preserve the existing design, branding, routing, and all operational features.
+
+==================================================
+SECTION 2 — CRITICAL ISSUE 1
+PERMANENT NEWS IMAGE MANAGEMENT SYSTEM
+==================================================
+
+CURRENT PROBLEMS:
+
+- Uploaded images are not displayed correctly.
+- A single default image appears repeatedly.
+- External image URLs are not rendered correctly.
+- Image uploads do not reliably persist.
+- News records sometimes contain incorrect image references.
+- The frontend does not consistently retrieve the actual image URL.
+
+Completely investigate and fix the root causes.
+
+A. DIRECT IMAGE UPLOAD
+
+Implement a reliable image upload system using the existing Supabase Storage infrastructure.
+
+Required workflow:
+
+1. Admin selects an image.
+2. Validate the image before upload.
+3. Display a preview.
+4. Upload the actual binary image to the correct Supabase Storage bucket.
+5. Wait for successful upload confirmation.
+6. Generate the correct public URL.
+7. Save that URL in the corresponding news database record.
+8. Retrieve the saved URL from Supabase.
+9. Render the actual image throughout the website.
+
+The system must support:
+- JPG
+- JPEG
+- PNG
+- WEBP
+- Other safe image formats where appropriate.
+
+Implement:
+- File type validation.
+- File size validation.
+- Upload progress.
+- Upload error handling.
+- Duplicate filename prevention.
+- Unique filenames using UUIDs.
+- Safe filename generation.
+- Image preview.
+- Retry mechanism.
+- Upload success confirmation.
+- Proper storage error reporting.
+
+Never save a fake image URL.
+
+Never mark an upload successful before Supabase confirms it.
+
+Never silently replace a failed upload with a default image.
+
+B. EXTERNAL IMAGE URL IMPORT
+
+The admin must be able to provide an image URL from external image hosting providers.
+
+Examples:
+- ImgBB
+- Direct HTTPS image URLs
+- Other publicly accessible image hosting providers.
+- Existing Supabase image URLs.
+
+Required workflow:
+
+1. Admin pastes an image URL.
+2. Validate the URL.
+3. Verify that the resource is accessible.
+4. Check whether the resource is an actual image.
+5. Display a live preview.
+6. Provide an option to import the image into Supabase Storage.
+7. When imported, download the image securely on the server.
+8. Validate its actual MIME type and size.
+9. Upload the binary image into the existing Supabase Storage bucket.
+10. Generate the new Supabase public URL.
+11. Save the correct URL in the news record.
+
+IMPORTANT:
+
+Do not assume that every URL ending in .jpg or .png points to an actual image.
+
+Support image-hosting URLs that may require redirects.
+
+Use secure server-side fetching for importing external images.
+
+Implement:
+- HTTPS restrictions.
+- Private IP and localhost blocking.
+- Redirect validation.
+- DNS/IP validation to mitigate SSRF.
+- Content-Type verification.
+- Maximum download size.
+- Request timeout.
+- Safe error handling.
+
+Do not expose Supabase Service Role Keys in frontend code.
+
+If an external provider blocks access or does not provide a direct image resource, show a clear error and allow the administrator to use another URL or upload the image manually.
+
+C. IMAGE STORAGE ARCHITECTURE
+
+Use the existing Supabase Storage bucket whenever it is correctly configured.
+
+If no suitable bucket exists, create a migration or provide an idempotent setup procedure to create one.
+
+Suggested organization:
+
+news-images/
+    2026/
+        11/
+            unique-image-name.webp
+
+Requirements:
+
+- Permanent image storage.
+- Public image access for published news.
+- Secure upload permissions.
+- Secure delete permissions.
+- Admin-only upload operations.
+- Correct bucket policies.
+- No accidental deletion of existing images.
+
+IMPORTANT:
+
+Do not delete or recreate an existing bucket.
+
+Do not overwrite existing images unnecessarily.
+
+Use unique object paths.
+
+Use the correct Supabase Storage API.
+
+D. DATABASE IMAGE FIELD
+
+Inspect the existing news table and identify the correct image column.
+
+Reuse the existing column if available.
+
+If necessary, create a safe migration to add the appropriate image field.
+
+Recommended logical fields:
+
+- featured_image_url
+- featured_image_path
+- featured_image_source
+- image_alt_text
+
+Use the existing naming convention wherever possible.
+
+The database must store the actual image URL and, where applicable, its storage object path.
+
+Do not introduce unnecessary duplicate fields.
+
+E. FIX THE DEFAULT IMAGE BUG
+
+This is a critical requirement.
+
+Find the exact reason why the same default image is appearing for every news article.
+
+Inspect:
+
+- Image URL database values.
+- Frontend image component.
+- News card component.
+- Hero news component.
+- Article detail page.
+- Admin editor.
+- Image URL mapping.
+- API response transformations.
+- Supabase query selections.
+- Null handling.
+- Fallback logic.
+
+Correct all incorrect mappings.
+
+Every news article must display its own associated image.
+
+A default placeholder may only appear when:
+- No image has been provided.
+- The image is genuinely unavailable.
+- The image URL is invalid.
+
+Even then, use a neutral placeholder rather than reusing an unrelated news image.
+
+Never show one news article's image on another article.
+
+F. IMAGE RENDERING ACROSS THE WEBSITE
+
+Ensure that the correct image appears in:
+
+- Homepage hero section.
+- Breaking news section.
+- Latest news.
+- News category pages.
+- Rajasthan news.
+- India news.
+- World news.
+- Education news.
+- Government jobs.
+- News cards.
+- News details.
+- Related news.
+- Search results.
+- Admin news management.
+- Social sharing previews where supported.
+
+Use proper image loading states.
+
+Use responsive image rendering.
+
+Prevent layout shifts.
+
+Handle failed images gracefully.
+
+Ensure the actual image URL is used everywhere.
+
+==================================================
+SECTION 3 — CRITICAL ISSUE 2
+PERMANENT DATABASE & NEWS DATA PERSISTENCE
+==================================================
+
+CURRENT PROBLEM:
+
+News published through the live admin panel sometimes disappears after code updates and redeployment.
+
+The project must be redesigned around a strict separation between application code and persistent application data.
+
+CORE PRINCIPLE:
+
+GITHUB STORES CODE.
+
+SUPABASE STORES LIVE DATA.
+
+NETLIFY HOSTS THE APPLICATION.
+
+GOOGLE AI STUDIO MODIFIES THE CODE.
+
+These systems must never be confused.
+
+A. SINGLE SOURCE OF TRUTH
+
+Supabase PostgreSQL must be the single source of truth for all dynamic website content.
+
+This includes:
+
+- News articles.
+- News titles.
+- News descriptions.
+- News content.
+- Featured images.
+- Categories.
+- Tags.
+- Authors.
+- Publication status.
+- Publication dates.
+- Breaking news.
+- Featured news.
+- Trending news.
+- Admin-managed content.
+- User-generated records where applicable.
+- Existing website settings stored in the database.
+
+All live content must be fetched from Supabase.
+
+Do not hardcode published news into React components.
+
+Do not store published news in localStorage as the primary database.
+
+Do not store production news in static JSON files.
+
+Do not create a second independent news database.
+
+B. NEWS PUBLISHING WORKFLOW
+
+When an administrator publishes news:
+
+1. Authenticate the administrator.
+2. Verify admin permissions.
+3. Validate the news data.
+4. Upload the image if necessary.
+5. Obtain the confirmed image URL.
+6. Insert or update the news record in Supabase PostgreSQL.
+7. Verify the database response.
+8. Return a success response only after the database operation succeeds.
+9. Refresh or invalidate relevant frontend queries.
+10. Update the live website.
+
+The published news must remain available after:
+
+- Browser refresh.
+- Browser restart.
+- Logout and login.
+- Netlify redeployment.
+- GitHub commit.
+- GitHub branch update.
+- Google AI Studio code modification.
+- New application build.
+- Frontend redesign.
+- Application restart.
+
+C. NEVER RESET PRODUCTION DATA
+
+Inspect the existing codebase for dangerous operations such as:
+
+- DROP TABLE.
+- TRUNCATE TABLE.
+- DELETE FROM without appropriate conditions.
+- Database reset scripts.
+- Destructive seed scripts.
+- Automatic table recreation.
+- Destructive migration logic.
+- Startup scripts that overwrite production records.
+
+Remove or repair unsafe operations.
+
+Do not execute destructive SQL against the production database.
+
+Do not run seed scripts automatically in production.
+
+Do not recreate the database during deployment.
+
+Do not overwrite live content with mock data.
+
+Do not use hardcoded demo news as production content.
+
+D. DATABASE MIGRATION SYSTEM
+
+Implement a safe database migration strategy.
+
+Requirements:
+
+- Version-controlled SQL migrations.
+- Idempotent migration scripts wherever practical.
+- Non-destructive schema changes.
+- Explicit migration ordering.
+- Existing data preservation.
+- Safe indexes.
+- Safe constraints.
+- Safe database changes.
+- Clear migration documentation.
+
+Never automatically drop production tables.
+
+Never reset existing database records to match a new frontend version.
+
+Database migrations must modify the schema without deleting existing news.
+
+E. DATABASE INDEPENDENCE FROM FRONTEND DEPLOYMENT
+
+This is extremely important.
+
+A new frontend deployment must not recreate or reset the database.
+
+The frontend must retrieve the latest data from Supabase at runtime.
+
+For example:
+
+Admin publishes news
+       ↓
+Supabase PostgreSQL
+       ↓
+Supabase Realtime / Database Query
+       ↓
+Live Website
+
+A new GitHub commit must not interfere with this workflow.
+
+A new Netlify deployment must not interfere with this workflow.
+
+A new Google AI Studio session must not interfere with this workflow.
+
+F. NEWS RECORD IDENTITY
+
+Every news record must have a permanent unique identifier.
+
+Use the existing primary key if correctly implemented.
+
+Do not generate temporary IDs that change on every deployment.
+
+Ensure that updates modify existing records rather than accidentally duplicating or replacing them.
+
+Preserve:
+- Created timestamps.
+- Updated timestamps.
+- Publication timestamps.
+- Existing news IDs.
+- Existing relationships.
+
+G. BACKUP AND RECOVERY
+
+Implement a documented database backup strategy.
+
+Requirements:
+
+- Explain Supabase backup options.
+- Document how to export news data.
+- Document how to restore database records.
+- Protect existing data before major schema changes.
+- Recommend regular backups.
+- Never claim a backup exists unless it has been verified.
+
+Do not store sensitive credentials inside GitHub.
+
+==================================================
+SECTION 4 — GITHUB + GOOGLE AI STUDIO + NETLIFY
+DEPLOYMENT SAFETY
+==================================================
+
+Establish a reliable development and deployment workflow.
+
+Expected architecture:
+
+Google AI Studio
+       |
+       | Code changes
+       v
+GitHub Repository
+       |
+       | Build and deployment
+       v
+Netlify Hosting
+       |
+       | Runtime API requests
+       v
+Supabase Database
+       |
+       v
+Supabase Storage
+
+Rules:
+
+1. GitHub contains source code and database migration files.
+2. Supabase contains all production news and dynamic records.
+3. Netlify deploys the frontend application.
+4. Supabase credentials are configured through secure environment variables.
+5. Deployment must not reset production data.
+6. Code updates must not delete published news.
+7. Existing news must not depend on the GitHub repository.
+8. Static assets and user-uploaded images must remain separate.
+9. Database access must use the correct Supabase project.
+10. Development and production environments must not accidentally share destructive operations.
+
+Inspect and fix:
+
+- .env configuration.
+- .env.example.
+- Vite environment variable handling.
+- Supabase client initialization.
+- Netlify environment configuration.
+- Build configuration.
+- Runtime API configuration.
+- Supabase project URL.
+- Supabase anonymous/publishable key configuration.
+
+Use VITE_ variables only for values safe to expose in the browser.
+
+Never expose:
+- Supabase Service Role Key.
+- Database passwords.
+- Private API keys.
+- Administrative secrets.
+
+Add the required server-side functions for privileged operations.
+
+IMPORTANT:
+
+Do not change the existing Supabase project URL or production database connection without explicit justification.
+
+Do not replace the current database with a new Supabase project.
+
+==================================================
+SECTION 5 — SECURITY & ADMIN ACCESS
+==================================================
+
+Preserve the existing authentication system.
+
+Inspect the current authentication and authorization implementation.
+
+Ensure:
+
+- Only authorized administrators can publish news.
+- Only authorized administrators can upload images.
+- Only authorized administrators can delete news.
+- Only authorized administrators can modify protected content.
+- Public users can read published news.
+- Draft news remains private.
+- Supabase RLS policies enforce these permissions.
+- Storage bucket policies enforce the appropriate permissions.
+
+Never rely exclusively on frontend route protection.
+
+Enforce permissions at the database and server level.
+
+Do not introduce a publicly accessible Service Role API.
+
+Do not expose admin credentials in browser code.
+
+Do not weaken existing security policies to make an operation work.
+
+==================================================
+SECTION 6 — REALTIME NEWS SYNCHRONIZATION
+==================================================
+
+Preserve and improve the existing live news functionality.
+
+When an administrator publishes news:
+
+- The database record must be saved first.
+- The frontend must receive the confirmed result.
+- The homepage must refresh its news data.
+- Relevant category pages must update.
+- Breaking news sections must update.
+- News cards must display the correct image.
+- Related news must remain consistent.
+
+Use Supabase Realtime if already configured.
+
+Otherwise, implement an appropriate realtime subscription.
+
+Prevent duplicate subscriptions.
+
+Prevent duplicate news entries.
+
+Handle reconnection and subscription failures.
+
+Use a reliable initial database fetch in addition to realtime events.
+
+Realtime events must never be treated as the permanent data store.
+
+The database remains the source of truth.
+
+==================================================
+SECTION 7 — ADMIN PANEL MEDIA EXPERIENCE
+==================================================
+
+Upgrade the existing news editor without destroying its current interface.
+
+Add a professional media management experience.
+
+The administrator should be able to:
+
+1. Upload an image.
+2. Paste an external image URL.
+3. Preview an image.
+4. Import an external image into Supabase.
+5. Replace an existing image.
+6. Remove an image when authorized.
+7. View upload progress.
+8. See clear success and failure messages.
+
+Add clear source labels:
+
+- Supabase Storage.
+- External URL.
+- No Image.
+
+Do not change existing publishing functionality unnecessarily.
+
+Ensure that editing a news article without changing its image preserves the existing image URL.
+
+Do not accidentally clear an image field when other news fields are updated.
+
+==================================================
+SECTION 8 — DATA INTEGRITY & ERROR HANDLING
+==================================================
+
+Implement robust error handling.
+
+Important scenarios:
+
+- Supabase unavailable.
+- Network interruption.
+- Invalid image URL.
+- Upload failure.
+- Database insertion failure.
+- Database update failure.
+- Unauthorized admin.
+- Missing storage bucket.
+- Invalid image format.
+- Expired authentication session.
+- Realtime disconnection.
+- Broken external image.
+- Duplicate publication request.
+
+Show meaningful error messages.
+
+Never report success if the database operation failed.
+
+Never silently discard news content.
+
+Never silently discard image URLs.
+
+If image upload succeeds but news insertion fails, preserve the uploaded image and provide a safe recovery mechanism.
+
+If a news update fails, preserve the previous valid record.
+
+Use appropriate transactions or compensating operations where applicable.
+
+==================================================
+SECTION 9 — PERFORMANCE & RELIABILITY
+==================================================
+
+Improve performance without changing the visual identity.
+
+Implement:
+
+- Optimized Supabase queries.
+- Pagination for news lists.
+- Appropriate database indexes.
+- Responsive image loading.
+- Lazy loading.
+- Image caching.
+- Query caching where appropriate.
+- Proper error boundaries.
+- Loading skeletons.
+- Efficient realtime subscriptions.
+
+Do not load every news article unnecessarily.
+
+Avoid duplicate database requests.
+
+Do not cache stale news indefinitely.
+
+==================================================
+SECTION 10 — STRICT BACKWARD COMPATIBILITY
+==================================================
+
+This is an existing live production website.
+
+Preserve:
+
+- Existing homepage.
+- Existing news categories.
+- Existing article pages.
+- Existing admin dashboard.
+- Existing authentication.
+- Existing navigation.
+- Existing visual identity.
+- Existing typography.
+- Existing responsive layouts.
+- Existing SEO structure.
+- Existing social links.
+- Existing website settings.
+- Existing Supabase records.
+
+Do not redesign the entire website.
+
+Do not remove working features.
+
+Do not replace the existing architecture without a strong technical reason.
+
+Do not introduce unnecessary dependencies.
+
+Do not introduce fake demo content.
+
+Do not break existing routes.
+
+Do not remove previously published news.
+
+==================================================
+SECTION 11 — IMPLEMENTATION STRATEGY
+==================================================
+
+Work in the following order.
+
+PHASE 1 — COMPLETE PROJECT AUDIT
+
+Inspect the entire project.
+
+Identify:
+
+- Existing news schema.
+- Existing image fields.
+- Existing storage bucket.
+- Existing image upload logic.
+- Existing image rendering logic.
+- Existing admin publishing workflow.
+- Existing Supabase policies.
+- Existing database migrations.
+- Existing deployment scripts.
+- Existing environment variables.
+
+Produce a concise audit report identifying the actual root causes.
+
+PHASE 2 — IMAGE SYSTEM REPAIR
+
+Fix direct image upload.
+
+Fix external image URL handling.
+
+Fix Supabase Storage integration.
+
+Fix image database persistence.
+
+Fix image rendering across every relevant page.
+
+Fix the repeated default image bug.
+
+PHASE 3 — DATA PERSISTENCE REPAIR
+
+Ensure that Supabase is the permanent source of truth.
+
+Repair news CRUD operations.
+
+Remove destructive database reset behavior.
+
+Implement safe migrations.
+
+Preserve all existing production records.
+
+PHASE 4 — DEPLOYMENT SAFETY
+
+Verify GitHub and Netlify configuration.
+
+Verify environment variables.
+
+Ensure that new builds do not modify production records.
+
+Ensure that database changes are independently managed.
+
+PHASE 5 — SECURITY
+
+Verify RLS.
+
+Verify storage permissions.
+
+Verify admin authorization.
+
+Verify secure image import.
+
+Verify secret handling.
+
+PHASE 6 — TESTING
+
+Test the complete production workflow.
+
+Do not finish merely because the code compiles.
+
+==================================================
+SECTION 12 — MANDATORY ACCEPTANCE TESTS
+==================================================
+
+The following tests are mandatory.
+
+TEST 1:
+Publish a news article with a newly uploaded image.
+
+Expected:
+- Image uploads to Supabase Storage.
+- Public URL is generated.
+- URL is saved in the news record.
+- Correct image appears on the homepage.
+- Correct image appears on the article page.
+
+TEST 2:
+Publish news using an external ImgBB image URL.
+
+Expected:
+- URL validation works.
+- Image preview appears.
+- External image can be imported into Supabase.
+- Imported image remains accessible.
+- Correct image appears throughout the website.
+
+TEST 3:
+Publish five different news articles with five different images.
+
+Expected:
+- All five articles display their respective images.
+- No article displays another article's image.
+- No repeated default image bug.
+
+TEST 4:
+Publish a news article.
+
+Refresh the browser.
+
+Expected:
+- The article remains available.
+- The image remains available.
+
+TEST 5:
+Log out and log in again.
+
+Expected:
+- All previously published news remains available.
+- All image references remain correct.
+
+TEST 6:
+Make a code change and deploy a new Netlify build.
+
+Expected:
+- No news is deleted.
+- No image is deleted.
+- All previous news remains live.
+- All previous images remain visible.
+
+TEST 7:
+Modify the homepage design.
+
+Expected:
+- Existing database records remain unchanged.
+- News content is still retrieved from Supabase.
+
+TEST 8:
+Edit an existing news article without changing its image.
+
+Expected:
+- The previous image remains attached.
+
+TEST 9:
+Attempt to publish news without admin authorization.
+
+Expected:
+- Operation is rejected securely.
+
+TEST 10:
+Simulate a failed image upload.
+
+Expected:
+- Clear error is displayed.
+- No fake success message.
+- No incorrect image URL is stored.
+
+TEST 11:
+Simulate a failed database insertion after successful image upload.
+
+Expected:
+- Existing news remains untouched.
+- Uploaded image is not silently lost.
+- Administrator receives a recovery message.
+
+TEST 12:
+Verify the database after deployment.
+
+Expected:
+- Existing news IDs remain unchanged.
+- Existing publication timestamps remain intact.
+- Existing image URLs remain intact.
+- Existing records are not duplicated or deleted.
+
+==================================================
+SECTION 13 — FINAL ENGINEERING REQUIREMENTS
+==================================================
+
+You must work with the actual existing codebase.
+
+Do not provide only theoretical recommendations.
+
+Do not simply explain what needs to be done.
+
+Actually inspect and modify the necessary files.
+
+Implement working code.
+
+Create safe SQL migrations only where needed.
+
+Update the existing Supabase integration.
+
+Update the existing admin panel.
+
+Update the existing frontend image components.
+
+Update backend functions where necessary.
+
+Add documentation for any required manual Supabase or Netlify configuration.
+
+If a required operation needs credentials or dashboard access that you do not have, do not pretend it was completed.
+
+Instead:
+- Complete everything possible in the codebase.
+- Explain the exact remaining manual step.
+- Provide the exact SQL or configuration needed.
+- Clearly distinguish implemented, tested, and pending items.
+
+Never invent successful test results.
+
+Never claim production deployment has been completed unless it has actually been deployed and verified.
+
+==================================================
+SECTION 14 — FINAL COMPLETION REPORT
+==================================================
+
+After implementation, provide a detailed report containing:
+
+1. Root causes discovered.
+2. Files modified.
+3. Files created.
+4. Database changes.
+5. Storage bucket configuration.
+6. RLS policy changes.
+7. Image upload implementation.
+8. External image URL implementation.
+9. News persistence improvements.
+10. GitHub and Netlify deployment safety.
+11. Security improvements.
+12. Testing results.
+13. Remaining manual configuration.
+14. Deployment instructions.
+
+Also provide:
+
+- Required environment variables.
+- Required SQL migrations.
+- Supabase Storage configuration.
+- Netlify deployment instructions.
+- A final production verification checklist.
+
+FINAL SUCCESS CONDITION:
+
+HUNKAR 24 must have a reliable, permanent, database-driven news publishing system.
+
+An administrator must be able to publish news and upload images from the live website.
+
+All news records must remain stored in Supabase PostgreSQL.
+
+All uploaded images must remain stored in Supabase Storage.
+
+External images must be handled correctly.
+
+Every news article must display its own correct image.
+
+Future GitHub code updates, Google AI Studio modifications, and Netlify deployments must not delete, overwrite, or reset existing production news or images.
+
+The existing HUNKAR 24 website must continue working without unnecessary redesign or loss of functionality.
+
+DO NOT STOP AFTER WRITING A PLAN.
+
+AUDIT → IMPLEMENT → VERIFY → REPORT.
+
+Treat this as a real production news platform, not a demonstration project.
+
+END OF MASTER ENGINEERING PROMPT.
