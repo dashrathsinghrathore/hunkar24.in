@@ -24,7 +24,17 @@ import {
   getDownloadURL,
   FirebaseStorage
 } from 'firebase/storage';
-import { Article, BreakingNewsItem, MediaAsset } from '../types';
+import { Article, BreakingNewsItem, MediaAsset, AdvertisementCampaign } from '../types';
+
+function stripUndefined<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const clean: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      clean[key] = value;
+    }
+  }
+  return clean;
+}
 
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
@@ -144,10 +154,10 @@ export async function saveArticleToFirebase(article: Article): Promise<boolean> 
   if (!isFirebaseConfigured || !firebaseDb) return false;
   try {
     const articleRef = ref(firebaseDb, `articles/${article.id}`);
-    await set(articleRef, {
+    await set(articleRef, stripUndefined({
       ...article,
       updatedAt: new Date().toISOString()
-    });
+    }));
     return true;
   } catch (error) {
     console.warn('[Firebase RTDB] Failed to save article:', error);
@@ -162,10 +172,10 @@ export async function updateArticleInFirebase(id: string, updates: Partial<Artic
   if (!isFirebaseConfigured || !firebaseDb) return false;
   try {
     const articleRef = ref(firebaseDb, `articles/${id}`);
-    await update(articleRef, {
+    await update(articleRef, stripUndefined({
       ...updates,
       updatedAt: new Date().toISOString()
-    });
+    }));
     return true;
   } catch (error) {
     console.warn('[Firebase RTDB] Failed to update article:', error);
@@ -195,7 +205,7 @@ export async function saveBreakingNewsToFirebase(item: BreakingNewsItem): Promis
   if (!isFirebaseConfigured || !firebaseDb) return false;
   try {
     const newsRef = ref(firebaseDb, `breaking_news/${item.id}`);
-    await set(newsRef, item);
+    await set(newsRef, stripUndefined(item));
     return true;
   } catch (error) {
     console.warn('[Firebase RTDB] Failed to save breaking news:', error);
@@ -216,6 +226,65 @@ export async function deleteBreakingNewsFromFirebase(id: string): Promise<boolea
     console.warn('[Firebase RTDB] Failed to delete breaking news:', error);
     return false;
   }
+}
+
+/**
+ * Save advertisement campaign in Firebase Realtime Database
+ */
+export async function saveAdvertisementToFirebase(ad: AdvertisementCampaign): Promise<boolean> {
+  if (!isFirebaseConfigured || !firebaseDb) return false;
+  try {
+    const adRef = ref(firebaseDb, `advertisements/${ad.id}`);
+    await set(adRef, stripUndefined(ad));
+    return true;
+  } catch (error) {
+    console.warn('[Firebase RTDB] Failed to save advertisement:', error);
+    return false;
+  }
+}
+
+/**
+ * Delete advertisement campaign from Firebase Realtime Database
+ */
+export async function deleteAdvertisementFromFirebase(id: string): Promise<boolean> {
+  if (!isFirebaseConfigured || !firebaseDb) return false;
+  try {
+    const adRef = ref(firebaseDb, `advertisements/${id}`);
+    await remove(adRef);
+    return true;
+  } catch (error) {
+    console.warn('[Firebase RTDB] Failed to delete advertisement:', error);
+    return false;
+  }
+}
+
+/**
+ * Real-time listener for advertisements
+ */
+export function subscribeToFirebaseAdvertisements(callback: (ads: AdvertisementCampaign[]) => void): () => void {
+  if (!isFirebaseConfigured || !firebaseDb) return () => {};
+
+  const adsRef = ref(firebaseDb, 'advertisements');
+  const unsubscribe = onValue(
+    adsRef,
+    (snapshot: DataSnapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+      const list: AdvertisementCampaign[] = Object.values(data);
+      callback(list);
+    },
+    (err) => {
+      console.warn('[Firebase RTDB] Advertisements subscription notice:', err.message);
+    }
+  );
+
+  return () => {
+    try {
+      off(adsRef, 'value', unsubscribe);
+    } catch {
+      // ignore
+    }
+  };
 }
 
 /**

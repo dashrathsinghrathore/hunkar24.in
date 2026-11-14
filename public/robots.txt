@@ -16,7 +16,12 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-# Sitemap & LLMs Knowledge Base
+User-agent: Googlebot-News
+Allow: /
+
+# Sitemap & LLMs Knowledge Base (Code/Crawler Only)
 Sitemap: https://hunkar24.in/sitemap.xml
-# LLM Manifest
+# LLM Manifests
 # https://hunkar24.in/llms.txt
+# https://hunkar24.in/llm.txt
+

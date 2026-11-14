@@ -35,6 +35,7 @@ export const MediaLibrary: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<'all' | 'image' | 'video'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Add / Upload Modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -114,8 +115,6 @@ export const MediaLibrary: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('क्या आप इस मीडिया फाइल को लाइब्रेरी से हटाना चाहते हैं?')) return;
-
     try {
       const res = await fetch(`/api/media/assets/${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -124,6 +123,8 @@ export const MediaLibrary: React.FC = () => {
       }
     } catch {
       setStatusMsg({ type: 'error', text: 'हटाने में त्रुटि हुई।' });
+    } finally {
+      setConfirmDeleteId(null);
     }
   };
 
@@ -396,13 +397,33 @@ export const MediaLibrary: React.FC = () => {
                     </button>
                   )}
 
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="p-1.5 rounded bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors cursor-pointer"
-                    title="हटाएं"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {confirmDeleteId === item.id ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(item.id)}
+                        className="px-2 py-1 rounded bg-red-600 text-white text-[10px] font-bold cursor-pointer"
+                      >
+                        हटाएं
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="px-2 py-1 rounded bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-200 text-[10px] font-bold cursor-pointer"
+                      >
+                        रद्द
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteId(item.id)}
+                      className="p-1.5 rounded bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors cursor-pointer"
+                      title="हटाएं"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

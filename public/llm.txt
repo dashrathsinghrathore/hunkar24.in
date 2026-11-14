@@ -1,0 +1,35 @@
+# HUNKAR 24 (हुंकार 24) – राजस्थान की बुलंद आवाज़
+
+> HUNKAR 24 is an independent Hindi digital news portal delivering verified Rajasthan ground reports, breaking news, government welfare schemes, RPSC/RSMSSB education & job updates, and daily agricultural mandi bhav.
+
+## Canonical Identity
+- Primary URL: https://hunkar24.in
+- Language: Hindi (hi-IN)
+- Publisher: Hunkar 24 Digital News Network
+- Headquarters: Jaipur, Rajasthan, India
+- Brand Logo: https://hunkar24.in/assets/hunkar24-logo.png
+- Social Preview Card: https://hunkar24.in/assets/hunkar24-share-card.jpg
+
+## Core News Sections
+- https://hunkar24.in/rajasthan — Rajasthan state politics, governance, and district news
+- https://hunkar24.in/jobs — RPSC, REET, RSMSSB recruitment notices and results
+- https://hunkar24.in/schemes — Central and Rajasthan state citizen welfare schemes
+- https://hunkar24.in/agriculture — Daily mandi bhav, crop rates, and farmer alerts
+- https://hunkar24.in/ground-report — Investigative rural and hyper-local reporting
+- https://hunkar24.in/national — National news and policy updates
+
+## Regional Hubs
+- https://hunkar24.in/jaipur
+- https://hunkar24.in/churu
+- https://hunkar24.in/sikar
+- https://hunkar24.in/bikaner
+- https://hunkar24.in/jodhpur
+- https://hunkar24.in/udaipur
+- https://hunkar24.in/nagaur
+- https://hunkar24.in/kota
+
+## Machine-Readable Discovery
+- Sitemap: https://hunkar24.in/sitemap.xml
+- Extended LLM Context: https://hunkar24.in/llms-full.txt
+- OpenAPI Spec: https://hunkar24.in/openapi.json
+- RSS Feed: https://hunkar24.in/rss.xml

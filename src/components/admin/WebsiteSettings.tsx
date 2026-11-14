@@ -3,6 +3,7 @@ import { Settings, Globe, Shield, Save, CheckCircle2, Megaphone, Link as LinkIco
 import { SITE_CONFIG } from '../../config/siteConfig';
 import { useNews } from '../../context/NewsContext';
 import { setSecondaryBackupEnabled } from '../../lib/firebaseClient';
+import { safeLocalStorageSet } from '../../utils/storageUtils';
 
 export const WebsiteSettings: React.FC = () => {
   const { logAction } = useNews();
@@ -58,6 +59,20 @@ export const WebsiteSettings: React.FC = () => {
       }).catch(() => {});
     }
 
+    const settingsObj = {
+      currentDomain,
+      futureDomain,
+      primaryDomain,
+      brandName,
+      brandNameHi,
+      tagline,
+      logoUrl,
+      adsenseId
+    };
+
+    safeLocalStorageSet('hunkar24_site_settings', settingsObj);
+    window.dispatchEvent(new CustomEvent('hunkar24:settings-updated', { detail: settingsObj }));
+
     const token = sessionStorage.getItem('hunkar24_admin_token') || '';
     fetch('/api/admin/state-sync', {
       method: 'POST',
@@ -68,16 +83,7 @@ export const WebsiteSettings: React.FC = () => {
       credentials: 'include',
       body: JSON.stringify({
         key: 'settings',
-        value: {
-          currentDomain,
-          futureDomain,
-          primaryDomain,
-          brandName,
-          brandNameHi,
-          tagline,
-          logoUrl,
-          adsenseId
-        }
+        value: settingsObj
       })
     }).catch(() => {});
 

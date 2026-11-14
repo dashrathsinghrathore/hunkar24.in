@@ -155,8 +155,23 @@
 
   <!-- High-Priority News Articles with Google News XML Tags -->
   <url>
+    <loc>https://hunkar24.in/news/katar-chhoti-bus-stand-kichad-jalbhav-highway-20</loc>
+    <lastmod>2026-11-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <news:news>
+      <news:publication>
+        <news:name>हुंकार 24 (HUNKAR 24)</news:name>
+        <news:language>hi</news:language>
+      </news:publication>
+      <news:publication_date>2026-11-12T12:43:00Z</news:publication_date>
+      <news:title>मुख्य बस स्टैंड पर कीचड़ का जमाव, राहगीर परेशान - स्टेट हाईवे-20 के प्रमुख तिराहे पर जलभराव</news:title>
+    </news:news>
+  </url>
+
+  <url>
     <loc>https://hunkar24.in/news/katar-chhoti-kabaddi-national-gold-silver-medal-churu</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <news:news>

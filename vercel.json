@@ -5,6 +5,28 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|LinkedInBot|Slackbot|Discordbot|SkypeUriPreview|Pinterest|Applebot|Signal).*"
+        }
+      ],
+      "destination": "/api/og?path=/"
+    },
+    {
+      "source": "/news/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|LinkedInBot|Slackbot|Discordbot|SkypeUriPreview|Pinterest|Applebot|Signal).*"
+        }
+      ],
+      "destination": "/api/og?path=/news/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

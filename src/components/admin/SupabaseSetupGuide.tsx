@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS public.articles (
   main_image TEXT NOT NULL,
   image_caption TEXT,
   image_source TEXT,
-  reporter_name TEXT NOT NULL DEFAULT 'हुंकार ब्यूरो',
-  reporter_role TEXT DEFAULT 'संवाददाता',
+  reporter_name TEXT NOT NULL DEFAULT '',
+  reporter_role TEXT DEFAULT '',
   reporter_photo TEXT,
   status TEXT NOT NULL DEFAULT 'published',
   is_breaking BOOLEAN DEFAULT false,
@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS public.articles (
   reading_time_minutes INT DEFAULT 3,
   tags TEXT[] DEFAULT ARRAY['राजस्थान', 'हुंकार24']::TEXT[],
   video_url TEXT,
+  gallery_images TEXT[] DEFAULT ARRAY[]::TEXT[],
   published_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -155,7 +156,34 @@ ON CONFLICT (id) DO UPDATE SET public = true;
 -- Storage Policies for Public Reading & Uploads
 CREATE POLICY "Public Read News Images" ON storage.objects FOR SELECT USING (bucket_id IN ('hunkar-news-images', 'hunkar-news-videos', 'hunkar-media-thumbnails', 'article-images'));
 CREATE POLICY "Admin Upload News Images" ON storage.objects FOR INSERT WITH CHECK (bucket_id IN ('hunkar-news-images', 'hunkar-news-videos', 'hunkar-media-thumbnails', 'article-images'));
-CREATE POLICY "Admin Update News Images" ON storage.objects FOR UPDATE USING (bucket_id IN ('hunkar-news-images', 'hunkar-news-videos', 'hunkar-media-thumbnails', 'article-images'));
+-- 8. ADVERTISEMENTS TABLE (Multi-Device Synchronized Ad Rotation)
+CREATE TABLE IF NOT EXISTS public.advertisements (
+  id TEXT PRIMARY KEY,
+  campaign_title TEXT NOT NULL,
+  advertiser_name TEXT NOT NULL,
+  placement TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  target_url TEXT NOT NULL,
+  desktop_visible BOOLEAN DEFAULT true,
+  mobile_visible BOOLEAN DEFAULT true,
+  impressions_count BIGINT DEFAULT 0,
+  clicks_count BIGINT DEFAULT 0,
+  pricing_inr NUMERIC(10, 2) DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  end_date DATE NOT NULL DEFAULT (CURRENT_DATE + INTERVAL '30 days'),
+  approved BOOLEAN NOT NULL DEFAULT true,
+  created_by_admin BOOLEAN NOT NULL DEFAULT true,
+  is_demo BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.advertisements ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Read Advertisements" ON public.advertisements;
+CREATE POLICY "Public Read Advertisements" ON public.advertisements FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Manage Advertisements" ON public.advertisements;
+CREATE POLICY "Admin Manage Advertisements" ON public.advertisements FOR ALL USING (true);
+ALTER PUBLICATION supabase_realtime ADD TABLE public.advertisements;
 `;
     navigator.clipboard.writeText(fullSql);
     setCopiedSchema(true);
@@ -168,7 +196,7 @@ CREATE POLICY "Admin Update News Images" ON storage.objects FOR UPDATE USING (bu
       title: 'Supabase Project URL (प्रोजेक्ट URL)',
       whereToFind: 'Supabase Dashboard -> Project Settings -> API -> Project URL',
       visibility: 'सार्वजनिक (Public)',
-      storageLocation: 'VITE_SUPABASE_URL (Netlify Environment Variables / .env)',
+      storageLocation: 'VITE_SUPABASE_URL (Vercel / Netlify Environment Variables / .env)',
       description: 'क्लाइंट-साइड डेटाबेस एक्सेस एवं इमेज स्टोरेज पाथ के लिए आवश्यक।'
     },
     {
@@ -176,7 +204,7 @@ CREATE POLICY "Admin Update News Images" ON storage.objects FOR UPDATE USING (bu
       title: 'Supabase Publishable / Anon Key (अनाम कुंजी)',
       whereToFind: 'Supabase Dashboard -> Project Settings -> API -> Project API keys -> "anon" "public"',
       visibility: 'सार्वजनिक (Public Safe for Client)',
-      storageLocation: 'VITE_SUPABASE_ANON_KEY (Netlify Environment Variables / .env)',
+      storageLocation: 'VITE_SUPABASE_ANON_KEY (Vercel / Netlify Environment Variables / .env)',
       description: 'Row Level Security (RLS) के तहत सुरक्षित डेटा क्वेरी करने के लिए।'
     },
     {
@@ -184,7 +212,7 @@ CREATE POLICY "Admin Update News Images" ON storage.objects FOR UPDATE USING (bu
       title: 'Supabase Service Role Key (सर्विस रोल सीक्रेट)',
       whereToFind: 'Supabase Dashboard -> Project Settings -> API -> Project API keys -> "service_role" "secret"',
       visibility: 'अत्यंत गोपनीय (STRICTLY SECRET - Never Frontend)',
-      storageLocation: 'Netlify Functions Environment Variables / Supabase Edge Functions',
+      storageLocation: 'Vercel Serverless Environment Variables / Supabase Edge Functions',
       description: 'बैकएंड ऑटोमेशन व सुपर एडमिन प्रक्रियाओं के लिए। कभी भी फ्रंटएंड कोड में न डालें।'
     },
     {

@@ -244,7 +244,21 @@ Sitemap: https://hunkar24.in/sitemap.xml
   res.send(robots);
 });
 
-// llms.txt & llms-full.txt Endpoints for AI Model Search Engine Discovery
+// llm.txt, llms.txt & llms-full.txt Endpoints for AI Model Search Engine Discovery
+app.get('/llm.txt', (req: Request, res: Response) => {
+  const filePath = path.resolve(__dirname, 'public', 'llm.txt');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.sendFile(filePath);
+  }
+  const fallback = path.resolve(__dirname, 'public', 'llms.txt');
+  if (fs.existsSync(fallback)) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.sendFile(fallback);
+  }
+  res.status(404).send('Not Found');
+});
+
 app.get('/llms.txt', (req: Request, res: Response) => {
   const filePath = path.resolve(__dirname, 'public', 'llms.txt');
   if (fs.existsSync(filePath)) {
@@ -2503,12 +2517,13 @@ async function getArticleMetadata(slug: string, origin: string) {
   }
 
   const baseOrigin = origin || 'https://hunkar24.in';
-  const fallbackLogo = 'https://i.ibb.co/bMrrmCqP/hunkar24.png';
+  const shareCardUrl = `${baseOrigin}/assets/hunkar24-share-card.jpg`;
+  const brandLogoUrl = `${baseOrigin}/assets/hunkar24-logo.png`;
 
   if (found) {
     let imgUrl = found.mainImage || '';
     if (!imgUrl || imgUrl.startsWith('data:')) {
-      imgUrl = fallbackLogo;
+      imgUrl = shareCardUrl;
     } else if (!imgUrl.startsWith('http://') && !imgUrl.startsWith('https://')) {
       imgUrl = `${baseOrigin}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
     }
@@ -2522,27 +2537,30 @@ async function getArticleMetadata(slug: string, origin: string) {
       description: articleDesc,
       image: imgUrl,
       imageAlt: found.imageAlt || found.headline || 'HUNKAR 24 समाचार',
+      logo: brandLogoUrl,
       url: articleUrl,
       type: 'article'
     };
   }
 
   return {
-    title: 'HUNKAR 24 – राजस्थान की बुलंद आवाज़ | हुंकार 24 डिजिटल न्यूज़',
+    title: 'HUNKAR 24 (हुंकार 24) – राजस्थान की बुलंद आवाज़',
     description:
-      'राजस्थान एवं देश-विदेश की निष्पक्ष ताज़ा खबरें, ब्रेकिंग न्यूज़, ग्राउंड रिपोर्ट, रोजगार एवं सरकारी योजनाएं। हुंकार 24 - निर्भीक पत्रकारिता का डिजिटल मंच।',
-    image: fallbackLogo,
-    imageAlt: 'HUNKAR 24 (हुंकार 24) Official Logo',
+      'राजस्थान एवं देश-विदेश की निष्पक्ष ताज़ा खबरें, ब्रेकिंग न्यूज़, ग्राउंड रिपोर्ट, सरकारी योजनाएं व मंडी भाव। अभी पढ़ें हुंकार 24 पर।',
+    image: shareCardUrl,
+    imageAlt: 'HUNKAR 24 (हुंकार 24) – राजस्थान की बुलंद आवाज़ आधिकारिक लोगो कार्ड',
+    logo: brandLogoUrl,
     url: `${baseOrigin}/`,
     type: 'website'
   };
 }
 
-function injectOpenGraphHtml(html: string, meta: { title: string; description: string; image: string; imageAlt: string; url: string; type: string }): string {
+function injectOpenGraphHtml(html: string, meta: { title: string; description: string; image: string; imageAlt: string; logo?: string; url: string; type: string }): string {
   const safeTitle = escapeHtmlAttr(meta.title);
   const safeDesc = escapeHtmlAttr(meta.description);
   const safeImage = escapeHtmlAttr(meta.image);
   const safeImageAlt = escapeHtmlAttr(meta.imageAlt);
+  const safeLogo = escapeHtmlAttr(meta.logo || 'https://hunkar24.in/assets/hunkar24-logo.png');
   const safeUrl = escapeHtmlAttr(meta.url);
   const safeType = escapeHtmlAttr(meta.type);
 
@@ -2558,6 +2576,7 @@ function injectOpenGraphHtml(html: string, meta: { title: string; description: s
   out = out.replace(/<meta\s+property="og:image"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:image" content="${safeImage}" />`);
   out = out.replace(/<meta\s+property="og:image:secure_url"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:image:secure_url" content="${safeImage}" />`);
   out = out.replace(/<meta\s+property="og:image:alt"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:image:alt" content="${safeImageAlt}" />`);
+  out = out.replace(/<meta\s+property="og:logo"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:logo" content="${safeLogo}" />`);
   out = out.replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:url" content="${safeUrl}" />`);
 
   out = out.replace(/<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/?>/i, `<meta name="twitter:title" content="${safeTitle}" />`);

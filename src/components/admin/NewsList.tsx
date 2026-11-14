@@ -17,12 +17,13 @@ interface NewsListProps {
 }
 
 export const NewsList: React.FC<NewsListProps> = ({ onEditArticle, onCreateNew }) => {
-  const { articles, deleteArticle, updateArticle } = useNews();
+  const { articles, categories, deleteArticle, updateArticle } = useNews();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const filteredArticles = articles.filter(art => {
     const q = searchTerm.toLowerCase();
@@ -36,10 +37,9 @@ export const NewsList: React.FC<NewsListProps> = ({ onEditArticle, onCreateNew }
     return matchesSearch && matchesStatus && matchesCat;
   });
 
-  const handleDelete = (id: string, headline: string) => {
-    if (window.confirm(`क्या आप वाकई इस समाचार को हटाना चाहते हैं?\n"${headline}"`)) {
-      deleteArticle(id);
-    }
+  const handleConfirmDelete = (id: string) => {
+    deleteArticle(id);
+    setConfirmDeleteId(null);
   };
 
   const handleToggleStatus = (article: Article) => {
@@ -115,12 +115,11 @@ export const NewsList: React.FC<NewsListProps> = ({ onEditArticle, onCreateNew }
           className="px-3 py-2 text-xs rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
         >
           <option value="all">सभी श्रेणियां (All Categories)</option>
-          <option value="rajasthan">राजस्थान</option>
-          <option value="jobs">नौकरी व रोजगार</option>
-          <option value="schemes">सरकारी योजनाएं</option>
-          <option value="agriculture">कृषि एवं मंडी</option>
-          <option value="ground-report">ग्राउंड रिपोर्ट</option>
-          <option value="weather">मौसम</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.slug}>
+              {cat.nameHi}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -226,13 +225,33 @@ export const NewsList: React.FC<NewsListProps> = ({ onEditArticle, onCreateNew }
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      onClick={() => handleDelete(art.id, art.headline)}
-                      className="p-1.5 rounded-lg text-stone-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 cursor-pointer"
-                      title="विलोपित करें"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {confirmDeleteId === art.id ? (
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmDelete(art.id)}
+                          className="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold cursor-pointer"
+                        >
+                          हटाएं
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-2 py-1 rounded bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-200 text-[10px] font-bold cursor-pointer"
+                        >
+                          रद्द
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(art.id)}
+                        className="p-1.5 rounded-lg text-stone-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 cursor-pointer"
+                        title="विलोपित करें"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

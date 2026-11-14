@@ -53,6 +53,7 @@ const AdminPortalLogin = lazy(() => import('./components/admin/AdminPortalLogin'
 
 import { Article } from './types';
 import { INITIAL_ARTICLES } from './data/mockData';
+import { updateCategorySEO } from './utils/seoUtils';
 import { ArrowLeft, RefreshCw, Layers } from 'lucide-react';
 
 const CATEGORY_NAMES_HI: Record<string, string> = {
@@ -227,6 +228,14 @@ const NewsAppContent: React.FC = () => {
       if (!isNewsPath && currentPath !== '/') {
         window.history.pushState(null, '', '/');
       }
+    }
+  }, [isAdminView, activeArticle, selectedCategory]);
+
+  // Dynamic Google SEO + Schema.org CollectionPage / BreadcrumbList for home & category views
+  useEffect(() => {
+    if (!isAdminView && !activeArticle) {
+      const titleHi = CATEGORY_NAMES_HI[selectedCategory] || selectedCategory.toUpperCase();
+      updateCategorySEO(selectedCategory, titleHi);
     }
   }, [isAdminView, activeArticle, selectedCategory]);
 

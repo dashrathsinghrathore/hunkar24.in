@@ -40,8 +40,11 @@ import {
   deleteArticleFromFirebase,
   saveBreakingNewsToFirebase,
   deleteBreakingNewsFromFirebase,
+  saveAdvertisementToFirebase,
+  deleteAdvertisementFromFirebase,
   subscribeToFirebaseArticles,
   subscribeToFirebaseBreakingNews,
+  subscribeToFirebaseAdvertisements,
   seedFirebaseIfEmpty,
   isFirebaseConfigured
 } from '../lib/firebaseClient';
@@ -196,6 +199,9 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
   const deletedBreakingIdsRef = useRef<Set<string>>(
     new Set(safeLocalStorageGet<string[]>('hunkar24_deleted_breaking_ids', []) || [])
+  );
+  const deletedAdIdsRef = useRef<Set<string>>(
+    new Set(safeLocalStorageGet<string[]>('hunkar24_deleted_ad_ids', []) || [])
   );
 
   // Load state from safe storage or use initial seed data with strict deduplication
@@ -652,6 +658,49 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         });
 
+      client
+        .from('advertisements')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50)
+        .then(({ data, error }) => {
+          if (!error && Array.isArray(data) && data.length > 0) {
+            const deletedAds = deletedAdIdsRef.current;
+            const mappedAds: AdvertisementCampaign[] = data
+              .filter((ad: any) => ad && !ad.is_demo && ad.approved !== false && ad.created_by_admin !== false && !deletedAds.has(ad.id))
+              .map((ad: any) => ({
+                id: ad.id,
+                campaignTitle: ad.campaign_title || '',
+                advertiserName: ad.advertiser_name || '',
+                placement: ad.placement || 'top_header',
+                imageUrl: ad.image_url || '',
+                logoUrl: ad.logo_url || undefined,
+                targetUrl: ad.target_url || '#',
+                desktopVisible: ad.desktop_visible ?? true,
+                mobileVisible: ad.mobile_visible ?? true,
+                impressions: Number(ad.impressions_count || 0),
+                clicks: Number(ad.clicks_count || 0),
+                status: ad.status || 'active',
+                startDate: ad.start_date || new Date().toISOString().slice(0, 10),
+                endDate: ad.end_date || '2027-12-31',
+                pricingInr: Number(ad.pricing_inr || 0),
+                approved: true,
+                createdByAdmin: true,
+                isDemo: false
+              }));
+            if (mappedAds.length > 0) {
+              setAdvertisements(prev => {
+                const map = new Map<string, AdvertisementCampaign>();
+                for (const m of mappedAds) map.set(m.id, m);
+                for (const p of prev) {
+                  if (!deletedAds.has(p.id) && !map.has(p.id)) map.set(p.id, p);
+                }
+                return Array.from(map.values());
+              });
+            }
+          }
+        });
+
       const articlesChannel = client
         .channel('public:articles')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'articles' }, (payload: any) => {
@@ -985,18 +1034,20 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 1. Seed initial data to Firebase Realtime Database if empty
     seedFirebaseIfEmpty(INITIAL_ARTICLES, INITIAL_BREAKING_NEWS);
 
-    // 2. Real-time live listener for articles
+    // 2. Real-time live listener for articles (filters deleted IDs and strips reporter identity)
     const unsubArticles = subscribeToFirebaseArticles((firebaseArticles) => {
       if (Array.isArray(firebaseArticles) && firebaseArticles.length > 0) {
+        const deletedSet = deletedArticleIdsRef.current;
         setArticles(prev => {
           const map = new Map<string, Article>();
-          // Existing items
           for (const a of prev) {
-            map.set(a.id, a);
+            if (!deletedSet.has(a.id)) {
+              map.set(a.id, sanitizeArticleRecord(a));
+            }
           }
-          // Merge Firebase items (Firebase is authoritative)
           for (const fa of firebaseArticles) {
-            map.set(fa.id, fa);
+            if (!fa || deletedSet.has(fa.id)) continue;
+            map.set(fa.id, sanitizeArticleRecord(fa));
           }
           const merged = Array.from(map.values());
           merged.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
@@ -1008,14 +1059,39 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 3. Real-time live listener for breaking news
     const unsubBreaking = subscribeToFirebaseBreakingNews((firebaseBreaking) => {
       if (Array.isArray(firebaseBreaking) && firebaseBreaking.length > 0) {
-        const sorted = [...firebaseBreaking].sort((a, b) => (a.priority || 99) - (b.priority || 99));
-        setBreakingNews(sorted);
+        const deletedBrkSet = deletedBreakingIdsRef.current;
+        const filtered = firebaseBreaking.filter(b => b && !deletedBrkSet.has(b.id));
+        const sorted = [...filtered].sort((a, b) => (a.priority || 99) - (b.priority || 99));
+        setBreakingNews(deduplicateBreakingNews(sorted));
+      }
+    });
+
+    // 4. Real-time live listener for advertisements
+    const unsubAds = subscribeToFirebaseAdvertisements((firebaseAds) => {
+      if (Array.isArray(firebaseAds) && firebaseAds.length > 0) {
+        const deletedAds = deletedAdIdsRef.current;
+        const validAds = firebaseAds.filter(
+          (a: any) => a && !a.isDemo && a.id !== 'ad-01' && a.id !== 'ad-02' && a.id !== 'ad-03' && a.createdByAdmin && a.approved && !deletedAds.has(a.id)
+        );
+        if (validAds.length > 0) {
+          setAdvertisements(prev => {
+            const map = new Map<string, AdvertisementCampaign>();
+            for (const p of prev) {
+              if (!deletedAds.has(p.id)) map.set(p.id, p);
+            }
+            for (const ad of validAds) {
+              map.set(ad.id, ad);
+            }
+            return Array.from(map.values());
+          });
+        }
       }
     });
 
     return () => {
       unsubArticles();
       unsubBreaking();
+      unsubAds();
     };
   }, []);
 
@@ -1256,7 +1332,14 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!error && resData && resData[0]?.id) {
               setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
             } else if (error) {
-              console.warn('[Supabase Realtime] Article insert notice:', error.message);
+              // Retry without optional gallery_images column if schema not yet migrated
+              const { gallery_images: _omit, ...fallbackPayload } = payload;
+              client
+                .from('articles')
+                .upsert([fallbackPayload], { onConflict: 'id' })
+                .then(({ error: fbErr }) => {
+                  if (fbErr) console.warn('[Supabase Realtime] Article insert notice:', fbErr.message);
+                });
             }
           });
       } catch (err) {
@@ -1356,8 +1439,18 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .update(updatePayload)
           .eq('id', id)
           .then(({ error }) => {
-            if (error) console.warn('[Supabase Realtime] Article update notice:', error);
-            else setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
+            if (error) {
+              const { gallery_images: _omit, ...fallbackUpdate } = updatePayload;
+              client
+                .from('articles')
+                .update(fallbackUpdate)
+                .eq('id', id)
+                .then(({ error: fbErr }) => {
+                  if (fbErr) console.warn('[Supabase Realtime] Article update notice:', fbErr);
+                });
+            } else {
+              setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
+            }
           });
       } catch (err) {
         console.warn('[Supabase] Update error:', err);
@@ -1650,7 +1743,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logAction('समाचार अस्वीकृत', 'Public Submissions', `आईडी ${id} अस्वीकृत। कारण: ${reason}`);
   };
 
-  // Advertisements (Synced with /api/ads/manage)
+  // Advertisements (Synced across Express, Supabase & Firebase RTDB)
   const addAdvertisement = (ad: Omit<AdvertisementCampaign, 'id' | 'impressions' | 'clicks'>) => {
     const newAd: AdvertisementCampaign = {
       ...ad,
@@ -1667,12 +1760,46 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       body: JSON.stringify({ action: 'create', ad: newAd })
     }).catch(() => {});
 
+    saveAdvertisementToFirebase(newAd);
+
+    const client = getSupabase();
+    if (client) {
+      Promise.resolve(
+        client.from('advertisements').upsert([{
+          id: newAd.id,
+          campaign_title: newAd.campaignTitle,
+          advertiser_name: newAd.advertiserName,
+          placement: newAd.placement,
+          image_url: newAd.imageUrl,
+          target_url: newAd.targetUrl,
+          desktop_visible: newAd.desktopVisible,
+          mobile_visible: newAd.mobileVisible,
+          impressions_count: 1,
+          clicks_count: 0,
+          pricing_inr: newAd.pricingInr || 0,
+          status: newAd.status || 'active',
+          start_date: newAd.startDate || new Date().toISOString().slice(0, 10),
+          end_date: newAd.endDate || '2027-12-31',
+          approved: true,
+          created_by_admin: true,
+          is_demo: false
+        }], { onConflict: 'id' })
+      ).catch(() => {});
+    }
+
     logAction('विज्ञापन अभियान सृजित', 'Ad Management', ad.campaignTitle);
   };
 
   const toggleAdStatus = (id: string) => {
+    let updatedAd: AdvertisementCampaign | undefined;
     setAdvertisements(prev =>
-      prev.map(ad => (ad.id === id ? { ...ad, status: ad.status === 'active' ? 'paused' : 'active' } : ad))
+      prev.map(ad => {
+        if (ad.id === id) {
+          updatedAd = { ...ad, status: ad.status === 'active' ? 'paused' : 'active' };
+          return updatedAd;
+        }
+        return ad;
+      })
     );
     safeFetchJson('/api/ads/manage', {
       method: 'POST',
@@ -1680,9 +1807,21 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       credentials: 'include',
       body: JSON.stringify({ action: 'toggle', adId: id })
     }).catch(() => {});
+
+    if (updatedAd) {
+      saveAdvertisementToFirebase(updatedAd);
+      const client = getSupabase();
+      if (client) {
+        Promise.resolve(
+          client.from('advertisements').update({ status: updatedAd.status }).eq('id', id)
+        ).catch(() => {});
+      }
+    }
   };
 
   const deleteAdvertisement = (id: string) => {
+    deletedAdIdsRef.current.add(id);
+    safeLocalStorageSet('hunkar24_deleted_ad_ids', Array.from(deletedAdIdsRef.current).slice(-100));
     setAdvertisements(prev => prev.filter(ad => ad.id !== id));
     safeFetchJson('/api/ads/manage', {
       method: 'POST',
@@ -1690,12 +1829,37 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       credentials: 'include',
       body: JSON.stringify({ action: 'delete', adId: id })
     }).catch(() => {});
+    deleteAdvertisementFromFirebase(id);
+    const client = getSupabase();
+    if (client) {
+      Promise.resolve(
+        client.from('advertisements').delete().eq('id', id)
+      ).catch(() => {});
+    }
   };
 
   const recordAdClick = (id: string) => {
+    let nextClicks = 0;
+    let updatedAd: AdvertisementCampaign | undefined;
     setAdvertisements(prev =>
-      prev.map(ad => (ad.id === id ? { ...ad, clicks: ad.clicks + 1 } : ad))
+      prev.map(ad => {
+        if (ad.id === id) {
+          nextClicks = ad.clicks + 1;
+          updatedAd = { ...ad, clicks: nextClicks };
+          return updatedAd;
+        }
+        return ad;
+      })
     );
+    if (updatedAd) {
+      saveAdvertisementToFirebase(updatedAd);
+      const client = getSupabase();
+      if (client) {
+        Promise.resolve(
+          client.from('advertisements').update({ clicks_count: nextClicks }).eq('id', id)
+        ).catch(() => {});
+      }
+    }
   };
 
   // Promotion Requests
