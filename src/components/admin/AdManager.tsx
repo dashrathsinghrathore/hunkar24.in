@@ -21,8 +21,9 @@ export const AdManager: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [campaignTitle, setCampaignTitle] = useState('');
   const [advertiserName, setAdvertiserName] = useState('');
-  const [placement, setPlacement] = useState<AdPlacement>('homepage_top');
+  const [placement, setPlacement] = useState<AdPlacement>('top_header');
   const [imageUrl, setImageUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
   const [targetUrl, setTargetUrl] = useState('');
   const [pricingInr, setPricingInr] = useState(10000);
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
@@ -30,13 +31,17 @@ export const AdManager: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
 
   // File upload handler
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'image' | 'logo' = 'image') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === 'string') {
-          setImageUrl(reader.result);
+          if (target === 'logo') {
+            setLogoUrl(reader.result);
+          } else {
+            setImageUrl(reader.result);
+          }
         }
       };
       reader.readAsDataURL(file);
@@ -56,6 +61,7 @@ export const AdManager: React.FC = () => {
       advertiserName: advertiserName.trim() || 'अधिकृत विज्ञापनदाता',
       placement,
       imageUrl: imageUrl.trim(),
+      ...(logoUrl.trim() ? { logoUrl: logoUrl.trim() } : {}),
       targetUrl: targetUrl.trim(),
       desktopVisible: true,
       mobileVisible: true,
@@ -73,6 +79,7 @@ export const AdManager: React.FC = () => {
     setCampaignTitle('');
     setAdvertiserName('');
     setImageUrl('');
+    setLogoUrl('');
     setTargetUrl('');
     setShowPreview(false);
   };
@@ -267,12 +274,13 @@ export const AdManager: React.FC = () => {
                     onChange={e => setPlacement(e.target.value as AdPlacement)}
                     className="w-full px-3 py-2 border rounded-xl bg-stone-50 dark:bg-stone-800 border-stone-300 dark:border-stone-700 font-semibold"
                   >
-                    <option value="homepage_top">होमपेज शीर्ष बैनर (Homepage Top)</option>
+                    <option value="top_header">होमपेज शीर्ष बैनर (Top Header — Auto Rotation)</option>
+                    <option value="homepage_top">होमपेज शीर्ष बैनर वैकल्पिक (Homepage Top — Auto Rotation)</option>
+                    <option value="sidebar">साइडबार बैनर (Sidebar — Auto Rotation)</option>
                     <option value="before_feed">समाचार फीड से पूर्व (Before News Feed)</option>
                     <option value="between_cards">समाचार कार्डों के मध्य (Between Cards)</option>
                     <option value="article_banner">समाचार लेख बैनर (Article Page Banner)</option>
                     <option value="category_banner">श्रेणी पृष्ठ बैनर (Category Page Banner)</option>
-                    <option value="sidebar">साइडबार बैनर (Sidebar Banner)</option>
                     <option value="mobile_sticky">मोबाइल बॉटम स्टिकी (Mobile Placement)</option>
                   </select>
                 </div>
@@ -289,7 +297,7 @@ export const AdManager: React.FC = () => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleFileUpload}
+                      onChange={e => handleFileUpload(e, 'image')}
                       className="hidden"
                     />
                   </label>
@@ -300,6 +308,31 @@ export const AdManager: React.FC = () => {
                   value={imageUrl}
                   onChange={e => setImageUrl(e.target.value)}
                   placeholder="https://... या ऊपर दिए अपलोड बटन से चुनें"
+                  className="w-full px-3 py-2 border rounded-xl bg-stone-50 dark:bg-stone-800 border-stone-300 dark:border-stone-700 font-mono"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-stone-700 dark:text-stone-300">
+                    पार्टनर लोगो URL (Partner Logo — वैकल्पिक)
+                  </label>
+                  <label className="flex items-center gap-1 text-[11px] text-red-600 hover:text-red-700 cursor-pointer font-bold">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>लोगो अपलोड करें</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => handleFileUpload(e, 'logo')}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <input
+                  type="url"
+                  value={logoUrl}
+                  onChange={e => setLogoUrl(e.target.value)}
+                  placeholder="https://.../logo.png (वैकल्पिक)"
                   className="w-full px-3 py-2 border rounded-xl bg-stone-50 dark:bg-stone-800 border-stone-300 dark:border-stone-700 font-mono"
                 />
               </div>

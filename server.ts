@@ -666,6 +666,7 @@ app.post('/api/ads/manage', requireAdminAuth, (req: Request, res: Response) => {
       advertiserName: ad.advertiserName || 'प्रशासक प्रायोजक',
       placement: ad.placement || 'homepage_top',
       imageUrl: ad.imageUrl,
+      ...(ad.logoUrl ? { logoUrl: ad.logoUrl } : {}),
       targetUrl: ad.targetUrl,
       desktopVisible: true,
       mobileVisible: true,

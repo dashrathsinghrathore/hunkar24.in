@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useNews, NewsProvider } from './context/NewsContext';
 import { TopUtilityBar } from './components/header/TopUtilityBar';
 import { MainHeader } from './components/header/MainHeader';
@@ -28,27 +28,29 @@ import { SearchModal } from './components/modals/SearchModal';
 import { ReportIssueModal } from './components/modals/ReportIssueModal';
 import { PolicyModal } from './components/modals/PolicyModal';
 
-// Admin Views
-import { AdminLayout, AdminTab } from './components/admin/AdminLayout';
-import { DashboardHome } from './components/admin/DashboardHome';
-import { NewsEditor } from './components/admin/NewsEditor';
-import { NewsList } from './components/admin/NewsList';
-import { BreakingNewsManager } from './components/admin/BreakingNewsManager';
-import { CategoriesManager } from './components/admin/CategoriesManager';
-import { DistrictsManager } from './components/admin/DistrictsManager';
-import { PublicSubmissionsReview } from './components/admin/PublicSubmissionsReview';
-import { ReporterManager } from './components/admin/ReporterManager';
-import { AdManager } from './components/admin/AdManager';
-import { PromotionRequestsManager } from './components/admin/PromotionRequestsManager';
-import { MediaLibrary } from './components/admin/MediaLibrary';
-import { VideoManager } from './components/admin/VideoManager';
-import { GalleryManager } from './components/admin/GalleryManager';
-import { AIViralAssistant } from './components/admin/AIViralAssistant';
-import { SupabaseSetupGuide } from './components/admin/SupabaseSetupGuide';
-import { WebsiteSettings } from './components/admin/WebsiteSettings';
-import { ActivityLogsView } from './components/admin/ActivityLogsView';
-import { AutoNewsControlCenter } from './components/admin/AutoNewsControlCenter';
-import { AdminPortalLogin } from './components/admin/AdminPortalLogin';
+// Lazy-loaded Admin Views (code-split away from public news bundle)
+import type { AdminTab } from './components/admin/AdminLayout';
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const DashboardHome = lazy(() => import('./components/admin/DashboardHome').then(m => ({ default: m.DashboardHome })));
+const NewsEditor = lazy(() => import('./components/admin/NewsEditor').then(m => ({ default: m.NewsEditor })));
+const NewsList = lazy(() => import('./components/admin/NewsList').then(m => ({ default: m.NewsList })));
+const BreakingNewsManager = lazy(() => import('./components/admin/BreakingNewsManager').then(m => ({ default: m.BreakingNewsManager })));
+const CategoriesManager = lazy(() => import('./components/admin/CategoriesManager').then(m => ({ default: m.CategoriesManager })));
+const DistrictsManager = lazy(() => import('./components/admin/DistrictsManager').then(m => ({ default: m.DistrictsManager })));
+const PublicSubmissionsReview = lazy(() => import('./components/admin/PublicSubmissionsReview').then(m => ({ default: m.PublicSubmissionsReview })));
+const ReporterManager = lazy(() => import('./components/admin/ReporterManager').then(m => ({ default: m.ReporterManager })));
+const AdManager = lazy(() => import('./components/admin/AdManager').then(m => ({ default: m.AdManager })));
+const PromotionRequestsManager = lazy(() => import('./components/admin/PromotionRequestsManager').then(m => ({ default: m.PromotionRequestsManager })));
+const MediaLibrary = lazy(() => import('./components/admin/MediaLibrary').then(m => ({ default: m.MediaLibrary })));
+const VideoManager = lazy(() => import('./components/admin/VideoManager').then(m => ({ default: m.VideoManager })));
+const GalleryManager = lazy(() => import('./components/admin/GalleryManager').then(m => ({ default: m.GalleryManager })));
+const AIViralAssistant = lazy(() => import('./components/admin/AIViralAssistant').then(m => ({ default: m.AIViralAssistant })));
+const SupabaseSetupGuide = lazy(() => import('./components/admin/SupabaseSetupGuide').then(m => ({ default: m.SupabaseSetupGuide })));
+const WebsiteSettings = lazy(() => import('./components/admin/WebsiteSettings').then(m => ({ default: m.WebsiteSettings })));
+const ActivityLogsView = lazy(() => import('./components/admin/ActivityLogsView').then(m => ({ default: m.ActivityLogsView })));
+const AutoNewsControlCenter = lazy(() => import('./components/admin/AutoNewsControlCenter').then(m => ({ default: m.AutoNewsControlCenter })));
+const AdminPortalLogin = lazy(() => import('./components/admin/AdminPortalLogin').then(m => ({ default: m.AdminPortalLogin })));
+
 import { Article } from './types';
 import { INITIAL_ARTICLES } from './data/mockData';
 import { ArrowLeft, RefreshCw, Layers } from 'lucide-react';
@@ -230,85 +232,95 @@ const NewsAppContent: React.FC = () => {
 
   // If Admin View is active, verify authentication
   if (isAdminView) {
+    const adminFallback = (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950 text-stone-700 dark:text-stone-300 text-sm font-bold">
+        प्रशासन पैनल लोड हो रहा है...
+      </div>
+    );
+
     if (!currentUser) {
       return (
-        <AdminPortalLogin
-          onLoginSuccess={() => {}}
-          onExitToPublic={() => {
-            setIsAdminView(false);
-            window.history.pushState(null, '', '/');
-          }}
-        />
+        <Suspense fallback={adminFallback}>
+          <AdminPortalLogin
+            onLoginSuccess={() => {}}
+            onExitToPublic={() => {
+              setIsAdminView(false);
+              window.history.pushState(null, '', '/');
+            }}
+          />
+        </Suspense>
       );
     }
 
     return (
-      <AdminLayout
-        currentTab={adminTab}
-        onSelectTab={tab => {
-          if (tab === 'news_create') {
-            setEditingArticle(null);
-          }
-          setAdminTab(tab);
-        }}
-        onExitAdmin={() => {
-          setIsAdminView(false);
-          window.history.pushState(null, '', '/');
-        }}
-      >
-        {adminTab === 'dashboard' && (
-          <DashboardHome
-            onNavigate={tab => {
-              if (tab === 'news_create') setEditingArticle(null);
-              setAdminTab(tab);
-            }}
-          />
-        )}
-        {adminTab === 'auto_news' && <AutoNewsControlCenter />}
-        {adminTab === 'news_list' && (
-          <NewsList
-            onCreateNew={() => {
+      <Suspense fallback={adminFallback}>
+        <AdminLayout
+          currentTab={adminTab}
+          onSelectTab={tab => {
+            if (tab === 'news_create') {
               setEditingArticle(null);
-              setAdminTab('news_create');
-            }}
-            onEditArticle={art => {
-              setEditingArticle(art);
-              setAdminTab('news_create');
-            }}
-          />
-        )}
-        {adminTab === 'news_create' && (
-          <NewsEditor
-            initialArticle={editingArticle}
-            onSaved={() => {
-              setEditingArticle(null);
-              setAdminTab('news_list');
-            }}
-          />
-        )}
-        {adminTab === 'breaking' && <BreakingNewsManager />}
-        {adminTab === 'categories' && <CategoriesManager />}
-        {adminTab === 'districts' && <DistrictsManager />}
-        {adminTab === 'submissions' && <PublicSubmissionsReview />}
-        {adminTab === 'reporters' && <ReporterManager />}
-        {adminTab === 'media' && <MediaLibrary />}
-        {adminTab === 'videos' && <VideoManager />}
-        {adminTab === 'galleries' && <GalleryManager />}
-        {adminTab === 'ads' && <AdManager />}
-        {adminTab === 'promotions' && <PromotionRequestsManager />}
-        {adminTab === 'ai_assistant' && <AIViralAssistant />}
-        {adminTab === 'supabase_guide' && <SupabaseSetupGuide />}
-        {adminTab === 'settings' && <WebsiteSettings />}
-        {adminTab === 'audit' && <ActivityLogsView />}
-        {adminTab === 'users' && <ReporterManager />}
-        {adminTab === 'listings' && <PromotionRequestsManager />}
-        {adminTab === 'payments' && <AdManager />}
-        {adminTab === 'analytics' && <DashboardHome onNavigate={setAdminTab} />}
-        {adminTab === 'seo' && <WebsiteSettings />}
-        {adminTab === 'social' && <WebsiteSettings />}
-        {adminTab === 'notifications' && <BreakingNewsManager />}
-        {adminTab === 'security' && <SupabaseSetupGuide />}
-      </AdminLayout>
+            }
+            setAdminTab(tab);
+          }}
+          onExitAdmin={() => {
+            setIsAdminView(false);
+            window.history.pushState(null, '', '/');
+          }}
+        >
+          {adminTab === 'dashboard' && (
+            <DashboardHome
+              onNavigate={tab => {
+                if (tab === 'news_create') setEditingArticle(null);
+                setAdminTab(tab);
+              }}
+            />
+          )}
+          {adminTab === 'auto_news' && <AutoNewsControlCenter />}
+          {adminTab === 'news_list' && (
+            <NewsList
+              onCreateNew={() => {
+                setEditingArticle(null);
+                setAdminTab('news_create');
+              }}
+              onEditArticle={art => {
+                setEditingArticle(art);
+                setAdminTab('news_create');
+              }}
+            />
+          )}
+          {adminTab === 'news_create' && (
+            <NewsEditor
+              initialArticle={editingArticle}
+              onSaved={() => {
+                setEditingArticle(null);
+                setAdminTab('news_list');
+              }}
+            />
+          )}
+          {adminTab === 'breaking' && <BreakingNewsManager />}
+          {adminTab === 'categories' && <CategoriesManager />}
+          {adminTab === 'districts' && <DistrictsManager />}
+          {adminTab === 'submissions' && <PublicSubmissionsReview />}
+          {adminTab === 'reporters' && <ReporterManager />}
+          {adminTab === 'media' && <MediaLibrary />}
+          {adminTab === 'videos' && <VideoManager />}
+          {adminTab === 'galleries' && <GalleryManager />}
+          {adminTab === 'ads' && <AdManager />}
+          {adminTab === 'promotions' && <PromotionRequestsManager />}
+          {adminTab === 'ai_assistant' && <AIViralAssistant />}
+          {adminTab === 'supabase_guide' && <SupabaseSetupGuide />}
+          {adminTab === 'settings' && <WebsiteSettings />}
+          {adminTab === 'audit' && <ActivityLogsView />}
+          {adminTab === 'users' && <ReporterManager />}
+          {adminTab === 'listings' && <PromotionRequestsManager />}
+          {adminTab === 'payments' && <AdManager />}
+          {adminTab === 'analytics' && <DashboardHome onNavigate={setAdminTab} />}
+          {adminTab === 'seo' && <WebsiteSettings />}
+          {adminTab === 'social' && <WebsiteSettings />}
+          {adminTab === 'notifications' && <BreakingNewsManager />}
+          {adminTab === 'security' && <SupabaseSetupGuide />}
+        </AdminLayout>
+      </Suspense>
     );
   }
 

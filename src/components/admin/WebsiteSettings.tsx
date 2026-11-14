@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Globe, Shield, Save, CheckCircle2, Megaphone, Link as LinkIcon, TrendingUp } from 'lucide-react';
 import { SITE_CONFIG } from '../../config/siteConfig';
 import { useNews } from '../../context/NewsContext';
+import { setSecondaryBackupEnabled } from '../../lib/firebaseClient';
 
 export const WebsiteSettings: React.FC = () => {
   const { logAction } = useNews();
@@ -284,9 +285,8 @@ export const WebsiteSettings: React.FC = () => {
               <input
                 type="checkbox"
                 defaultChecked={true}
-                onChange={async (e) => {
+                onChange={(e) => {
                   const enabled = e.target.checked;
-                  const { setSecondaryBackupEnabled } = await import('../../lib/firebaseClient');
                   setSecondaryBackupEnabled(enabled);
                   fetch('/api/media/settings', {
                     method: 'POST',

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Video, Plus, Trash2, ExternalLink, Play } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { UniversalVideoPlayer, parseVideoUrl } from '../common/UniversalVideoPlayer';
+import { captureVideoThumbnail, uploadSingleMedia } from '../../lib/mediaService';
 
 export const VideoManager: React.FC = () => {
   const { videos, addVideo, deleteVideo, clearAllVideos } = useNews();
@@ -174,7 +175,6 @@ export const VideoManager: React.FC = () => {
                         }
                         if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ''));
                         try {
-                          const { captureVideoThumbnail, uploadSingleMedia } = await import('../../lib/mediaService');
                           const thumb = await captureVideoThumbnail(file);
                           if (thumb?.dataUrl && !thumbnailUrl) {
                             setThumbnailUrl(thumb.dataUrl);
