@@ -19,7 +19,10 @@ import {
   Check,
   CloudUpload,
   ShieldCheck,
-  Film
+  Film,
+  Copy,
+  Share2,
+  ExternalLink
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { RAJASTHAN_DISTRICTS } from '../../config/siteConfig';
@@ -103,9 +106,8 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
   // Video state
   const [videoUrl, setVideoUrl] = useState(initialArticle?.videoUrl || '');
   const [videoPoster, setVideoPoster] = useState('');
-  const [reporterName, setReporterName] = useState(initialArticle?.reporterName || 'हुंकार 24 ब्यूरो');
-  const [isBreaking, setIsBreaking] = useState(initialArticle?.isBreaking || false);
-  const [isHero, setIsHero] = useState(initialArticle?.isHero || false);
+  const [isBreaking, setIsBreaking] = useState(initialArticle ? Boolean(initialArticle.isBreaking) : true);
+  const [isHero, setIsHero] = useState(initialArticle ? Boolean(initialArticle.isHero) : true);
   const [isExclusive, setIsExclusive] = useState(initialArticle?.isExclusive || false);
   const [tagsInput, setTagsInput] = useState(initialArticle?.tags?.join(', ') || 'राजस्थान, ताज़ा खबर');
 
@@ -119,6 +121,8 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadStatusText, setUploadStatusText] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [publishedShareInfo, setPublishedShareInfo] = useState<{ article: Article; url: string } | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Video upload tracking
   const [uploadingVideo, setUploadingVideo] = useState(false);
@@ -395,7 +399,6 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
       return;
     }
 
-    const finalReporterName = reporterName.trim() || 'हुंकार 24 ब्यूरो';
     const tagsArray = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
 
     // Save up to 5 images in galleryImages
@@ -421,29 +424,86 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
       imageType,
       imageGenerationStatus,
       videoUrl: videoUrl.trim() || undefined,
-      reporterId: 'rep-bureau',
-      reporterName: finalReporterName,
-      reporterPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
-      reporterRole: 'हुंकार ब्यूरो',
-      isBreaking,
-      isHero,
+      reporterId: '',
+      reporterName: '',
+      reporterPhoto: '',
+      reporterRole: '',
+      isBreaking: status === 'published' ? true : isBreaking,
+      isHero: status === 'published' ? true : isHero,
       isExclusive,
       status,
       tags: tagsArray,
       readingTimeMinutes: Math.max(1, Math.ceil(content.split(' ').length / 150))
     };
 
+    let savedArt: Article;
     if (initialArticle) {
       updateArticle(initialArticle.id, payloadData);
-      setStatusMsg({ type: 'success', text: 'समाचार सफलतापूर्वक संशोधित किया गया एवं लाइव प्रसारित हुआ!' });
+      savedArt = { ...initialArticle, ...payloadData };
+      setStatusMsg({ type: 'success', text: 'समाचार सफलतापूर्वक संशोधित किया गया एवं सभी जगह टॉप पर लाइव प्रसारित हुआ!' });
     } else {
-      addArticle(payloadData);
-      setStatusMsg({ type: 'success', text: `समाचार सफलतापूर्वक ${status === 'published' ? 'प्रकाशित' : 'ड्राफ्ट'} किया गया!` });
+      savedArt = addArticle(payloadData);
+      setStatusMsg({
+        type: 'success',
+        text:
+          status === 'published'
+            ? 'समाचार सफलतापूर्वक प्रकाशित हुआ! यह होमपेज, ब्रेकिंग न्यूज़, बुलेटिन बोर्ड व स्लाइडर में सबसे ऊपर लाइव हो गया है।'
+            : 'समाचार ड्राफ्ट के रूप में सुरक्षित किया गया!'
+      });
     }
 
-    setTimeout(() => {
-      onSaved();
-    }, 1200);
+    if (status === 'published') {
+      const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://hunkar24.in';
+      const shareUrl = `${origin}/news/${savedArt.slug}`;
+      setPublishedShareInfo({ article: savedArt, url: shareUrl });
+      setCopiedLink(false);
+    } else {
+      setTimeout(() => {
+        onSaved();
+      }, 1000);
+    }
+  };
+
+  const handleCopyPublishedUrl = async () => {
+    if (!publishedShareInfo?.url) return;
+    try {
+      await navigator.clipboard.writeText(publishedShareInfo.url);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 3000);
+    } catch {
+      // Fallback copy method
+      const input = document.createElement('input');
+      input.value = publishedShareInfo.url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 3000);
+    }
+  };
+
+  const handleResetForNewArticle = () => {
+    setHeadline('');
+    setSlug('');
+    setSummary('');
+    setContent('');
+    setTehsil('');
+    setVillage('');
+    setVideoUrl('');
+    setVideoPoster('');
+    setStatusMsg(null);
+    setPublishedShareInfo(null);
+    setCopiedLink(false);
+    setImagesList([
+      {
+        id: `img-0-${Date.now()}`,
+        url: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
+        caption: 'संदर्भ दृश्य',
+        altText: 'राजस्थान समाचार',
+        isMain: true
+      }
+    ]);
   };
 
   return (
@@ -507,6 +567,108 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
         </div>
       )}
 
+      {/* Instant Copyable Full Share Link & Rich Social Share Box after Publish */}
+      {publishedShareInfo && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/40 border-2 border-emerald-500/70 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <h3 className="text-sm font-black text-emerald-900 dark:text-emerald-200">
+                  शेयर करने के लिए पूरा न्यूज़ लिंक तैयार है
+                </h3>
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                  इस लिंक को WhatsApp, Telegram या Facebook पर भेजने पर लोगो, फोटो व शीर्षक का पूरा प्रीव्यू कार्ड दिखेगा।
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPublishedShareInfo(null)}
+              className="self-end sm:self-center p-1 text-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900 rounded-lg cursor-pointer"
+              title="बंद करें"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Copyable Full Link Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={publishedShareInfo.url}
+              onClick={e => (e.target as HTMLInputElement).select()}
+              className="flex-1 px-3 py-2.5 text-xs font-mono bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 rounded-xl border border-emerald-300 dark:border-emerald-700 select-all"
+            />
+            <button
+              type="button"
+              onClick={handleCopyPublishedUrl}
+              className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer shadow-xs ${
+                copiedLink
+                  ? 'bg-stone-900 text-white'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
+            >
+              {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              <span>{copiedLink ? 'लिंक कॉपी हो गया!' : 'लिंक कॉपी करें'}</span>
+            </button>
+          </div>
+
+          {/* Direct Share & Next Navigation Actions */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <a
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`*${publishedShareInfo.article.headline}*\n\n${publishedShareInfo.article.summary.slice(0, 120)}...\n\nपूरी खबर पढ़ें हुंकार 24 पर:\n${publishedShareInfo.url}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold transition-colors"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>WhatsApp शेयर</span>
+            </a>
+
+            <a
+              href={`https://t.me/share/url?url=${encodeURIComponent(publishedShareInfo.url)}&text=${encodeURIComponent(publishedShareInfo.article.headline)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0088cc] hover:bg-[#0077b3] text-white text-xs font-bold transition-colors"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Telegram शेयर</span>
+            </a>
+
+            <a
+              href={publishedShareInfo.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-stone-800 dark:text-stone-200 hover:bg-stone-100 text-xs font-bold transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>लाइव खबर खोलें</span>
+            </a>
+
+            <div className="flex-1" />
+
+            <button
+              type="button"
+              onClick={handleResetForNewArticle}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>और नया लिखें</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onSaved}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition-colors cursor-pointer"
+            >
+              <span>समाचार सूची देखें</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Editor Form */}
       <div className="space-y-5">
         {/* Headline */}
@@ -551,7 +713,7 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
         </div>
 
         {/* Categorization & Location row */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-stone-200 dark:border-stone-700">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-stone-200 dark:border-stone-700">
           <div>
             <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
               श्रेणी (Category)
@@ -596,19 +758,6 @@ export const NewsEditor: React.FC<NewsEditorProps> = ({ initialArticle, onSaved 
               onChange={e => setTehsil(e.target.value)}
               placeholder="उदा. बस्सी"
               className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-              संवाददाता / रिपोर्टर (वैकल्पिक)
-            </label>
-            <input
-              type="text"
-              value={reporterName}
-              onChange={e => setReporterName(e.target.value)}
-              placeholder="हुंकार 24 ब्यूरो"
-              className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 font-semibold text-stone-900 dark:text-stone-100"
             />
           </div>
         </div>

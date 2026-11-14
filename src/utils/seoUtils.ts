@@ -42,18 +42,21 @@ function setCanonical(url: string) {
 export function updateArticleSEO(article: Article | null) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
+  const baseUrl = window.location?.origin || SITE_CONFIG.currentSiteUrl;
+
   if (!article) {
     // Reset to default portal SEO
     document.title = DEFAULT_TITLE;
     setMetaTag('meta[name="description"]', 'content', DEFAULT_DESCRIPTION);
+    setMetaTag('meta[property="og:type"]', 'content', 'website');
     setMetaTag('meta[property="og:title"]', 'content', DEFAULT_TITLE);
     setMetaTag('meta[property="og:description"]', 'content', DEFAULT_DESCRIPTION);
     setMetaTag('meta[property="og:image"]', 'content', DEFAULT_IMAGE);
-    setMetaTag('meta[property="og:url"]', 'content', `${SITE_CONFIG.currentSiteUrl}/`);
+    setMetaTag('meta[property="og:url"]', 'content', `${baseUrl}/`);
     setMetaTag('meta[name="twitter:title"]', 'content', DEFAULT_TITLE);
     setMetaTag('meta[name="twitter:description"]', 'content', DEFAULT_DESCRIPTION);
     setMetaTag('meta[name="twitter:image"]', 'content', DEFAULT_IMAGE);
-    setCanonical(`${SITE_CONFIG.currentSiteUrl}/`);
+    setCanonical(`${baseUrl}/`);
 
     // Remove dynamic article schema if present
     const existing = document.getElementById(SCHEMA_SCRIPT_ID);
@@ -63,8 +66,9 @@ export function updateArticleSEO(article: Article | null) {
 
   const cleanTitle = sanitizeHeadline(article.headline);
   const cleanDesc = sanitizeSummary(article.summary, cleanTitle, article.category).slice(0, 160);
-  const pageUrl = `${SITE_CONFIG.currentSiteUrl}/news/${article.slug}`;
-  const imageUrl = article.mainImage || DEFAULT_IMAGE;
+  const pageUrl = `${baseUrl}/news/${article.slug}`;
+  const rawImg = article.mainImage || DEFAULT_IMAGE;
+  const imageUrl = rawImg.startsWith('http') ? rawImg : `${baseUrl}${rawImg.startsWith('/') ? '' : '/'}${rawImg}`;
   const pageTitle = `${cleanTitle} – हुंकार 24`;
 
   // 1. Update Title and Canonical
@@ -76,10 +80,12 @@ export function updateArticleSEO(article: Article | null) {
 
   // 3. OpenGraph Tags (Facebook, WhatsApp, LinkedIn, Telegram)
   setMetaTag('meta[property="og:type"]', 'content', 'article');
+  setMetaTag('meta[property="og:site_name"]', 'content', 'HUNKAR 24 (हुंकार 24)');
   setMetaTag('meta[property="og:title"]', 'content', cleanTitle);
   setMetaTag('meta[property="og:description"]', 'content', cleanDesc);
   setMetaTag('meta[property="og:image"]', 'content', imageUrl);
   setMetaTag('meta[property="og:image:secure_url"]', 'content', imageUrl);
+  setMetaTag('meta[property="og:image:alt"]', 'content', cleanTitle);
   setMetaTag('meta[property="og:url"]', 'content', pageUrl);
 
   // 4. Twitter / X Card Tags
@@ -87,6 +93,7 @@ export function updateArticleSEO(article: Article | null) {
   setMetaTag('meta[name="twitter:title"]', 'content', cleanTitle);
   setMetaTag('meta[name="twitter:description"]', 'content', cleanDesc);
   setMetaTag('meta[name="twitter:image"]', 'content', imageUrl);
+  setMetaTag('meta[name="twitter:image:alt"]', 'content', cleanTitle);
 
   // 5. Schema.org NewsArticle JSON-LD structured data for Google News
   let script = document.getElementById(SCHEMA_SCRIPT_ID) as HTMLScriptElement | null;
@@ -111,15 +118,15 @@ export function updateArticleSEO(article: Article | null) {
     'dateModified': article.updatedAt || article.publishedAt,
     'inLanguage': 'hi-IN',
     'author': {
-      '@type': 'Person',
-      'name': article.reporterName || 'हुंकार 24 ब्यूरो',
-      'jobTitle': article.reporterRole || 'पत्रकार'
+      '@type': 'NewsMediaOrganization',
+      'name': 'HUNKAR 24',
+      'url': baseUrl
     },
     'publisher': {
       '@type': 'NewsMediaOrganization',
       'name': 'HUNKAR 24',
       'alternateName': 'हुंकार 24',
-      'url': SITE_CONFIG.currentSiteUrl,
+      'url': baseUrl,
       'logo': {
         '@type': 'ImageObject',
         'url': DEFAULT_IMAGE,

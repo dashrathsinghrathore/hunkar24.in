@@ -100,21 +100,55 @@ function parseCookies(req: Request): Record<string, string> {
   return list;
 }
 
+const SESSION_SIGNING_SECRET = process.env.ADMIN_AUTH_SALT || 'hunkar24-session-hmac-secret-2026';
+
+function signAdminToken(id: string, role: 'super_admin', expiresAt: number): string {
+  const payload = Buffer.from(JSON.stringify({ id, role, expiresAt, nonce: crypto.randomBytes(8).toString('hex') })).toString('base64url');
+  const sig = crypto.createHmac('sha256', SESSION_SIGNING_SECRET).update(payload).digest('base64url');
+  return `${payload}.${sig}`;
+}
+
+function verifySignedToken(token: string): AdminSession | null {
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  try {
+    const [payload, sig] = parts;
+    const expectedSig = crypto.createHmac('sha256', SESSION_SIGNING_SECRET).update(payload).digest('base64url');
+    if (sig.length !== expectedSig.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
+      return null;
+    }
+    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (!decoded || !decoded.expiresAt || Date.now() > decoded.expiresAt) return null;
+    return {
+      token,
+      id: decoded.id || 'usr-admin-01',
+      role: 'super_admin',
+      createdAt: Date.now(),
+      expiresAt: decoded.expiresAt,
+      ip: 'verified'
+    };
+  } catch {
+    return null;
+  }
+}
+
 function getValidSession(req: Request): AdminSession | null {
   const cookies = parseCookies(req);
   const tokenFromCookie = cookies['hunkar24_session'];
   const authHeader = req.headers.authorization;
   const tokenFromHeader = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
-  const token = tokenFromCookie || tokenFromHeader;
+  const token = (tokenFromHeader && tokenFromHeader.trim()) || (tokenFromCookie && tokenFromCookie.trim());
 
   if (!token) return null;
   const session = activeAdminSessions.get(token);
-  if (!session) return null;
-  if (Date.now() > session.expiresAt) {
-    activeAdminSessions.delete(token);
-    return null;
+  if (session) {
+    if (Date.now() > session.expiresAt) {
+      activeAdminSessions.delete(token);
+      return null;
+    }
+    return session;
   }
-  return session;
+  return verifySignedToken(token);
 }
 
 // Server-side authentication guard for protected endpoints
@@ -141,6 +175,7 @@ export interface AdminAdCampaign {
   advertiserName: string;
   placement: string;
   imageUrl: string;
+  logoUrl?: string;
   targetUrl: string;
   desktopVisible: boolean;
   mobileVisible: boolean;
@@ -533,14 +568,15 @@ app.post('/api/admin/login', (req: Request, res: Response) => {
     // Success: Reset rate limit record for this IP
     ipRateLimitMap.delete(clientIp);
 
-    // Generate 256-bit cryptographically secure session token
-    const token = crypto.randomBytes(32).toString('hex');
+    // Generate signed 256-bit cryptographically secure session token (survives server restarts)
+    const expiresAt = now + 24 * 60 * 60 * 1000; // 24 hours
+    const token = signAdminToken('usr-admin-01', 'super_admin', expiresAt);
     const session: AdminSession = {
       token,
       id: 'usr-admin-01',
       role: 'super_admin',
       createdAt: now,
-      expiresAt: now + 24 * 60 * 60 * 1000, // 24 hours
+      expiresAt,
       ip: clientIp
     };
     activeAdminSessions.set(token, session);
@@ -548,7 +584,7 @@ app.post('/api/admin/login', (req: Request, res: Response) => {
     // Set HttpOnly, SameSite=Strict cookie
     res.setHeader(
       'Set-Cookie',
-      `hunkar24_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400${isProduction ? '; Secure' : ''}`
+      `hunkar24_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400${isProduction ? '; Secure' : ''}`
     );
 
     res.json({
@@ -645,6 +681,7 @@ app.post('/api/ads/manage', requireAdminAuth, (req: Request, res: Response) => {
     };
     persistedAds.unshift(newAd);
     saveAdsToDisk(persistedAds);
+    broadcastRealtime('ads_updated', { ads: persistedAds });
     return res.json({ success: true, ad: newAd });
   }
 
@@ -653,6 +690,7 @@ app.post('/api/ads/manage', requireAdminAuth, (req: Request, res: Response) => {
     if (found) {
       found.status = found.status === 'active' ? 'paused' : 'active';
       saveAdsToDisk(persistedAds);
+      broadcastRealtime('ads_updated', { ads: persistedAds });
       return res.json({ success: true, ad: found });
     }
   }
@@ -660,6 +698,7 @@ app.post('/api/ads/manage', requireAdminAuth, (req: Request, res: Response) => {
   if (action === 'delete' && adId) {
     persistedAds = persistedAds.filter(a => a.id !== adId);
     saveAdsToDisk(persistedAds);
+    broadcastRealtime('ads_updated', { ads: persistedAds });
     return res.json({ success: true, deletedId: adId });
   }
 
@@ -667,16 +706,132 @@ app.post('/api/ads/manage', requireAdminAuth, (req: Request, res: Response) => {
 });
 
 // ============================================================================
-// ADMIN ARTICLES & MULTI-DEVICE REAL-TIME PERSISTENCE
+// REALTIME SSE STREAM & UNIFIED MULTI-DEVICE PERSISTENCE
 // ============================================================================
+const sseClients = new Set<Response>();
+
+function broadcastRealtime(event: string, data: any = {}) {
+  const payload = `event: ${event}\ndata: ${JSON.stringify({ ...data, timestamp: new Date().toISOString() })}\n\n`;
+  for (const client of sseClients) {
+    try {
+      client.write(payload);
+    } catch {
+      sseClients.delete(client);
+    }
+  }
+}
+
+app.get('/api/realtime/stream', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  res.write(`event: connected\ndata: ${JSON.stringify({ ok: true, serverTime: new Date().toISOString() })}\n\n`);
+  sseClients.add(res);
+
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(`: ping\n\n`);
+    } catch {
+      clearInterval(heartbeat);
+      sseClients.delete(res);
+    }
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+});
+
+const SITE_STATE_FILE = path.resolve(process.cwd(), '.site-state.json');
+
+interface PersistedSiteState {
+  breakingNews: any[];
+  deletedArticleIds: string[];
+  deletedBreakingIds: string[];
+  categories: any[] | null;
+  submissions: any[] | null;
+  promotionRequests: any[] | null;
+  videos: any[] | null;
+  galleries: any[] | null;
+  reporters: any[] | null;
+  businessListings: any[] | null;
+  settings: Record<string, any>;
+  updatedAt: string;
+}
+
+const DEFAULT_SITE_STATE: PersistedSiteState = {
+  breakingNews: [],
+  deletedArticleIds: [],
+  deletedBreakingIds: [],
+  categories: null,
+  submissions: null,
+  promotionRequests: null,
+  videos: null,
+  galleries: null,
+  reporters: null,
+  businessListings: null,
+  settings: {},
+  updatedAt: new Date().toISOString()
+};
+
+function loadSiteState(): PersistedSiteState {
+  try {
+    if (fs.existsSync(SITE_STATE_FILE)) {
+      const raw = fs.readFileSync(SITE_STATE_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          ...DEFAULT_SITE_STATE,
+          ...parsed,
+          breakingNews: Array.isArray(parsed.breakingNews) ? parsed.breakingNews : [],
+          deletedArticleIds: Array.isArray(parsed.deletedArticleIds) ? parsed.deletedArticleIds : [],
+          deletedBreakingIds: Array.isArray(parsed.deletedBreakingIds) ? parsed.deletedBreakingIds : []
+        };
+      }
+    }
+  } catch (err: any) {
+    console.warn('[SiteState] Error loading .site-state.json:', err?.message);
+  }
+  return { ...DEFAULT_SITE_STATE };
+}
+
+function saveSiteState(state: PersistedSiteState): void {
+  try {
+    state.updatedAt = new Date().toISOString();
+    fs.writeFileSync(SITE_STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
+  } catch (err: any) {
+    console.error('[SiteState] Error saving .site-state.json:', err?.message);
+  }
+}
+
+let siteState: PersistedSiteState = loadSiteState();
+
 const ARTICLES_STORE_FILE = path.resolve(process.cwd(), '.admin-articles.json');
+
+function sanitizeArticleForOutput(a: any): any {
+  if (!a) return a;
+  return {
+    ...a,
+    reporterName: '',
+    reporterRole: '',
+    reporterPhoto: ''
+  };
+}
 
 function loadAdminArticles(): any[] {
   try {
     if (fs.existsSync(ARTICLES_STORE_FILE)) {
       const data = fs.readFileSync(ARTICLES_STORE_FILE, 'utf-8');
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.map(sanitizeArticleForOutput);
+        cleaned.sort((a: any, b: any) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
+        return cleaned;
+      }
     }
   } catch (err: any) {
     console.warn('[ServerArticles] Error reading store:', err.message);
@@ -686,7 +841,9 @@ function loadAdminArticles(): any[] {
 
 function saveAdminArticles(list: any[]): void {
   try {
-    fs.writeFileSync(ARTICLES_STORE_FILE, JSON.stringify(list, null, 2), 'utf-8');
+    const cleaned = list.map(sanitizeArticleForOutput);
+    cleaned.sort((a: any, b: any) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
+    fs.writeFileSync(ARTICLES_STORE_FILE, JSON.stringify(cleaned, null, 2), 'utf-8');
   } catch (err: any) {
     console.error('[ServerArticles] Error saving store:', err.message);
   }
@@ -756,8 +913,8 @@ async function hydrateArticlesFromSupabase() {
         imageAlt: d.image_alt,
         imageType: d.image_type || 'photo',
         imageGenerationStatus: d.image_generation_status || 'completed',
-        reporterName: d.reporter_name || 'हुंकार ब्यूरो',
-        reporterRole: d.reporter_role || 'संपाददाता',
+        reporterName: '',
+        reporterRole: '',
         status: d.status || 'published',
         publishedAt: d.published_at || new Date().toISOString(),
         updatedAt: d.updated_at || new Date().toISOString(),
@@ -832,47 +989,157 @@ async function hydrateArticlesFromFirebase() {
 
 hydrateArticlesFromFirebase().catch(() => {});
 
-// GET /api/articles - All client devices fetch live server articles
+async function syncBreakingToFirebase(item: any) {
+  if (!FIREBASE_DATABASE_URL) return;
+  try {
+    await fetch(`${FIREBASE_DATABASE_URL}/breaking_news/${item.id}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item)
+    });
+  } catch {}
+}
+
+async function deleteBreakingFromFirebase(id: string) {
+  if (!FIREBASE_DATABASE_URL) return;
+  try {
+    await fetch(`${FIREBASE_DATABASE_URL}/breaking_news/${id}.json`, { method: 'DELETE' });
+  } catch {}
+}
+
+// GET /api/articles - All client devices fetch live server articles (newest first, zero reporter names)
 app.get('/api/articles', (req: Request, res: Response) => {
+  const deletedSet = new Set(siteState.deletedArticleIds || []);
+  const active = persistedAdminArticles
+    .filter(a => a && !deletedSet.has(a.id))
+    .map(sanitizeArticleForOutput)
+    .sort((a: any, b: any) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
   res.json({
     success: true,
-    articles: persistedAdminArticles
+    articles: active,
+    deletedArticleIds: siteState.deletedArticleIds || []
   });
 });
 
-// POST /api/articles - Admin publishes or edits an article (immediately saved & broadcasted across all devices)
+// GET /api/sync-state - Complete unified live state across all devices
+app.get('/api/sync-state', (req: Request, res: Response) => {
+  const deletedSet = new Set(siteState.deletedArticleIds || []);
+  const activeArticles = persistedAdminArticles
+    .filter(a => a && !deletedSet.has(a.id))
+    .map(sanitizeArticleForOutput)
+    .sort((a: any, b: any) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
+
+  const deletedBrkSet = new Set(siteState.deletedBreakingIds || []);
+  const activeBreaking = (siteState.breakingNews || [])
+    .filter(b => b && !deletedBrkSet.has(b.id))
+    .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+  res.json({
+    success: true,
+    articles: activeArticles,
+    deletedArticleIds: siteState.deletedArticleIds || [],
+    breakingNews: activeBreaking,
+    deletedBreakingIds: siteState.deletedBreakingIds || [],
+    categories: siteState.categories,
+    submissions: siteState.submissions,
+    promotionRequests: siteState.promotionRequests,
+    advertisements: persistedAds,
+    videos: siteState.videos,
+    galleries: siteState.galleries,
+    reporters: siteState.reporters,
+    businessListings: siteState.businessListings,
+    settings: siteState.settings,
+    serverTime: new Date().toISOString()
+  });
+});
+
+// POST /api/articles - Admin publishes or edits an article (auto-saved, promoted to #1 everywhere, & broadcasted live)
 app.post('/api/articles', (req: Request, res: Response) => {
   const article = req.body;
   if (!article || !article.headline) {
     return res.status(400).json({ success: false, error: 'Headline is required' });
   }
 
+  const now = new Date().toISOString();
   const existingIndex = persistedAdminArticles.findIndex(
     a => a.id === article.id || (article.slug && a.slug === article.slug)
   );
 
+  const isPublishingNow = (article.status || 'published') === 'published';
+  const wasDraftBefore = existingIndex >= 0 && persistedAdminArticles[existingIndex]?.status !== 'published';
+
+  // If publishing a new article or promoting a draft to published, put it strictly at #1 top everywhere
+  if (isPublishingNow && (existingIndex < 0 || wasDraftBefore || article.promoteToTop)) {
+    persistedAdminArticles = persistedAdminArticles.map(a => ({ ...a, isHero: false }));
+  }
+
+  const cleanedInput = sanitizeArticleForOutput(article);
+  let targetArticle: any;
+
   if (existingIndex >= 0) {
-    persistedAdminArticles[existingIndex] = {
+    targetArticle = {
       ...persistedAdminArticles[existingIndex],
-      ...article,
-      updatedAt: new Date().toISOString()
+      ...cleanedInput,
+      reporterId: '',
+      reporterName: '',
+      reporterRole: '',
+      reporterPhoto: '',
+      isHero: isPublishingNow && (wasDraftBefore || article.promoteToTop) ? true : Boolean(cleanedInput.isHero ?? persistedAdminArticles[existingIndex].isHero),
+      publishedAt: (wasDraftBefore || article.promoteToTop) ? now : (cleanedInput.publishedAt || persistedAdminArticles[existingIndex].publishedAt || now),
+      updatedAt: now
     };
+    persistedAdminArticles[existingIndex] = targetArticle;
   } else {
-    persistedAdminArticles.unshift({
-      ...article,
-      id: article.id || `art-${Date.now()}`,
-      publishedAt: article.publishedAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
+    const newId = cleanedInput.id || `art-${Date.now()}`;
+    targetArticle = {
+      ...cleanedInput,
+      id: newId,
+      reporterId: '',
+      reporterName: '',
+      reporterRole: '',
+      reporterPhoto: '',
+      status: cleanedInput.status || 'published',
+      isBreaking: isPublishingNow ? true : Boolean(cleanedInput.isBreaking),
+      isHero: isPublishingNow ? true : Boolean(cleanedInput.isHero),
+      publishedAt: cleanedInput.publishedAt || now,
+      updatedAt: now
+    };
+    persistedAdminArticles.unshift(targetArticle);
   }
 
-  if (persistedAdminArticles.length > 100) {
-    persistedAdminArticles = persistedAdminArticles.slice(0, 100);
+  // Ensure removed from deleted list if re-saved
+  if (Array.isArray(siteState.deletedArticleIds) && siteState.deletedArticleIds.includes(targetArticle.id)) {
+    siteState.deletedArticleIds = siteState.deletedArticleIds.filter(id => id !== targetArticle.id);
   }
 
+  persistedAdminArticles.sort((a: any, b: any) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
+  if (persistedAdminArticles.length > 120) {
+    persistedAdminArticles = persistedAdminArticles.slice(0, 120);
+  }
   saveAdminArticles(persistedAdminArticles);
-  const targetArticle = existingIndex >= 0 ? persistedAdminArticles[existingIndex] : persistedAdminArticles[0];
-  
+
+  // Automatically add/promote in Breaking News & Bulletin Board when published
+  let createdBreaking: any = null;
+  if (targetArticle.status === 'published') {
+    const brkId = `brk-${targetArticle.id}`;
+    createdBreaking = {
+      id: brkId,
+      text: targetArticle.headline,
+      category: targetArticle.category || 'rajasthan',
+      linkArticleId: targetArticle.id,
+      linkUrl: `/news/${targetArticle.slug}`,
+      isActive: true,
+      priority: 1,
+      createdAt: targetArticle.publishedAt || now
+    };
+    siteState.breakingNews = [
+      createdBreaking,
+      ...(siteState.breakingNews || []).filter(b => b.id !== brkId && b.linkArticleId !== targetArticle.id && b.text !== targetArticle.headline)
+    ].slice(0, 40);
+    siteState.deletedBreakingIds = (siteState.deletedBreakingIds || []).filter(id => id !== brkId);
+  }
+  saveSiteState(siteState);
+
   // Realtime multi-device sync via Supabase PostgreSQL
   const supabase = getSupabaseServerClient();
   if (supabase) {
@@ -888,37 +1155,61 @@ app.post('/api/articles', (req: Request, res: Response) => {
       village: targetArticle.village || null,
       main_image: targetArticle.mainImage || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
       image_caption: targetArticle.imageCaption || null,
-      image_source: targetArticle.imageSource || 'हुंकार 24 डेस्क',
+      image_source: targetArticle.imageSource || 'हुंकार 24 फोटो डेस्क',
       image_alt: targetArticle.imageAlt || null,
       image_type: targetArticle.imageType || 'photo',
       image_generation_status: targetArticle.imageGenerationStatus || 'completed',
-      reporter_name: targetArticle.reporterName || 'हुंकार ब्यूरो',
-      reporter_role: targetArticle.reporterRole || 'संपाददाता',
-      reporter_photo: targetArticle.reporterPhoto || null,
+      reporter_name: '',
+      reporter_role: '',
+      reporter_photo: null,
       status: targetArticle.status || 'published',
       is_breaking: Boolean(targetArticle.isBreaking),
       is_hero: Boolean(targetArticle.isHero),
       is_exclusive: Boolean(targetArticle.isExclusive),
-      views_count: targetArticle.views || 1,
+      views_count: targetArticle.views || 0,
       likes_count: targetArticle.likesCount || 0,
       reading_time_minutes: targetArticle.readingTimeMinutes || 3,
       tags: targetArticle.tags || ['राजस्थान', 'हुंकार24'],
       video_url: targetArticle.videoUrl || null,
       gallery_images: Array.isArray(targetArticle.galleryImages) ? targetArticle.galleryImages : [],
       media_asset_ids: Array.isArray(targetArticle.mediaAssetIds) ? targetArticle.mediaAssetIds : [],
-      source_name: targetArticle.sourceName || 'विशेष प्रतिनिधि',
+      source_name: targetArticle.sourceName || 'हुंकार 24',
       original_url: targetArticle.sourceUrl || null,
-      published_at: targetArticle.publishedAt || new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      published_at: targetArticle.publishedAt || now,
+      updated_at: now
     }, { onConflict: 'id' }).then(undefined, (err: any) => console.warn('[Supabase Article Sync]', err?.message));
+
+    if (createdBreaking) {
+      supabase.from('breaking_news').upsert({
+        id: createdBreaking.id,
+        text: createdBreaking.text,
+        category_slug: createdBreaking.category,
+        link_article_id: createdBreaking.linkArticleId,
+        link_url: createdBreaking.linkUrl,
+        is_active: true,
+        priority: 1,
+        created_at: createdBreaking.createdAt
+      }, { onConflict: 'id' }).then(undefined, () => {});
+    }
   }
 
   // Realtime multi-device sync via Firebase RTDB
   syncArticleToFirebase(targetArticle);
+  if (createdBreaking) {
+    syncBreakingToFirebase(createdBreaking);
+  }
+
+  // Broadcast immediately via SSE to all connected phones & desktops
+  broadcastRealtime('articles_updated', {
+    action: existingIndex >= 0 ? 'update' : 'insert',
+    article: targetArticle,
+    breakingItem: createdBreaking
+  });
 
   res.json({
     success: true,
-    article: targetArticle
+    article: targetArticle,
+    breakingItem: createdBreaking
   });
 });
 
@@ -928,13 +1219,139 @@ app.delete('/api/articles/:id', requireAdminAuth, (req: Request, res: Response) 
   persistedAdminArticles = persistedAdminArticles.filter(a => a.id !== id);
   saveAdminArticles(persistedAdminArticles);
 
+  if (!siteState.deletedArticleIds.includes(id)) {
+    siteState.deletedArticleIds.push(id);
+  }
+  siteState.breakingNews = (siteState.breakingNews || []).filter(b => b.linkArticleId !== id && b.id !== `brk-${id}`);
+  saveSiteState(siteState);
+
   const supabase = getSupabaseServerClient();
   if (supabase) {
     supabase.from('articles').delete().eq('id', id).then(undefined, () => {});
+    supabase.from('breaking_news').delete().eq('link_article_id', id).then(undefined, () => {});
   }
 
   deleteArticleFromFirebase(id);
+  deleteBreakingFromFirebase(`brk-${id}`);
+  broadcastRealtime('article_deleted', { deletedId: id });
   res.json({ success: true, deletedId: id });
+});
+
+// BREAKING NEWS SERVER ROUTES
+app.get('/api/breaking-news', (req: Request, res: Response) => {
+  const deletedSet = new Set(siteState.deletedBreakingIds || []);
+  const items = (siteState.breakingNews || [])
+    .filter(b => b && !deletedSet.has(b.id))
+    .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  res.json({ success: true, items, deletedBreakingIds: siteState.deletedBreakingIds || [] });
+});
+
+app.post('/api/breaking-news', (req: Request, res: Response) => {
+  const body = req.body || {};
+  if (!body.text || typeof body.text !== 'string') {
+    return res.status(400).json({ success: false, error: 'Breaking news text is required' });
+  }
+  const now = new Date().toISOString();
+  const item = {
+    id: body.id || `brk-${Date.now()}`,
+    text: body.text.trim(),
+    category: body.category || 'rajasthan',
+    linkUrl: body.linkUrl || undefined,
+    linkArticleId: body.linkArticleId || undefined,
+    isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
+    priority: body.priority || 1,
+    createdAt: body.createdAt || now
+  };
+  const idx = (siteState.breakingNews || []).findIndex(b => b.id === item.id);
+  if (idx >= 0) {
+    siteState.breakingNews[idx] = { ...siteState.breakingNews[idx], ...item };
+  } else {
+    siteState.breakingNews.unshift(item);
+  }
+  siteState.deletedBreakingIds = (siteState.deletedBreakingIds || []).filter(id => id !== item.id);
+  saveSiteState(siteState);
+
+  const supabase = getSupabaseServerClient();
+  if (supabase) {
+    supabase.from('breaking_news').upsert({
+      id: item.id,
+      text: item.text,
+      category_slug: item.category,
+      link_url: item.linkUrl || null,
+      link_article_id: item.linkArticleId || null,
+      is_active: item.isActive,
+      priority: item.priority,
+      created_at: item.createdAt
+    }, { onConflict: 'id' }).then(undefined, () => {});
+  }
+  syncBreakingToFirebase(item);
+  broadcastRealtime('breaking_updated', { item });
+  res.json({ success: true, item });
+});
+
+app.put('/api/breaking-news/:id', (req: Request, res: Response) => {
+  const id = req.params.id;
+  const updates = req.body || {};
+  const idx = (siteState.breakingNews || []).findIndex(b => b.id === id);
+  let updated: any;
+  if (idx >= 0) {
+    updated = { ...siteState.breakingNews[idx], ...updates };
+    siteState.breakingNews[idx] = updated;
+  } else {
+    updated = { id, ...updates, createdAt: new Date().toISOString() };
+    siteState.breakingNews.unshift(updated);
+  }
+  saveSiteState(siteState);
+
+  const supabase = getSupabaseServerClient();
+  if (supabase) {
+    supabase.from('breaking_news').update({
+      is_active: updated.isActive,
+      text: updated.text
+    }).eq('id', id).then(undefined, () => {});
+  }
+  syncBreakingToFirebase(updated);
+  broadcastRealtime('breaking_updated', { item: updated });
+  res.json({ success: true, item: updated });
+});
+
+app.delete('/api/breaking-news/:id', (req: Request, res: Response) => {
+  const id = req.params.id;
+  siteState.breakingNews = (siteState.breakingNews || []).filter(b => b.id !== id);
+  if (!siteState.deletedBreakingIds.includes(id)) {
+    siteState.deletedBreakingIds.push(id);
+  }
+  saveSiteState(siteState);
+
+  const supabase = getSupabaseServerClient();
+  if (supabase) {
+    supabase.from('breaking_news').delete().eq('id', id).then(undefined, () => {});
+  }
+  deleteBreakingFromFirebase(id);
+  broadcastRealtime('breaking_deleted', { deletedId: id });
+  res.json({ success: true, deletedId: id });
+});
+
+// UNIFIED STATE SYNC ROUTE (Categories, Submissions, Promotions, Videos, Galleries, Settings)
+app.post('/api/admin/state-sync', (req: Request, res: Response) => {
+  const { key, value } = req.body || {};
+  const allowedKeys = new Set([
+    'categories',
+    'submissions',
+    'promotionRequests',
+    'videos',
+    'galleries',
+    'reporters',
+    'businessListings',
+    'settings'
+  ]);
+  if (!key || !allowedKeys.has(key)) {
+    return res.status(400).json({ success: false, error: 'Invalid state key' });
+  }
+  (siteState as any)[key] = value;
+  saveSiteState(siteState);
+  broadcastRealtime('state_updated', { key, value });
+  res.json({ success: true, key, updatedAt: siteState.updatedAt });
 });
 
 // ============================================================================
@@ -1801,8 +2218,8 @@ const handleChatGptPublish = async (req: Request, res: Response) => {
     mainImage: mainImage || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
     imageCaption: imageCaption || `${headline.slice(0, 50)} संदर्भ दृश्य`,
     imageSource: imageSource || 'हुंकार 24 ग्राउंड रिपोर्ट',
-    reporterName: 'हुंकार AI विशेष डेस्क (ChatGPT)',
-    reporterRole: 'डिजिटल न्यूज़ नेटवर्क',
+    reporterName: '',
+    reporterRole: '',
     status: targetStatus,
     publishedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -1861,11 +2278,13 @@ const handleChatGptPublish = async (req: Request, res: Response) => {
     }
   }
 
+  broadcastRealtime('articles_updated', { action: 'insert', article: newArticle });
+
   res.json({
     success: true,
     articleId: newArticle.id,
     slug: newArticle.slug,
-    url: `https://hunkar24.in/news/${newArticle.slug}`,
+    url: `${getRequestOrigin(req)}/news/${newArticle.slug}`,
     status: targetStatus,
     supabaseCommitted,
     message: targetStatus === 'published'
@@ -2013,39 +2432,147 @@ app.post('/api/mandi/settings', (req: Request, res: Response) => {
 // OPENGRAPH / SOCIAL BOT CRAWLER SHARE CARD (WhatsApp, Telegram, Facebook, X)
 // Injects rich preview tags dynamically for any shared news link without UI clutter
 // ============================================================================
-const SOCIAL_BOTS_REGEX = /facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|LinkedInBot|Slackbot|Discordbot|SkypeUriPreview|Google-Extended|bingbot|yandex/i;
+const SOCIAL_BOTS_REGEX = /facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|LinkedInBot|Slackbot|Discordbot|SkypeUriPreview|Google-Extended|Applebot|bingbot|yandex|Pinterest|Signal/i;
 
-function getArticleMetadata(slug: string) {
-  const cleanSlug = slug.toLowerCase().trim();
-  const found = persistedAdminArticles.find(
-    a => a.slug === cleanSlug || a.id === cleanSlug || cleanSlug.includes(a.id) || (a.slug && cleanSlug.includes(a.slug))
-  );
+function getRequestOrigin(req: Request): string {
+  const protoHeader = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'https';
+  const proto = protoHeader.split(',')[0].trim();
+  const hostHeader = (req.headers['x-forwarded-host'] as string) || req.get('host') || 'hunkar24.in';
+  const host = hostHeader.split(',')[0].trim();
+  return `${proto}://${host}`;
+}
+
+function escapeHtmlAttr(str: string): string {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+async function getArticleMetadata(slug: string, origin: string) {
+  let decoded = slug || '';
+  try {
+    decoded = decodeURIComponent(slug);
+  } catch {
+    decoded = slug;
+  }
+  const cleanSlug = decoded.replace(/^\/+|\/+$/g, '').toLowerCase().trim();
+
+  let found: any = null;
+  if (cleanSlug) {
+    found =
+      persistedAdminArticles.find(
+        a =>
+          (a.slug && a.slug.toLowerCase() === cleanSlug) ||
+          (a.id && a.id.toLowerCase() === cleanSlug)
+      ) ||
+      persistedAdminArticles.find(
+        a =>
+          (a.id && cleanSlug.includes(a.id.toLowerCase())) ||
+          (a.slug && cleanSlug.includes(a.slug.toLowerCase())) ||
+          (a.slug && a.slug.toLowerCase().includes(cleanSlug))
+      );
+
+    // Fallback: query Supabase directly if article is not in memory cache
+    if (!found) {
+      const supabase = getSupabaseServerClient();
+      if (supabase) {
+        try {
+          const { data } = await supabase
+            .from('articles')
+            .select('id, headline, slug, summary, main_image, image_alt')
+            .or(`slug.eq.${decoded},id.eq.${decoded}`)
+            .limit(1);
+          if (Array.isArray(data) && data[0]) {
+            found = {
+              id: data[0].id,
+              headline: data[0].headline,
+              slug: data[0].slug,
+              summary: data[0].summary,
+              mainImage: data[0].main_image,
+              imageAlt: data[0].image_alt
+            };
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+
+  const baseOrigin = origin || 'https://hunkar24.in';
+  const fallbackLogo = 'https://i.ibb.co/bMrrmCqP/hunkar24.png';
+
   if (found) {
-    const imgUrl = found.mainImage?.startsWith('http')
-      ? found.mainImage
-      : `https://hunkar24.in${found.mainImage || '/assets/katar-kabaddi-champions.jpg'}`;
+    let imgUrl = found.mainImage || '';
+    if (!imgUrl || imgUrl.startsWith('data:')) {
+      imgUrl = fallbackLogo;
+    } else if (!imgUrl.startsWith('http://') && !imgUrl.startsWith('https://')) {
+      imgUrl = `${baseOrigin}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
+    }
+
+    const articleTitle = `${found.headline} | HUNKAR 24 (हुंकार 24)`;
+    const articleDesc = (found.summary || found.headline || '').slice(0, 260);
+    const articleUrl = `${baseOrigin}/news/${encodeURIComponent(found.slug || found.id)}`;
+
     return {
-      title: `${found.headline} | हुंकार 24`,
-      description: found.summary || found.headline,
+      title: articleTitle,
+      description: articleDesc,
       image: imgUrl,
-      url: `https://hunkar24.in/news/${found.slug || found.id}`,
+      imageAlt: found.imageAlt || found.headline || 'HUNKAR 24 समाचार',
+      url: articleUrl,
       type: 'article'
     };
   }
+
   return {
     title: 'HUNKAR 24 – राजस्थान की बुलंद आवाज़ | हुंकार 24 डिजिटल न्यूज़',
-    description: 'राजस्थान एवं देश-विदेश की निष्पक्ष ताज़ा खबरें, ब्रेकिंग न्यूज़, ग्राउंड रिपोर्ट, रोजगार एवं सरकारी योजनाएं। हुंकार 24 - निर्भीक पत्रकारिता का डिजिटल मंच।',
-    image: 'https://i.ibb.co/bMrrmCqP/hunkar24.png',
-    url: 'https://hunkar24.in/',
+    description:
+      'राजस्थान एवं देश-विदेश की निष्पक्ष ताज़ा खबरें, ब्रेकिंग न्यूज़, ग्राउंड रिपोर्ट, रोजगार एवं सरकारी योजनाएं। हुंकार 24 - निर्भीक पत्रकारिता का डिजिटल मंच।',
+    image: fallbackLogo,
+    imageAlt: 'HUNKAR 24 (हुंकार 24) Official Logo',
+    url: `${baseOrigin}/`,
     type: 'website'
   };
 }
 
-// Social crawler interceptor for dynamic rich share cards
-app.use((req: Request, res: Response, next: NextFunction) => {
+function injectOpenGraphHtml(html: string, meta: { title: string; description: string; image: string; imageAlt: string; url: string; type: string }): string {
+  const safeTitle = escapeHtmlAttr(meta.title);
+  const safeDesc = escapeHtmlAttr(meta.description);
+  const safeImage = escapeHtmlAttr(meta.image);
+  const safeImageAlt = escapeHtmlAttr(meta.imageAlt);
+  const safeUrl = escapeHtmlAttr(meta.url);
+  const safeType = escapeHtmlAttr(meta.type);
+
+  let out = html;
+  out = out.replace(/<title>.*?<\/title>/is, `<title>${safeTitle}</title>`);
+  out = out.replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/i, `<meta name="description" content="${safeDesc}" />`);
+  out = out.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i, `<link rel="canonical" href="${safeUrl}" />`);
+
+  out = out.replace(/<meta\s+property="og:type"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:type" content="${safeType}" />`);
+  out = out.replace(/<meta\s+property="og:site_name"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:site_name" content="HUNKAR 24 (हुंकार 24)" />`);
+  out = out.replace(/<meta\s+property="og:title"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:title" content="${safeTitle}" />`);
+  out = out.replace(/<meta\s+property="og:description"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:description" content="${safeDesc}" />`);
+  out = out.replace(/<meta\s+property="og:image"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:image" content="${safeImage}" />`);
+  out = out.replace(/<meta\s+property="og:image:secure_url"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:image:secure_url" content="${safeImage}" />`);
+  out = out.replace(/<meta\s+property="og:image:alt"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:image:alt" content="${safeImageAlt}" />`);
+  out = out.replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:url" content="${safeUrl}" />`);
+
+  out = out.replace(/<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/?>/i, `<meta name="twitter:title" content="${safeTitle}" />`);
+  out = out.replace(/<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/?>/i, `<meta name="twitter:description" content="${safeDesc}" />`);
+  out = out.replace(/<meta\s+name="twitter:image"\s+content="[^"]*"\s*\/?>/i, `<meta name="twitter:image" content="${safeImage}" />`);
+  out = out.replace(/<meta\s+name="twitter:image:alt"\s+content="[^"]*"\s*\/?>/i, `<meta name="twitter:image:alt" content="${safeImageAlt}" />`);
+  return out;
+}
+
+// Social crawler interceptor for immediate rich share cards (WhatsApp, Telegram, Facebook, X)
+app.use(async (req: Request, res: Response, next: NextFunction) => {
+  if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.startsWith('/assets')) {
+    return next();
+  }
   const ua = req.headers['user-agent'] || '';
   const isSocialCrawler = SOCIAL_BOTS_REGEX.test(ua);
-  const isNewsRoute = req.path.startsWith('/news/');
 
   if (isSocialCrawler) {
     const indexPath = isProduction
@@ -2054,21 +2581,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
     if (fs.existsSync(indexPath)) {
       try {
-        let html = fs.readFileSync(indexPath, 'utf-8');
-        const slug = req.path.replace('/news/', '').trim();
-        const meta = getArticleMetadata(slug);
-
-        html = html.replace(/<title>.*?<\/title>/i, `<title>${meta.title}</title>`);
-        html = html.replace(/<meta property="og:title" content=".*?" \/>/i, `<meta property="og:title" content="${meta.title.replace(/"/g, '&quot;')}" />`);
-        html = html.replace(/<meta property="og:description" content=".*?" \/>/i, `<meta property="og:description" content="${meta.description.replace(/"/g, '&quot;')}" />`);
-        html = html.replace(/<meta property="og:image" content=".*?" \/>/i, `<meta property="og:image" content="${meta.image}" />`);
-        html = html.replace(/<meta property="og:url" content=".*?" \/>/i, `<meta property="og:url" content="${meta.url}" />`);
-        html = html.replace(/<meta name="twitter:title" content=".*?" \/>/i, `<meta name="twitter:title" content="${meta.title.replace(/"/g, '&quot;')}" />`);
-        html = html.replace(/<meta name="twitter:description" content=".*?" \/>/i, `<meta name="twitter:description" content="${meta.description.replace(/"/g, '&quot;')}" />`);
-        html = html.replace(/<meta name="twitter:image" content=".*?" \/>/i, `<meta name="twitter:image" content="${meta.image}" />`);
+        const html = fs.readFileSync(indexPath, 'utf-8');
+        const slug = req.path.startsWith('/news/') ? req.path.slice('/news/'.length).trim() : '';
+        const meta = await getArticleMetadata(slug, getRequestOrigin(req));
+        const injected = injectOpenGraphHtml(html, meta);
 
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.send(html);
+        res.setHeader('Cache-Control', 'no-cache, max-age=0');
+        return res.send(injected);
       } catch {
         // Fallback to standard handler
       }
@@ -2091,6 +2611,27 @@ async function startServer() {
       },
       appType: 'spa'
     });
+
+    // Inject dynamic OpenGraph & Twitter meta tags on /news/* before Vite's SPA fallback catches them
+    app.get('/news/*', async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const templatePath = path.resolve(__dirname, 'index.html');
+        if (fs.existsSync(templatePath)) {
+          let template = fs.readFileSync(templatePath, 'utf-8');
+          const slug = req.path.slice('/news/'.length).trim();
+          const meta = await getArticleMetadata(slug, getRequestOrigin(req));
+          template = injectOpenGraphHtml(template, meta);
+          template = await vite.transformIndexHtml(req.originalUrl, template);
+          res.status(200).set({ 'Content-Type': 'text/html; charset=utf-8' }).end(template);
+          return;
+        }
+      } catch (e: any) {
+        vite.ssrFixStacktrace(e);
+        return next(e);
+      }
+      next();
+    });
+
     app.use(vite.middlewares);
 
     // Development SPA HTML fallback handler for direct navigation and deep links
@@ -2103,6 +2644,11 @@ async function startServer() {
         const templatePath = path.resolve(__dirname, 'index.html');
         if (fs.existsSync(templatePath)) {
           let template = fs.readFileSync(templatePath, 'utf-8');
+          if (req.path.startsWith('/news/')) {
+            const slug = req.path.slice('/news/'.length).trim();
+            const meta = await getArticleMetadata(slug, getRequestOrigin(req));
+            template = injectOpenGraphHtml(template, meta);
+          }
           template = await vite.transformIndexHtml(url, template);
           res.status(200).set({ 'Content-Type': 'text/html; charset=utf-8' }).end(template);
           return;
@@ -2115,8 +2661,20 @@ async function startServer() {
     });
   } else {
     app.use(express.static(path.resolve(__dirname, 'dist')));
-    app.get('*', (req: Request, res: Response) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+    app.get('*', async (req: Request, res: Response) => {
+      const distIndex = path.resolve(__dirname, 'dist', 'index.html');
+      if (req.path.startsWith('/news/') && fs.existsSync(distIndex)) {
+        try {
+          const html = fs.readFileSync(distIndex, 'utf-8');
+          const slug = req.path.slice('/news/'.length).trim();
+          const meta = await getArticleMetadata(slug, getRequestOrigin(req));
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          return res.send(injectOpenGraphHtml(html, meta));
+        } catch {
+          // fallback below
+        }
+      }
+      res.sendFile(distIndex);
     });
   }
 

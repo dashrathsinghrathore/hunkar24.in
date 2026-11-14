@@ -202,8 +202,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
             )}
           </div>
 
-          <div className="flex items-center justify-between mt-3 pt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-500 dark:text-stone-400">
-            <span className="font-medium truncate max-w-[160px]">{article.reporterName || 'हुंकार 24 ब्यूरो'}</span>
+          <div className="flex items-center justify-end mt-3 pt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-500 dark:text-stone-400">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -303,10 +302,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2.5 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-500 dark:text-stone-400">
-          <span className="truncate max-w-[140px] font-medium text-stone-700 dark:text-stone-300">
-            {article.reporterName || 'हुंकार 24 ब्यूरो'}
-          </span>
+        <div className="flex items-center justify-end pt-2.5 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-500 dark:text-stone-400">
           <div className="flex items-center gap-2">
             <button
               type="button"

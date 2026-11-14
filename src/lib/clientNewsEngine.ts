@@ -8,7 +8,7 @@
  * - Database compatibility: Omits 'id' on article insertion for PostgreSQL UUID auto-generation.
  */
 
-import { supabase } from './supabaseClient';
+import { getSupabase } from './supabaseClient';
 import { saveArticleToFirebase } from './firebaseClient';
 import { Article, AutoNewsArticleItem } from '../types';
 import { safeFetchJson } from './apiClient';
@@ -70,8 +70,8 @@ export async function fetchNewsClientSide(existingArticles: Article[]): Promise<
         mainImage: item.mainImage || item.main_image || item.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
         imageCaption: item.imageCaption || item.image_caption || `${item.district ? item.district.toUpperCase() : 'राजस्थान'} समाचार संदर्भ दृश्य`,
         imageSource: item.imageSource || item.image_source || 'हुंकार 24 फोटो डेस्क',
-        reporterName: item.reporterName || item.reporter_name || 'हुंकार 24 AI डेस्क',
-        reporterRole: item.reporterRole || 'स्वचालित समाचार नेटवर्क',
+        reporterName: '',
+        reporterRole: '',
         status: 'published' as const,
         publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -100,6 +100,7 @@ export async function fetchNewsClientSide(existingArticles: Article[]): Promise<
   }
 
   // 2. Direct Supabase Edge Function Invocation (Standard Netlify production path)
+  const supabase = getSupabase();
   if (supabase) {
     try {
       const cronSecret = sessionStorage.getItem('hunkar24_cron_secret') || '';
@@ -125,8 +126,8 @@ export async function fetchNewsClientSide(existingArticles: Article[]): Promise<
           mainImage: item.main_image,
           imageCaption: item.image_caption,
           imageSource: item.image_source,
-          reporterName: item.reporter_name,
-          reporterRole: item.reporter_role || 'स्वचालित समाचार नेटवर्क',
+          reporterName: '',
+          reporterRole: '',
           status: 'published' as const,
           publishedAt: item.published_at || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -200,6 +201,7 @@ export async function approveClientArticle(
     .slice(0, 65) || `news-${Date.now()}`;
   const now = new Date().toISOString();
 
+  const supabase = getSupabase();
   // MANDATORY DATABASE COMPATIBILITY: Omit 'id' on insert so Postgres generates UUID!
   if (supabase) {
     try {
@@ -213,8 +215,8 @@ export async function approveClientArticle(
           category_slug: customData?.category || item.category || 'rajasthan',
           district: customData?.district || item.district || null,
           main_image: item.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
-          reporter_name: 'हुंकार 24 ब्यूरो',
-          reporter_role: 'हुंकार ब्यूरो',
+          reporter_name: '',
+          reporter_role: '',
           status: 'published',
           published_at: now
         }])
@@ -231,8 +233,8 @@ export async function approveClientArticle(
           category: inserted.category_slug,
           district: inserted.district,
           mainImage: inserted.main_image,
-          reporterName: inserted.reporter_name || 'हुंकार 24 ब्यूरो',
-          reporterRole: inserted.reporter_role || 'हुंकार ब्यूरो',
+          reporterName: '',
+          reporterRole: '',
           status: 'published',
           publishedAt: inserted.published_at,
           updatedAt: now,
@@ -276,6 +278,7 @@ export async function getRealDatabaseStatus() {
   let totalPublished = 0;
   let recentLogs: any[] = [];
 
+  const supabase = getSupabase();
   if (supabase) {
     try {
       const { count } = await supabase

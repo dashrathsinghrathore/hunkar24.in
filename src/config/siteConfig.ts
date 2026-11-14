@@ -19,7 +19,7 @@ export const SITE_CONFIG = {
   // Domains
   currentSiteUrl: 'https://hunkar24.in',
   futureCustomDomain: 'https://hunkar24.in',
-  primarySiteUrl: import.meta.env.VITE_SITE_URL || 'https://hunkar24.in',
+  primarySiteUrl: ((import.meta as any)?.env?.VITE_SITE_URL) || 'https://hunkar24.in',
   
   // Official Supplied Logo
   // Local high-speed fallback asset + remote verified direct image URL

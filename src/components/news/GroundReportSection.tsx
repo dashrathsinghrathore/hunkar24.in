@@ -10,9 +10,10 @@ interface GroundReportSectionProps {
 export const GroundReportSection: React.FC<GroundReportSectionProps> = ({ excludeIds }) => {
   const { articles, setSelectedCategory } = useNews();
 
+  const publishedArticles = articles.filter(a => a.status === 'published');
   const candidateArticles = excludeIds && excludeIds.size > 0
-    ? articles.filter(a => !excludeIds.has(a.id))
-    : articles;
+    ? publishedArticles.filter(a => !excludeIds.has(a.id))
+    : publishedArticles;
 
   const groundReports = candidateArticles.filter(
     a => a.category === 'ground-report' || a.isExclusive

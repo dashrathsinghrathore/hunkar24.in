@@ -122,8 +122,11 @@ export function sanitizeSummary(summary?: string, headline?: string, category = 
  * Sanitizes full content, ensuring clean factual news without generic filler.
  * Length strictly respects available facts.
  */
-export function sanitizeContent(content?: string, summary?: string, headline?: string, sourceName?: string): string {
-  const clean = stripGenericFiller((content || '').trim());
+export function sanitizeContent(content?: string, summary?: string, headline?: string, _sourceName?: string): string {
+  const clean = stripGenericFiller((content || '').trim())
+    .replace(/\n*---\n\*\*हुंकार 24[^*]*\*\*\s*\n\*[^*]*\*/g, '')
+    .replace(/\n*\*[^*\n]*ब्यूरो\*/g, '')
+    .trim();
   if (clean && clean !== '|' && clean.length > 30) {
     return clean;
   }

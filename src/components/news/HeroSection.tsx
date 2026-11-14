@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, ArrowRight, Share2, Sparkles } from 'lucide-react';
+import { ArrowRight, Share2, Sparkles } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { ArticleCard } from './ArticleCard';
 import { SITE_CONFIG } from '../../config/siteConfig';
@@ -8,10 +8,11 @@ import { SafeImage } from '../common/SafeImage';
 export const HeroSection: React.FC = () => {
   const { articles, setActiveArticle } = useNews();
 
-  // Top lead story: newest article marked isHero, or simply the freshest published article
-  const leadStory = articles.find(a => a.isHero) || articles[0];
-  const secondaryStories = articles.filter(a => a.id !== leadStory?.id).slice(0, 2);
-  const fastUpdates = articles.filter(a => a.id !== leadStory?.id && !secondaryStories.some(s => s.id === a.id)).slice(0, 4);
+  // Always show the freshest published article at #1 Lead Story & #1 in Quick Bulletin
+  const publishedArticles = articles.filter(a => a.status === 'published');
+  const leadStory = publishedArticles[0];
+  const secondaryStories = publishedArticles.slice(1, 3);
+  const fastUpdates = [leadStory, ...publishedArticles.slice(3, 6)].filter(Boolean);
 
   if (!leadStory) return null;
 
@@ -22,7 +23,8 @@ export const HeroSection: React.FC = () => {
 
   const handleWhatsAppShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const shareText = `*${leadStory.headline}*\n\n${leadStory.summary.slice(0, 120)}...\n\nपूरी खबर पढ़ें हुंकार 24 पर:\n${SITE_CONFIG.currentSiteUrl}/news/${leadStory.slug}`;
+    const baseUrl = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : SITE_CONFIG.currentSiteUrl;
+    const shareText = `*${leadStory.headline}*\n\n${leadStory.summary.slice(0, 120)}...\n\nपूरी खबर पढ़ें हुंकार 24 पर:\n${baseUrl}/news/${leadStory.slug}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
   };
 
@@ -71,10 +73,6 @@ export const HeroSection: React.FC = () => {
               <div>
                 {/* Clean unboxed metadata */}
                 <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mb-2">
-                  <span className="font-semibold text-red-700 dark:text-red-400">
-                    {leadStory.reporterName}
-                  </span>
-                  <span aria-hidden="true">·</span>
                   <span>{leadStory.readingTimeMinutes} मिनट पठन</span>
                 </div>
 

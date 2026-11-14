@@ -20,10 +20,10 @@ interface AgricultureFarmersSectionProps {
 export const AgricultureFarmersSection: React.FC<AgricultureFarmersSectionProps> = ({ excludeIds }) => {
   const { articles, setSelectedCategory } = useNews();
 
-  // Filter agriculture, farmer and rural articles, excluding stories shown in previous sections
+  const publishedArticles = articles.filter(a => a.status === 'published');
   const candidateArticles = excludeIds && excludeIds.size > 0
-    ? articles.filter(a => !excludeIds.has(a.id))
-    : articles;
+    ? publishedArticles.filter(a => !excludeIds.has(a.id))
+    : publishedArticles;
 
   const agriArticles = candidateArticles.filter(
     a => a.category === 'agriculture' || a.tags?.some(t => ['किसान', 'कृषि', 'मंडी भाव', 'ग्रामीण', 'कुसुम योजना'].includes(t))

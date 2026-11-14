@@ -312,8 +312,10 @@ const NewsAppContent: React.FC = () => {
     );
   }
 
+  const publishedArticles = articles.filter(a => a.status === 'published');
+
   // Filtered Articles for Category Feed
-  const filteredCategoryArticles = articles.filter(a => {
+  const filteredCategoryArticles = publishedArticles.filter(a => {
     if (selectedCategory === 'all' || selectedCategory === 'home') return true;
     if (selectedCategory === 'saved') {
       try {
@@ -324,7 +326,7 @@ const NewsAppContent: React.FC = () => {
         return false;
       }
     }
-    if (selectedCategory === 'latest') return a.status === 'published';
+    if (selectedCategory === 'latest') return true;
     const matchCategory = a.category?.toLowerCase() === selectedCategory.toLowerCase();
     const matchDistrict = a.district?.toLowerCase() === selectedCategory.toLowerCase();
     const matchTag = a.tags?.some(t => t.toLowerCase() === selectedCategory.toLowerCase());
@@ -332,34 +334,33 @@ const NewsAppContent: React.FC = () => {
   });
 
   // Calculate strictly non-overlapping articles for homepage feed (Zero repetition guarantee)
-  // 1. Hero Section Stories (1 Lead + 2 Secondary + 4 Fast Updates = 7 unique stories)
-  const heroLead = articles.find(a => a.isHero) || articles[0];
-  const heroSecondary = articles.filter(a => a.id !== heroLead?.id).slice(0, 2);
-  const heroSecondaryIds = new Set(heroSecondary.map(a => a.id));
-  const heroFast = articles.filter(a => a.id !== heroLead?.id && !heroSecondaryIds.has(a.id)).slice(0, 4);
+  // 1. Hero Section Stories (1 Lead + 2 Secondary + 3 Fast Updates = 6 unique stories)
+  const heroLead = publishedArticles[0];
+  const heroSecondary = publishedArticles.slice(1, 3);
+  const heroFast = publishedArticles.slice(3, 6);
   const usedInHero = new Set([heroLead?.id, ...heroSecondary.map(a => a.id), ...heroFast.map(a => a.id)].filter(Boolean) as string[]);
 
   // 2. District Feed Stories (excludes Hero)
-  const districtFiltered = articles.filter(a => !usedInHero.has(a.id));
+  const districtFiltered = publishedArticles.filter(a => !usedInHero.has(a.id));
   const usedInDistrict = new Set([...usedInHero, ...districtFiltered.slice(0, 6).map(a => a.id)]);
 
   // 3. Agriculture & Mandi Stories (excludes Hero & District)
-  const agriFiltered = articles.filter(a => !usedInDistrict.has(a.id) && (a.category === 'agriculture' || a.tags?.some(t => ['किसान', 'कृषि', 'मंडी भाव', 'ग्रामीण', 'कुसुम योजना'].includes(t))));
+  const agriFiltered = publishedArticles.filter(a => !usedInDistrict.has(a.id) && (a.category === 'agriculture' || a.tags?.some(t => ['किसान', 'कृषि', 'मंडी भाव', 'ग्रामीण', 'कुसुम योजना'].includes(t))));
   const usedInAgri = new Set([...usedInDistrict, ...agriFiltered.slice(0, 6).map(a => a.id)]);
 
   // 4. Education & Jobs Stories (excludes above)
-  const eduFiltered = articles.filter(a => !usedInAgri.has(a.id) && (a.category === 'education' || a.category === 'jobs' || a.category === 'schemes'));
+  const eduFiltered = publishedArticles.filter(a => !usedInAgri.has(a.id) && (a.category === 'education' || a.category === 'jobs' || a.category === 'schemes'));
   const usedInEdu = new Set([...usedInAgri, ...eduFiltered.slice(0, 4).map(a => a.id)]);
 
   // 5. Ground Reports (excludes above)
-  const groundFiltered = articles.filter(a => !usedInEdu.has(a.id) && (a.category === 'ground-report' || a.isExclusive));
+  const groundFiltered = publishedArticles.filter(a => !usedInEdu.has(a.id) && (a.category === 'ground-report' || a.isExclusive));
   const usedInGround = new Set([...usedInEdu, ...groundFiltered.slice(0, 3).map(a => a.id)]);
 
   // 6. Homepage Latest Feed (strictly remaining stories not displayed above)
-  const remainingLatest = articles.filter(a => !usedInGround.has(a.id));
-  const homepageLatestFeed = remainingLatest.length >= 4 
-    ? remainingLatest.slice(0, 10) 
-    : articles.filter(a => !usedInHero.has(a.id)).slice(0, 8);
+  const remainingLatest = publishedArticles.filter(a => !usedInGround.has(a.id));
+  const homepageLatestFeed = remainingLatest.length >= 4
+    ? remainingLatest.slice(0, 10)
+    : publishedArticles.filter(a => !usedInHero.has(a.id)).slice(0, 8);
 
   const categoryTitle = CATEGORY_NAMES_HI[selectedCategory] || selectedCategory.toUpperCase();
 

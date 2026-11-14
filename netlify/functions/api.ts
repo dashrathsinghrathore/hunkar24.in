@@ -30,8 +30,47 @@ function getSupabaseBackend() {
   }
 }
 
+const FIREBASE_RTDB_URL = (process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL || '').replace(/\/$/, '');
+
 // In-memory fallback stores for serverless runtime
 const fallbackArticles: any[] = [];
+const fallbackBreaking: any[] = [];
+
+async function fetchFirebaseNode(node: string) {
+  if (!FIREBASE_RTDB_URL) return null;
+  try {
+    const res = await fetch(`${FIREBASE_RTDB_URL}/${node}.json`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && typeof data === 'object' ? Object.values(data) : [];
+  } catch {
+    return null;
+  }
+}
+
+async function putFirebaseNode(node: string, id: string, payload: any) {
+  if (!FIREBASE_RTDB_URL) return false;
+  try {
+    const res = await fetch(`${FIREBASE_RTDB_URL}/${node}/${id}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function deleteFirebaseNode(node: string, id: string) {
+  if (!FIREBASE_RTDB_URL) return false;
+  try {
+    const res = await fetch(`${FIREBASE_RTDB_URL}/${node}/${id}.json`, { method: 'DELETE' });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 // Clean CORS headers
 const CORS_HEADERS = {
@@ -137,19 +176,21 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
     }
 
     // ------------------------------------------------------------------------
-    // 3. GET /api/articles (Live website reader feed)
+    // 3. GET /api/articles or /api/sync-state (Live website reader feed)
     // ------------------------------------------------------------------------
-    if (cleanPath === '/api/articles' && method === 'GET') {
+    if ((cleanPath === '/api/articles' || cleanPath === '/api/sync-state') && method === 'GET') {
+      let articlesList: any[] = [];
+      let breakingList: any[] = [];
+
       if (supabase) {
         const { data, error } = await supabase
           .from('articles')
           .select('*')
-          .eq('status', 'published')
           .order('published_at', { ascending: false })
-          .limit(60);
+          .limit(80);
 
         if (!error && Array.isArray(data)) {
-          const mapped = data.map((d: any) => ({
+          articlesList = data.map((d: any) => ({
             id: d.id,
             headline: d.headline,
             slug: d.slug,
@@ -157,33 +198,152 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
             content: d.content,
             category: d.category_slug || 'rajasthan',
             district: d.district,
+            tehsil: d.tehsil,
+            village: d.village,
             mainImage: d.main_image,
+            galleryImages: Array.isArray(d.gallery_images) ? d.gallery_images : (d.main_image ? [d.main_image] : []),
+            videoUrl: d.video_url || undefined,
             imageCaption: d.image_caption,
             imageSource: d.image_source || 'हुंकार 24 डेस्क',
-            reporterName: d.reporter_name || 'हुंकार ब्यूरो',
-            reporterRole: d.reporter_role || 'संपाददाता',
-            status: d.status,
+            reporterName: '',
+            reporterRole: '',
+            status: d.status || 'published',
             publishedAt: d.published_at,
             updatedAt: d.updated_at,
-            views: Number(d.views_count || 1),
+            views: Number(d.views_count || 0),
+            likesCount: Number(d.likes_count || 0),
             isBreaking: Boolean(d.is_breaking),
             isHero: Boolean(d.is_hero),
             isExclusive: Boolean(d.is_exclusive),
             tags: d.tags || []
           }));
-          return {
-            statusCode: 200,
-            headers: CORS_HEADERS,
-            body: JSON.stringify({ success: true, articles: mapped })
-          };
         }
+
+        const { data: brkData, error: brkErr } = await supabase
+          .from('breaking_news')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(30);
+
+        if (!brkErr && Array.isArray(brkData)) {
+          breakingList = brkData.map((b: any) => ({
+            id: b.id,
+            text: b.text,
+            category: b.category_slug || undefined,
+            linkUrl: b.link_url || undefined,
+            linkArticleId: b.link_article_id || undefined,
+            isActive: b.is_active ?? true,
+            priority: b.priority || 1,
+            createdAt: b.created_at || new Date().toISOString()
+          }));
+        }
+      }
+
+      if (articlesList.length === 0) {
+        const fbArts = await fetchFirebaseNode('articles');
+        if (Array.isArray(fbArts) && fbArts.length > 0) {
+          articlesList = fbArts.map((a: any) => ({ ...a, reporterName: '', reporterRole: '' }));
+        } else {
+          articlesList = fallbackArticles;
+        }
+      }
+
+      if (breakingList.length === 0) {
+        const fbBrk = await fetchFirebaseNode('breaking_news');
+        if (Array.isArray(fbBrk) && fbBrk.length > 0) {
+          breakingList = fbBrk;
+        } else {
+          breakingList = fallbackBreaking;
+        }
+      }
+
+      articlesList.sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
+      breakingList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+      if (cleanPath === '/api/sync-state') {
+        return {
+          statusCode: 200,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            success: true,
+            articles: articlesList,
+            breakingNews: breakingList,
+            serverTime: new Date().toISOString()
+          })
+        };
       }
 
       return {
         statusCode: 200,
         headers: CORS_HEADERS,
-        body: JSON.stringify({ success: true, articles: fallbackArticles })
+        body: JSON.stringify({ success: true, articles: articlesList })
       };
+    }
+
+    // ------------------------------------------------------------------------
+    // 3b. GET / POST / DELETE /api/breaking-news
+    // ------------------------------------------------------------------------
+    if (cleanPath === '/api/breaking-news' && method === 'GET') {
+      let items: any[] = [];
+      if (supabase) {
+        const { data } = await supabase.from('breaking_news').select('*').order('created_at', { ascending: false }).limit(30);
+        if (Array.isArray(data)) {
+          items = data.map((b: any) => ({
+            id: b.id,
+            text: b.text,
+            category: b.category_slug,
+            linkUrl: b.link_url,
+            linkArticleId: b.link_article_id,
+            isActive: b.is_active ?? true,
+            priority: b.priority || 1,
+            createdAt: b.created_at
+          }));
+        }
+      }
+      if (items.length === 0) {
+        const fb = await fetchFirebaseNode('breaking_news');
+        items = Array.isArray(fb) && fb.length > 0 ? fb : fallbackBreaking;
+      }
+      return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ success: true, items }) };
+    }
+
+    if (cleanPath === '/api/breaking-news' && method === 'POST') {
+      const body = parseBody();
+      if (!body.text) {
+        return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ success: false, error: 'Text required' }) };
+      }
+      const item = {
+        id: body.id || `brk-${Date.now()}`,
+        text: body.text,
+        category: body.category || 'rajasthan',
+        linkUrl: body.linkUrl || null,
+        linkArticleId: body.linkArticleId || null,
+        isActive: body.isActive ?? true,
+        priority: body.priority || 1,
+        createdAt: body.createdAt || new Date().toISOString()
+      };
+      if (supabase) {
+        await supabase.from('breaking_news').upsert([{
+          id: item.id,
+          text: item.text,
+          category_slug: item.category,
+          link_url: item.linkUrl,
+          link_article_id: item.linkArticleId,
+          is_active: item.isActive,
+          priority: item.priority,
+          created_at: item.createdAt
+        }], { onConflict: 'id' });
+      }
+      await putFirebaseNode('breaking_news', item.id, item);
+      fallbackBreaking.unshift(item);
+      return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ success: true, item }) };
+    }
+
+    if (cleanPath.startsWith('/api/breaking-news/') && method === 'DELETE') {
+      const id = cleanPath.replace('/api/breaking-news/', '').trim();
+      if (supabase && id) await supabase.from('breaking_news').delete().eq('id', id);
+      if (id) await deleteFirebaseNode('breaking_news', id);
+      return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ success: true, deletedId: id }) };
     }
 
     // ------------------------------------------------------------------------
@@ -237,7 +397,7 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
         .slice(0, 70);
 
       const artId = body.id || `art-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      const uniqueSlug = `${rawSlug}-${artId.slice(-4)}`;
+      const uniqueSlug = body.slug ? rawSlug : `${rawSlug}-${artId.slice(-4)}`;
 
       const status = isDraftRequest ? 'draft' : (body.status || 'published');
       const now = new Date().toISOString();
@@ -253,17 +413,18 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
         main_image: body.mainImage || body.main_image || body.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
         image_caption: body.imageCaption || body.image_caption || `${headline.slice(0, 50)} संदर्भ दृश्य`,
         image_source: body.imageSource || body.image_source || 'हुंकार 24 ग्राउंड रिपोर्ट',
-        reporter_name: body.reporterName || body.reporter_name || 'हुंकार 24 ब्यूरो',
-        reporter_role: body.reporterRole || body.reporter_role || 'संपाददाता',
+        reporter_name: '',
+        reporter_role: '',
         status,
-        is_breaking: Boolean(body.isBreaking || body.is_breaking),
-        is_hero: Boolean(body.isHero || body.is_hero),
+        is_breaking: Boolean(body.isBreaking || body.is_breaking || status === 'published'),
+        is_hero: Boolean(body.isHero || body.is_hero || status === 'published'),
         is_exclusive: Boolean(body.isExclusive || body.is_exclusive),
         views_count: 1,
         likes_count: 0,
         reading_time_minutes: body.readingTimeMinutes || Math.max(1, Math.ceil(content.split(' ').length / 150)),
         tags: Array.isArray(body.tags) && body.tags.length > 0 ? body.tags : ['राजस्थान', 'हुंकार 24'],
         video_url: body.videoUrl || body.video_url || null,
+        gallery_images: Array.isArray(body.galleryImages) ? body.galleryImages : [],
         source_name: body.sourceName || body.source_name || 'विशेष प्रतिनिधि',
         original_url: body.sourceUrl || body.source_url || body.originalUrl || null,
         published_at: body.publishedAt || now,
@@ -285,8 +446,63 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
         }
       }
 
-      // 2. Keep in serverless in-memory list
-      fallbackArticles.unshift(articleRecord);
+      // 2. Sync to Firebase RTDB & auto-add top breaking item
+      const clientArticle = {
+        id: artId,
+        headline: articleRecord.headline,
+        slug: uniqueSlug,
+        summary: articleRecord.summary,
+        content: articleRecord.content,
+        category,
+        district,
+        mainImage: articleRecord.main_image,
+        galleryImages: articleRecord.gallery_images,
+        videoUrl: articleRecord.video_url || undefined,
+        imageCaption: articleRecord.image_caption,
+        imageSource: articleRecord.image_source,
+        reporterName: '',
+        reporterRole: '',
+        status,
+        isBreaking: articleRecord.is_breaking,
+        isHero: articleRecord.is_hero,
+        isExclusive: articleRecord.is_exclusive,
+        views: 0,
+        likesCount: 0,
+        readingTimeMinutes: articleRecord.reading_time_minutes,
+        tags: articleRecord.tags,
+        publishedAt: articleRecord.published_at,
+        updatedAt: now
+      };
+      await putFirebaseNode('articles', artId, clientArticle);
+
+      if (status === 'published') {
+        const autoBrk = {
+          id: `brk-${artId}`,
+          text: articleRecord.headline,
+          category,
+          linkArticleId: artId,
+          linkUrl: `/news/${uniqueSlug}`,
+          isActive: true,
+          priority: 1,
+          createdAt: now
+        };
+        if (supabase) {
+          await supabase.from('breaking_news').upsert([{
+            id: autoBrk.id,
+            text: autoBrk.text,
+            category_slug: category,
+            link_article_id: artId,
+            link_url: autoBrk.linkUrl,
+            is_active: true,
+            priority: 1,
+            created_at: now
+          }], { onConflict: 'id' });
+        }
+        await putFirebaseNode('breaking_news', autoBrk.id, autoBrk);
+      }
+
+      // 3. Keep in serverless in-memory list
+      fallbackArticles.unshift(clientArticle);
 
       return {
         statusCode: 200,

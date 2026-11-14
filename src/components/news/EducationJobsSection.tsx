@@ -20,9 +20,10 @@ interface EducationJobsSectionProps {
 export const EducationJobsSection: React.FC<EducationJobsSectionProps> = ({ excludeIds }) => {
   const { articles, setSelectedCategory } = useNews();
 
+  const publishedArticles = articles.filter(a => a.status === 'published');
   const candidateArticles = excludeIds && excludeIds.size > 0
-    ? articles.filter(a => !excludeIds.has(a.id))
-    : articles;
+    ? publishedArticles.filter(a => !excludeIds.has(a.id))
+    : publishedArticles;
 
   const educationArticles = candidateArticles.filter(
     a => a.category === 'education' || a.category === 'jobs' || a.category === 'schemes'

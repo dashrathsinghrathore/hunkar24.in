@@ -21,10 +21,16 @@ export const BreakingTicker: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [showAllDrawer, setShowAllDrawer] = useState(false);
 
-  // Combine dedicated breaking news items + latest published articles (Up to 35+ items for rich bulletin stream)
+  // Combine dedicated breaking news items + latest published articles (newest always #1)
   const activeItems = useMemo(() => {
-    const rawBreaking = breakingNews.filter(item => item.isActive);
-    
+    const rawBreaking = breakingNews
+      .filter(item => item.isActive)
+      .sort((a, b) => {
+        const diff = new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        if (diff !== 0) return diff;
+        return (a.priority || 99) - (b.priority || 99);
+      });
+
     // Map latest published articles into bulletin news items
     const articleBulletins: BreakingNewsItem[] = articles
       .filter(a => a.status === 'published')
@@ -34,6 +40,7 @@ export const BreakingTicker: React.FC = () => {
         text: a.headline,
         category: a.category || 'rajasthan',
         linkArticleId: a.id,
+        linkUrl: `/news/${a.slug}`,
         priority: a.isBreaking ? 1 : 10 + idx,
         isActive: true,
         createdAt: a.publishedAt
@@ -44,6 +51,11 @@ export const BreakingTicker: React.FC = () => {
     const unique = deduplicateBreakingNews(combined);
     return unique.slice(0, 35);
   }, [breakingNews, articles]);
+
+  const topBreakingId = activeItems[0]?.id;
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [topBreakingId]);
 
   // Auto-cycle ticker every 4.5 seconds
   useEffect(() => {

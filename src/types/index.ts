@@ -200,6 +200,7 @@ export interface AdvertisementCampaign {
   advertiserName: string;
   placement: AdPlacement;
   imageUrl: string;
+  logoUrl?: string;
   targetUrl: string;
   desktopVisible: boolean;
   mobileVisible: boolean;

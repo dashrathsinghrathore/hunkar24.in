@@ -62,6 +62,7 @@ if (typeof window !== 'undefined' && !getCredentials().isConfigured) {
         safeLocalStorageSet('hunkar24_supabase_url', data.url);
         safeLocalStorageSet('hunkar24_supabase_anon_key', data.anonKey);
         activeClientInstance = createSupabaseInstance(data.url, data.anonKey);
+        window.dispatchEvent(new CustomEvent('hunkar24:supabase-ready'));
       }
     })
     .catch(() => {});

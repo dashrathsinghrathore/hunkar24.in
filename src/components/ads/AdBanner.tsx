@@ -58,7 +58,6 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement, className = '' })
   const handleClick = () => {
     if (activeAd.targetUrl) {
       recordAdClick(activeAd.id);
-      window.open(activeAd.targetUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -86,6 +85,14 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement, className = '' })
     }
   };
 
+  const displayHost = (() => {
+    try {
+      return new URL(activeAd.targetUrl).hostname;
+    } catch {
+      return activeAd.advertiserName || '';
+    }
+  })();
+
   return (
     <div className={`ad-banner my-4 mx-auto ${className}`}>
       {/* Strict Requirement: Clearly label advertisements as "विज्ञापन" or "Sponsored" */}
@@ -94,36 +101,51 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement, className = '' })
           विज्ञापन · Sponsored
         </span>
         {activeAd.advertiserName && (
-          <span className="text-[10px] truncate max-w-[200px] text-stone-400">
+          <span className="text-[10px] truncate max-w-[240px] text-stone-400">
             {activeAd.advertiserName}
           </span>
         )}
       </div>
 
-      <div
+      <a
+        href={activeAd.targetUrl || '#'}
+        target="_blank"
+        rel="noopener noreferrer"
         onClick={handleClick}
-        role="button"
-        tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && handleClick()}
-        className={`group relative overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 cursor-pointer shadow-xs hover:shadow-md transition-all ${getDimensions()}`}
+        className={`block group relative overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 cursor-pointer shadow-xs hover:shadow-md transition-all ${getDimensions()}`}
       >
         <img
           src={activeAd.imageUrl}
           alt={activeAd.campaignTitle}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent flex items-end p-3">
-          <div className="flex items-center justify-between w-full text-white">
-            <span className="text-xs font-bold truncate drop-shadow-md pr-2">
-              {activeAd.campaignTitle}
-            </span>
-            <span className="inline-flex items-center gap-1 bg-red-700 hover:bg-red-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md shrink-0 shadow-md">
-              <span>देखें</span>
-              <ExternalLink className="w-3 h-3" />
-            </span>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/65 flex items-center justify-between gap-3 px-3 sm:px-5">
+          <div className="flex items-center gap-3 min-w-0">
+            {activeAd.logoUrl && (
+              <img
+                src={activeAd.logoUrl}
+                alt={activeAd.advertiserName || activeAd.campaignTitle}
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-contain bg-white p-1 border-2 border-amber-400 shadow-md shrink-0"
+              />
+            )}
+            <div className="min-w-0 text-white">
+              <span className="text-xs sm:text-sm font-black truncate block drop-shadow-md">
+                {activeAd.campaignTitle}
+              </span>
+              {displayHost && (
+                <span className="text-[10px] sm:text-xs font-mono text-amber-300 truncate block drop-shadow">
+                  {displayHost}
+                </span>
+              )}
+            </div>
           </div>
+
+          <span className="inline-flex items-center gap-1.5 bg-red-700 group-hover:bg-red-600 text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg shrink-0 shadow-md transition-colors">
+            <span>वेबसाइट खोलें</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </span>
         </div>
-      </div>
+      </a>
     </div>
   );
 };

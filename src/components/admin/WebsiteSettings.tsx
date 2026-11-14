@@ -26,6 +26,23 @@ export const WebsiteSettings: React.FC = () => {
         if (d?.apiKey) setMandiApiKey(d.apiKey);
       })
       .catch(() => {});
+
+    fetch('/api/sync-state')
+      .then(res => res.json())
+      .then(d => {
+        const s = d?.settings;
+        if (s && typeof s === 'object') {
+          if (s.currentDomain) setCurrentDomain(s.currentDomain);
+          if (s.futureDomain) setFutureDomain(s.futureDomain);
+          if (s.primaryDomain) setPrimaryDomain(s.primaryDomain);
+          if (s.brandName) setBrandName(s.brandName);
+          if (s.brandNameHi) setBrandNameHi(s.brandNameHi);
+          if (s.tagline) setTagline(s.tagline);
+          if (s.logoUrl) setLogoUrl(s.logoUrl);
+          if (s.adsenseId) setAdsenseId(s.adsenseId);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const [savedMsg, setSavedMsg] = useState(false);
@@ -39,6 +56,30 @@ export const WebsiteSettings: React.FC = () => {
         body: JSON.stringify({ apiKey: mandiApiKey })
       }).catch(() => {});
     }
+
+    const token = sessionStorage.getItem('hunkar24_admin_token') || '';
+    fetch('/api/admin/state-sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        key: 'settings',
+        value: {
+          currentDomain,
+          futureDomain,
+          primaryDomain,
+          brandName,
+          brandNameHi,
+          tagline,
+          logoUrl,
+          adsenseId
+        }
+      })
+    }).catch(() => {});
+
     logAction(
       'वेबसाइट सेटिंग्स अद्यतित',
       'Website Settings',

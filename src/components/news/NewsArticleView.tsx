@@ -51,7 +51,7 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
   // Sanitized content and dynamic read time estimation
   const cleanTitle = sanitizeHeadline(article.headline);
   const cleanDesc = sanitizeSummary(article.summary, cleanTitle, article.category);
-  const cleanFullContent = sanitizeContent(article.content, article.summary, cleanTitle, article.sourceName || article.reporterName);
+  const cleanFullContent = sanitizeContent(article.content, article.summary, cleanTitle, article.sourceName);
   const readTimeMinutes = estimateReadingTime(cleanFullContent, cleanDesc, article.readingTimeMinutes);
 
   // Dynamic OpenGraph, Twitter Cards and Google NewsArticle Schema Update
@@ -94,8 +94,10 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
     }
   };
 
+  const shareBaseUrl = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : SITE_CONFIG.currentSiteUrl;
+
   const handleCopyLink = () => {
-    const url = `${SITE_CONFIG.currentSiteUrl}/news/${article.slug}`;
+    const url = `${shareBaseUrl}/news/${article.slug}`;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
@@ -109,7 +111,7 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
   };
 
   // Social shares
-  const shareUrl = `${SITE_CONFIG.currentSiteUrl}/news/${article.slug}`;
+  const shareUrl = `${shareBaseUrl}/news/${article.slug}`;
   const shareTitle = `${cleanTitle} - हुंकार 24`;
 
   const shareWhatsApp = () => {
@@ -197,8 +199,6 @@ export const NewsArticleView: React.FC<NewsArticleViewProps> = ({ article, onBac
         {/* Action Ribbon: Audio Reader, Print, Share */}
         <div className="flex items-center justify-between gap-3 py-2.5 my-2 border-y border-stone-200 dark:border-stone-800 text-xs no-print">
           <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
-            <span className="font-semibold text-stone-800 dark:text-stone-200">{article.reporterName || 'हुंकार 24 ब्यूरो'}</span>
-            <span>·</span>
             <span>{formatDate(article.publishedAt)}</span>
           </div>
           {/* Audio Listen */}

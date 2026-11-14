@@ -13,10 +13,16 @@ export const MobileNewsSlider: React.FC = () => {
   const touchEndX = useRef<number | null>(null);
   const autoPlayTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Take top 10 unique verified articles with zero duplicate stories
-  const sliderArticles: Article[] = deduplicateArticlesList(articles).slice(0, 10);
+  // Take top 10 unique published articles with zero duplicate stories
+  const publishedArticles = articles.filter(a => a.status === 'published');
+  const sliderArticles: Article[] = deduplicateArticlesList(publishedArticles).slice(0, 10);
 
   const totalSlides = sliderArticles.length;
+  const topArticleId = sliderArticles[0]?.id;
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [topArticleId]);
 
   const nextSlide = useCallback(() => {
     if (totalSlides === 0) return;
@@ -166,10 +172,6 @@ export const MobileNewsSlider: React.FC = () => {
           <div className="md:col-span-7 p-4 sm:p-6 flex flex-col justify-between">
             <div className="space-y-2 sm:space-y-3">
               <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
-                <span className="font-bold text-red-700 dark:text-red-400">
-                  {activeArticle.reporterName || 'हुंकार 24 ब्यूरो'}
-                </span>
-                <span>•</span>
                 <span className="flex items-center gap-1 font-mono text-[11px]">
                   <Clock className="w-3 h-3" />
                   <span>3 मिनट पठन</span>

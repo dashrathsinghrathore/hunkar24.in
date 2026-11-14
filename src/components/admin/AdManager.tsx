@@ -69,28 +69,6 @@ export const AdManager: React.FC = () => {
       isDemo: false
     });
 
-    // Also persist to server if server is running
-    fetch('/api/ads/manage', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${sessionStorage.getItem('hunkar24_admin_token') || ''}`
-      },
-      body: JSON.stringify({
-        action: 'create',
-        ad: {
-          campaignTitle: campaignTitle.trim(),
-          advertiserName: advertiserName.trim() || 'अधिकृत विज्ञापनदाता',
-          placement,
-          imageUrl: imageUrl.trim(),
-          targetUrl: targetUrl.trim(),
-          startDate,
-          endDate,
-          pricingInr
-        }
-      })
-    }).catch(() => {});
-
     setShowAddModal(false);
     setCampaignTitle('');
     setAdvertiserName('');

@@ -30,10 +30,12 @@ export const RajasthanDistrictFeed: React.FC<RajasthanDistrictFeedProps> = ({ ex
     { id: 'churu', nameHi: 'चूरू' }
   ];
 
-  // Filter articles by district, excluding stories already shown in earlier sections
-  const candidateArticles = excludeIds && excludeIds.size > 0
-    ? articles.filter(a => !excludeIds.has(a.id))
-    : articles;
+  // Filter published articles by district; when a specific district tab is chosen, show all matching district news including newest top stories
+  const publishedArticles = articles.filter(a => a.status === 'published');
+  const candidateArticles =
+    selectedDistrict === 'all' && excludeIds && excludeIds.size > 0
+      ? publishedArticles.filter(a => !excludeIds.has(a.id))
+      : publishedArticles;
 
   const districtArticles = candidateArticles.filter(a => {
     if (selectedDistrict === 'all') return true;

@@ -7,11 +7,13 @@ export const TrendingNewsSection: React.FC = () => {
   const { articles, setActiveArticle } = useNews();
   const [filterPeriod, setFilterPeriod] = useState<'today' | 'week'>('today');
 
-  // Trending stories sorted by breaking status and fresh recency
-  const trendingArticles = [...articles]
+  // Trending stories: newest published stories first
+  const trendingArticles = articles
+    .filter(a => a.status === 'published')
     .sort((a, b) => {
-      if (a.isBreaking !== b.isBreaking) return a.isBreaking ? -1 : 1;
-      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+      const timeDiff = new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+      if (timeDiff !== 0) return timeDiff;
+      return (a.isBreaking ? -1 : 0) - (b.isBreaking ? -1 : 0);
     })
     .slice(0, 5);
 

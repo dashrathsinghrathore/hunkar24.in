@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import {
   Article,
   BreakingNewsItem,
@@ -25,7 +25,7 @@ import {
   INITIAL_BUSINESS_LISTINGS
 } from '../data/mockData';
 import { DEFAULT_CATEGORIES, RAJASTHAN_DISTRICTS } from '../config/siteConfig';
-import { getSupabase, supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { getSupabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { safeFetchJson } from '../lib/apiClient';
 import {
   fetchNewsClientSide,
@@ -52,6 +52,22 @@ import {
   normalizeHeadline,
   areHeadlinesDuplicate
 } from '../utils/deduplication';
+
+const sanitizeArticleRecord = (a: Article): Article => ({
+  ...a,
+  reporterId: '',
+  reporterName: '',
+  reporterRole: '',
+  reporterPhoto: ''
+});
+
+const getAdminAuthHeaders = (): Record<string, string> => {
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('hunkar24_admin_token') || '' : '';
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+};
 
 
 export type LanguageCode = 'hi' | 'raj' | 'en';
@@ -175,30 +191,41 @@ interface NewsContextType {
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
 
 export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const deletedArticleIdsRef = useRef<Set<string>>(
+    new Set(safeLocalStorageGet<string[]>('hunkar24_deleted_article_ids', []) || [])
+  );
+  const deletedBreakingIdsRef = useRef<Set<string>>(
+    new Set(safeLocalStorageGet<string[]>('hunkar24_deleted_breaking_ids', []) || [])
+  );
+
   // Load state from safe storage or use initial seed data with strict deduplication
   const [articles, setArticles] = useState<Article[]>(() => {
     const raw = safeLocalStorageGet<Article[]>('hunkar24_articles', INITIAL_ARTICLES);
     const storedList = Array.isArray(raw) && raw.length > 0 ? raw : [];
+    const deletedSet = deletedArticleIdsRef.current;
 
-    // Ensure all articles from INITIAL_ARTICLES (including Katar Kabaddi) are ALWAYS present
     const map = new Map<string, Article>();
     for (const a of INITIAL_ARTICLES) {
-      map.set(a.id, a);
+      if (!deletedSet.has(a.id)) map.set(a.id, sanitizeArticleRecord(a));
     }
     for (const a of storedList) {
+      if (!a || deletedSet.has(a.id)) continue;
       const existing = map.get(a.id);
       if (existing) {
-        map.set(a.id, {
-          ...existing,
-          ...a,
-          mainImage: a.mainImage || existing.mainImage,
-          videoUrl: a.videoUrl !== undefined ? a.videoUrl : existing.videoUrl
-        });
+        map.set(
+          a.id,
+          sanitizeArticleRecord({
+            ...existing,
+            ...a,
+            mainImage: a.mainImage || existing.mainImage,
+            videoUrl: a.videoUrl !== undefined ? a.videoUrl : existing.videoUrl
+          })
+        );
       } else {
-        map.set(a.id, a);
+        map.set(a.id, sanitizeArticleRecord(a));
       }
     }
-    // Make sure initial baseline articles exist if not present in storage
+
     const guaranteedIds = [
       'art-katar-chhoti-bus-stand-20261112',
       'art-amarsar-road-bike-accident-20261110',
@@ -211,18 +238,21 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'art-katar-kabaddi-2026'
     ];
     for (const id of guaranteedIds) {
+      if (deletedSet.has(id)) continue;
       const art = INITIAL_ARTICLES.find(a => a.id === id);
       if (art && !map.has(art.id)) {
-        map.set(art.id, art);
+        map.set(art.id, sanitizeArticleRecord(art));
       }
     }
 
     const list = Array.from(map.values());
-    const sanitized = list.map(a => ({
-      ...a,
-      views: (a.views && a.views > 500) ? 0 : (a.views || 0),
-      likesCount: (a.likesCount && a.likesCount > 50) ? 0 : (a.likesCount || 0)
-    }));
+    const sanitized = list.map(a =>
+      sanitizeArticleRecord({
+        ...a,
+        views: a.views && a.views > 500 ? 0 : a.views || 0,
+        likesCount: a.likesCount && a.likesCount > 50 ? 0 : a.likesCount || 0
+      })
+    );
     sanitized.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
     return deduplicateArticlesList(sanitized);
   });
@@ -230,24 +260,24 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [breakingNews, setBreakingNews] = useState<BreakingNewsItem[]>(() => {
     const raw = safeLocalStorageGet<BreakingNewsItem[]>('hunkar24_breaking', INITIAL_BREAKING_NEWS);
     const storedBreaking = Array.isArray(raw) && raw.length > 0 ? raw : [];
+    const deletedBrkSet = deletedBreakingIdsRef.current;
     const bMap = new Map<string, BreakingNewsItem>();
     for (const b of INITIAL_BREAKING_NEWS) {
-      bMap.set(b.id, b);
+      if (!deletedBrkSet.has(b.id)) bMap.set(b.id, b);
     }
     for (const b of storedBreaking) {
-      bMap.set(b.id, b);
+      if (b && !deletedBrkSet.has(b.id)) bMap.set(b.id, b);
     }
-    // Ensure Board Exam and Katar Kabaddi breaking are active and present
     const boardExamBrk = INITIAL_BREAKING_NEWS.find(b => b.id === 'brk-board-exam-2027-incomplete');
-    if (boardExamBrk) {
+    if (boardExamBrk && !deletedBrkSet.has(boardExamBrk.id)) {
       bMap.set(boardExamBrk.id, boardExamBrk);
     }
     const katarBrk = INITIAL_BREAKING_NEWS.find(b => b.id === 'brk-katar-kabaddi-1');
-    if (katarBrk) {
+    if (katarBrk && !deletedBrkSet.has(katarBrk.id)) {
       bMap.set(katarBrk.id, katarBrk);
     }
     const mergedB = Array.from(bMap.values());
-    mergedB.sort((a, b) => (a.priority || 99) - (b.priority || 99));
+    mergedB.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     return deduplicateBreakingNews(mergedB);
   });
 
@@ -435,8 +465,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 mainImage: item.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
                 imageCaption: `${item.sourceProvider} स्रोत रिपोर्ट`,
                 imageSource: item.sourceProvider,
-                reporterName: `हुंकार AI न्यूज़ डेस्क (${item.sourceProvider})`,
-                reporterRole: 'स्वचालित न्यूज़ नेटवर्क',
+                reporterName: '',
+                reporterRole: '',
                 status: 'published',
                 publishedAt: item.publishedAt || new Date().toISOString(),
                 updatedAt: item.createdAt || new Date().toISOString(),
@@ -497,123 +527,140 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, []);
 
-  // Supabase Real-Time Database Connection & Sync (Phase 2 & 3)
+  // Supabase Real-Time Database Connection & Sync (Reacts dynamically to hunkar24:supabase-ready)
   useEffect(() => {
-    const client = getSupabase();
-    if (!client) {
-      setSupabaseStatus('standby');
-      return;
-    }
+    let activeCleanup: (() => void) | null = null;
 
-    setSupabaseStatus('connecting');
+    const setupSupabaseRealtime = () => {
+      if (activeCleanup) {
+        activeCleanup();
+        activeCleanup = null;
+      }
 
-    // Helper to fetch live articles from Supabase
-    const fetchLiveArticles = async () => {
-      try {
-        const { data, error } = await client
-          .from('articles')
-          .select('*')
-          .order('published_at', { ascending: false })
-          .limit(80);
+      const client = getSupabase();
+      if (!client) {
+        setSupabaseStatus('standby');
+        return;
+      }
 
-        if (!error && Array.isArray(data)) {
-          setSupabaseStatus('connected');
-          setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
+      setSupabaseStatus('connecting');
 
-          if (data.length > 0) {
-            const mappedArticles: Article[] = data.map((d: any) => ({
-              id: d.id,
-              headline: d.headline,
-              slug: d.slug,
-              summary: d.summary || '',
-              content: d.content || d.summary || '',
-              category: d.category_slug || d.category || 'rajasthan',
-              district: d.district,
-              tehsil: d.tehsil,
-              village: d.village,
-              mainImage: d.main_image || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
-              imageCaption: d.image_caption,
-              imageSource: d.image_source || 'हुंकार 24 डेस्क',
-              reporterName: d.reporter_name || 'हुंकार ब्यूरो',
-              reporterRole: d.reporter_role || 'संपाददाता',
-              reporterPhoto: d.reporter_photo,
-              status: d.status || 'published',
-              publishedAt: d.published_at || d.created_at || new Date().toISOString(),
-              updatedAt: d.updated_at || new Date().toISOString(),
-              views: Number(d.views_count || 0),
-              isBreaking: Boolean(d.is_breaking),
-              isHero: Boolean(d.is_hero),
-              isExclusive: Boolean(d.is_exclusive),
-              tags: Array.isArray(d.tags) ? d.tags : ['राजस्थान', 'हुंकार24'],
-              readingTimeMinutes: d.reading_time_minutes || 2,
-              likesCount: d.likes_count || 0,
-              videoUrl: d.video_url,
-              galleryImages: Array.isArray(d.gallery_images) && d.gallery_images.length > 0 ? d.gallery_images : (d.main_image ? [d.main_image] : [])
-            }));
+      const fetchLiveArticles = async () => {
+        try {
+          const { data, error } = await client
+            .from('articles')
+            .select('*')
+            .order('published_at', { ascending: false })
+            .limit(80);
 
-            setArticles(prev => {
-              const dbMap = new Map<string, Article>();
-              for (const a of mappedArticles) {
-                dbMap.set(a.id, a);
-              }
-              for (const p of prev) {
-                if (!dbMap.has(p.id)) {
-                  dbMap.set(p.id, p);
+          if (!error && Array.isArray(data)) {
+            setSupabaseStatus('connected');
+            setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
+
+            if (data.length > 0) {
+              const deletedSet = deletedArticleIdsRef.current;
+              const mappedArticles: Article[] = data
+                .filter((d: any) => !deletedSet.has(d.id))
+                .map((d: any) =>
+                  sanitizeArticleRecord({
+                    id: d.id,
+                    headline: d.headline,
+                    slug: d.slug,
+                    summary: d.summary || '',
+                    content: d.content || d.summary || '',
+                    category: d.category_slug || d.category || 'rajasthan',
+                    district: d.district,
+                    tehsil: d.tehsil,
+                    village: d.village,
+                    mainImage: d.main_image || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
+                    imageCaption: d.image_caption,
+                    imageSource: d.image_source || 'हुंकार 24 डेस्क',
+                    reporterName: '',
+                    reporterRole: '',
+                    reporterPhoto: '',
+                    status: d.status || 'published',
+                    publishedAt: d.published_at || d.created_at || new Date().toISOString(),
+                    updatedAt: d.updated_at || new Date().toISOString(),
+                    views: Number(d.views_count || 0),
+                    isBreaking: Boolean(d.is_breaking),
+                    isHero: Boolean(d.is_hero),
+                    isExclusive: Boolean(d.is_exclusive),
+                    tags: Array.isArray(d.tags) ? d.tags : ['राजस्थान', 'हुंकार24'],
+                    readingTimeMinutes: d.reading_time_minutes || 2,
+                    likesCount: d.likes_count || 0,
+                    videoUrl: d.video_url,
+                    galleryImages: Array.isArray(d.gallery_images) && d.gallery_images.length > 0 ? d.gallery_images : d.main_image ? [d.main_image] : []
+                  })
+                );
+
+              setArticles(prev => {
+                const dbMap = new Map<string, Article>();
+                for (const a of mappedArticles) {
+                  dbMap.set(a.id, a);
                 }
-              }
-              return deduplicateArticlesList(Array.from(dbMap.values()));
-            });
+                for (const p of prev) {
+                  if (!deletedSet.has(p.id) && !dbMap.has(p.id)) {
+                    dbMap.set(p.id, sanitizeArticleRecord(p));
+                  }
+                }
+                const list = Array.from(dbMap.values());
+                list.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+                return deduplicateArticlesList(list);
+              });
+            }
+          } else if (error) {
+            console.warn('[Supabase] Initial query notice:', error.message);
+            setSupabaseStatus('error');
           }
-        } else if (error) {
-          console.warn('[Supabase] Initial query notice:', error.message);
+        } catch (err) {
+          console.warn('[Supabase] Connection notice:', err);
           setSupabaseStatus('error');
         }
-      } catch (err) {
-        console.warn('[Supabase] Connection notice:', err);
-        setSupabaseStatus('error');
-      }
-    };
+      };
 
-    fetchLiveArticles();
+      fetchLiveArticles();
 
-    // 2. Fetch initial breaking news from Supabase
-    client
-      .from('breaking_news')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(20)
-      .then(({ data, error }) => {
-        if (!error && Array.isArray(data) && data.length > 0) {
-          const mappedBreaking: BreakingNewsItem[] = data.map((b: any) => ({
-            id: b.id,
-            text: b.text,
-            linkUrl: b.link_url,
-            linkArticleId: b.link_article_id,
-            isActive: b.is_active ?? true,
-            priority: b.priority || 1,
-            createdAt: b.created_at || new Date().toISOString()
-          }));
-          setBreakingNews(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const newOnes = mappedBreaking.filter(m => !existingIds.has(m.id));
-            return newOnes.length > 0 ? [...newOnes, ...prev] : prev;
-          });
-        }
-      });
+      client
+        .from('breaking_news')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(25)
+        .then(({ data, error }) => {
+          if (!error && Array.isArray(data) && data.length > 0) {
+            const deletedBrkSet = deletedBreakingIdsRef.current;
+            const mappedBreaking: BreakingNewsItem[] = data
+              .filter((b: any) => !deletedBrkSet.has(b.id))
+              .map((b: any) => ({
+                id: b.id,
+                text: b.text,
+                linkUrl: b.link_url,
+                linkArticleId: b.link_article_id,
+                isActive: b.is_active ?? true,
+                priority: b.priority || 1,
+                createdAt: b.created_at || new Date().toISOString()
+              }));
+            setBreakingNews(prev => {
+              const bMap = new Map<string, BreakingNewsItem>();
+              for (const m of mappedBreaking) bMap.set(m.id, m);
+              for (const p of prev) {
+                if (!deletedBrkSet.has(p.id) && !bMap.has(p.id)) bMap.set(p.id, p);
+              }
+              const list = Array.from(bMap.values());
+              list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+              return deduplicateBreakingNews(list);
+            });
+          }
+        });
 
-    // 3. Real-Time channel subscriptions for Articles with reconnect handling
-    const articlesChannel = client
-      .channel('public:articles')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'articles' },
-        (payload: any) => {
+      const articlesChannel = client
+        .channel('public:articles')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'articles' }, (payload: any) => {
           setRealtimeStatus('active');
           setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
 
           if (payload.eventType === 'INSERT') {
             const d = payload.new;
-            const newArt: Article = {
+            const newArt: Article = sanitizeArticleRecord({
               id: d.id,
               headline: d.headline,
               slug: d.slug,
@@ -626,8 +673,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
               mainImage: d.main_image || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
               imageCaption: d.image_caption,
               imageSource: d.image_source || 'हुंकार 24 डेस्क',
-              reporterName: d.reporter_name || 'हुंकार ब्यूरो',
-              reporterRole: d.reporter_role || 'संपाददाता',
+              reporterName: '',
+              reporterRole: '',
               status: d.status || 'published',
               publishedAt: d.published_at || new Date().toISOString(),
               updatedAt: d.updated_at || new Date().toISOString(),
@@ -637,16 +684,20 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
               isHero: Boolean(d.is_hero),
               isExclusive: Boolean(d.is_exclusive),
               videoUrl: d.video_url || undefined,
-              galleryImages: Array.isArray(d.gallery_images) && d.gallery_images.length > 0 ? d.gallery_images : (d.main_image ? [d.main_image] : []),
+              galleryImages: Array.isArray(d.gallery_images) && d.gallery_images.length > 0 ? d.gallery_images : d.main_image ? [d.main_image] : [],
               tags: d.tags || []
-            };
-            setArticles(prev => [newArt, ...prev.filter(a => a.id !== newArt.id && a.slug !== newArt.slug)]);
+            });
+            setArticles(prev => {
+              const next = [newArt, ...prev.filter(a => a.id !== newArt.id && a.slug !== newArt.slug)];
+              next.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+              return next;
+            });
           } else if (payload.eventType === 'UPDATE') {
             const d = payload.new;
-            setArticles(prev =>
-              prev.map(a =>
+            setArticles(prev => {
+              const next = prev.map(a =>
                 a.id === d.id
-                  ? {
+                  ? sanitizeArticleRecord({
                       ...a,
                       headline: d.headline || a.headline,
                       slug: d.slug || a.slug,
@@ -660,34 +711,34 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
                       status: d.status || a.status,
                       isBreaking: d.is_breaking !== undefined ? Boolean(d.is_breaking) : a.isBreaking,
                       isHero: d.is_hero !== undefined ? Boolean(d.is_hero) : a.isHero,
+                      publishedAt: d.published_at || a.publishedAt,
+                      updatedAt: d.updated_at || a.updatedAt,
                       views: Number(d.views_count || a.views)
-                    }
+                    })
                   : a
-              )
-            );
+              );
+              next.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+              return next;
+            });
           } else if (payload.eventType === 'DELETE') {
             const d = payload.old;
             if (d?.id) {
+              deletedArticleIdsRef.current.add(d.id);
               setArticles(prev => prev.filter(a => a.id !== d.id));
             }
           }
-        }
-      )
-      .subscribe((status: string) => {
-        if (status === 'SUBSCRIBED') {
-          setRealtimeStatus('active');
-        } else if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
-          setRealtimeStatus('reconnecting');
-        }
-      });
+        })
+        .subscribe((status: string) => {
+          if (status === 'SUBSCRIBED') {
+            setRealtimeStatus('active');
+          } else if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
+            setRealtimeStatus('reconnecting');
+          }
+        });
 
-    // 4. Real-Time channel subscriptions for Breaking News
-    const breakingChannel = client
-      .channel('public:breaking_news')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'breaking_news' },
-        (payload: any) => {
+      const breakingChannel = client
+        .channel('public:breaking_news')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'breaking_news' }, (payload: any) => {
           if (payload.eventType === 'INSERT') {
             const b = payload.new;
             const newItem: BreakingNewsItem = {
@@ -717,76 +768,215 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else if (payload.eventType === 'DELETE') {
             const b = payload.old;
             if (b?.id) {
+              deletedBreakingIdsRef.current.add(b.id);
               setBreakingNews(prev => prev.filter(item => item.id !== b.id));
             }
           }
-        }
-      )
-      .subscribe();
+        })
+        .subscribe();
 
-    // 5. Offline / Online network event listeners for seamless reconnection
-    const handleOnline = () => {
-      console.log('[Supabase Realtime] Device reconnected online, reconciling news data...');
-      setRealtimeStatus('active');
-      fetchLiveArticles();
+      const handleOnline = () => {
+        setRealtimeStatus('active');
+        fetchLiveArticles();
+      };
+      const handleOffline = () => {
+        setRealtimeStatus('offline');
+      };
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      activeCleanup = () => {
+        client.removeChannel(articlesChannel);
+        client.removeChannel(breakingChannel);
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
     };
 
-    const handleOffline = () => {
-      console.warn('[Supabase Realtime] Device offline, relying on cached data.');
-      setRealtimeStatus('offline');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    setupSupabaseRealtime();
+    const handleSupabaseReady = () => setupSupabaseRealtime();
+    window.addEventListener('hunkar24:supabase-ready', handleSupabaseReady);
 
     return () => {
-      client.removeChannel(articlesChannel);
-      client.removeChannel(breakingChannel);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('hunkar24:supabase-ready', handleSupabaseReady);
+      if (activeCleanup) activeCleanup();
     };
   }, []);
 
-  // Multi-Device Server Live Sync (Ensures newly published news appears instantly on all devices)
-  useEffect(() => {
-    let isMounted = true;
-    const syncServerArticles = async () => {
-      try {
-        const res = await safeFetchJson('/api/articles');
-        if (isMounted && res.success && Array.isArray(res.data?.articles) && res.data.articles.length > 0) {
-          const serverArts = res.data.articles as Article[];
+  // Multi-Device Real-Time SSE + Full State Sync across all phones, desktops & tabs
+  const syncFullServerState = useCallback(async () => {
+    try {
+      const res = await safeFetchJson('/api/sync-state');
+      if (res.success && res.data && res.data.success) {
+        const data = res.data;
+
+        if (Array.isArray(data.deletedArticleIds)) {
+          for (const id of data.deletedArticleIds) {
+            deletedArticleIdsRef.current.add(id);
+          }
+          safeLocalStorageSet('hunkar24_deleted_article_ids', Array.from(deletedArticleIdsRef.current).slice(-100));
+        }
+        if (Array.isArray(data.deletedBreakingIds)) {
+          for (const id of data.deletedBreakingIds) {
+            deletedBreakingIdsRef.current.add(id);
+          }
+          safeLocalStorageSet('hunkar24_deleted_breaking_ids', Array.from(deletedBreakingIdsRef.current).slice(-100));
+        }
+
+        const deletedSet = deletedArticleIdsRef.current;
+        const deletedBrkSet = deletedBreakingIdsRef.current;
+
+        if (Array.isArray(data.articles)) {
+          const serverArts = (data.articles as Article[]).map(sanitizeArticleRecord);
           setArticles(prev => {
             const map = new Map<string, Article>();
             for (const a of serverArts) {
-              map.set(a.id, a);
+              if (!deletedSet.has(a.id)) {
+                map.set(a.id, a);
+              }
             }
             for (const a of prev) {
+              if (deletedSet.has(a.id)) continue;
               const existing = map.get(a.id);
               if (!existing) {
-                map.set(a.id, a);
-              } else if (a.updatedAt && existing.updatedAt && new Date(a.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
-                map.set(a.id, { ...existing, ...a });
+                map.set(a.id, sanitizeArticleRecord(a));
+              } else if (
+                a.updatedAt &&
+                existing.updatedAt &&
+                new Date(a.updatedAt).getTime() > new Date(existing.updatedAt).getTime()
+              ) {
+                map.set(a.id, sanitizeArticleRecord({ ...existing, ...a }));
               }
             }
             const merged = Array.from(map.values());
+            merged.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
             return deduplicateArticlesList(merged);
           });
         }
-      } catch (err: any) {
-        console.warn('[ServerSync] Articles sync notice:', err?.message);
-      }
-    };
 
-    // Immediate sync on component mount
-    syncServerArticles();
-    // Poll every 6 seconds so admin submissions are live across different phones and laptops
-    const serverSyncInterval = setInterval(syncServerArticles, 6000);
+        if (Array.isArray(data.breakingNews)) {
+          const serverBrk = data.breakingNews as BreakingNewsItem[];
+          setBreakingNews(prev => {
+            const bMap = new Map<string, BreakingNewsItem>();
+            for (const b of serverBrk) {
+              if (!deletedBrkSet.has(b.id)) bMap.set(b.id, b);
+            }
+            for (const b of prev) {
+              if (!deletedBrkSet.has(b.id) && !bMap.has(b.id)) bMap.set(b.id, b);
+            }
+            const mergedB = Array.from(bMap.values());
+            mergedB.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+            return deduplicateBreakingNews(mergedB);
+          });
+        }
+
+        if (Array.isArray(data.categories) && data.categories.length > 0) {
+          setCategories(data.categories);
+        }
+        if (Array.isArray(data.submissions)) {
+          setSubmissions(data.submissions);
+        }
+        if (Array.isArray(data.promotionRequests)) {
+          setPromotionRequests(data.promotionRequests);
+        }
+        if (Array.isArray(data.advertisements)) {
+          setAdvertisements(
+            data.advertisements.filter(
+              (a: any) => a && !a.isDemo && a.id !== 'ad-01' && a.id !== 'ad-02' && a.id !== 'ad-03' && a.createdByAdmin && a.approved
+            )
+          );
+        }
+        if (Array.isArray(data.videos)) {
+          setVideos(data.videos);
+        }
+        if (Array.isArray(data.galleries)) {
+          setGalleries(data.galleries);
+        }
+        if (Array.isArray(data.reporters)) {
+          setReporters(data.reporters);
+        }
+        if (Array.isArray(data.businessListings)) {
+          setBusinessListings(data.businessListings);
+        }
+        if (data.settings && typeof data.settings === 'object' && Object.keys(data.settings).length > 0) {
+          safeLocalStorageSet('hunkar24_site_settings', data.settings);
+          window.dispatchEvent(new CustomEvent('hunkar24:settings-updated', { detail: data.settings }));
+        }
+
+        setRealtimeStatus('active');
+        setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
+        return;
+      }
+
+      // Fallback for /api/articles if /api/sync-state unavailable
+      const artRes = await safeFetchJson('/api/articles');
+      if (artRes.success && Array.isArray(artRes.data?.articles)) {
+        const deletedSet = deletedArticleIdsRef.current;
+        if (Array.isArray(artRes.data?.deletedArticleIds)) {
+          artRes.data.deletedArticleIds.forEach((id: string) => deletedSet.add(id));
+        }
+        const serverArts = (artRes.data.articles as Article[]).map(sanitizeArticleRecord);
+        setArticles(prev => {
+          const map = new Map<string, Article>();
+          for (const a of serverArts) {
+            if (!deletedSet.has(a.id)) map.set(a.id, a);
+          }
+          for (const a of prev) {
+            if (!deletedSet.has(a.id) && !map.has(a.id)) map.set(a.id, sanitizeArticleRecord(a));
+          }
+          const merged = Array.from(map.values());
+          merged.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+          return deduplicateArticlesList(merged);
+        });
+        setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
+      }
+    } catch (err: any) {
+      console.warn('[ServerSync] State sync notice:', err?.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    syncFullServerState();
+
+    // Subscribe to Server-Sent Events for instant sub-second live updates across all browsers/devices
+    let eventSource: EventSource | null = null;
+    if (typeof window !== 'undefined' && typeof EventSource !== 'undefined') {
+      try {
+        eventSource = new EventSource('/api/realtime/stream');
+        const handleStreamEvent = () => {
+          setRealtimeStatus('active');
+          syncFullServerState();
+        };
+        eventSource.addEventListener('connected', () => setRealtimeStatus('active'));
+        eventSource.addEventListener('articles_updated', handleStreamEvent);
+        eventSource.addEventListener('article_deleted', handleStreamEvent);
+        eventSource.addEventListener('breaking_updated', handleStreamEvent);
+        eventSource.addEventListener('breaking_deleted', handleStreamEvent);
+        eventSource.addEventListener('ads_updated', handleStreamEvent);
+        eventSource.addEventListener('state_updated', handleStreamEvent);
+        eventSource.onerror = () => {
+          setRealtimeStatus('reconnecting');
+        };
+      } catch {
+        // Fallback to polling interval below
+      }
+    }
+
+    const handleFocusOrOnline = () => syncFullServerState();
+    window.addEventListener('focus', handleFocusOrOnline);
+    window.addEventListener('online', handleFocusOrOnline);
+
+    // Fallback polling every 8 seconds so mobile/remote devices stay synchronized even without SSE
+    const serverSyncInterval = setInterval(syncFullServerState, 8000);
 
     return () => {
-      isMounted = false;
+      if (eventSource) eventSource.close();
+      window.removeEventListener('focus', handleFocusOrOnline);
+      window.removeEventListener('online', handleFocusOrOnline);
       clearInterval(serverSyncInterval);
     };
-  }, []);
+  }, [syncFullServerState]);
 
   // Firebase Realtime Database Connection & Live Sync
   useEffect(() => {
@@ -967,46 +1157,65 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuditLogs(prev => [newLog, ...prev.slice(0, 99)]);
   };
 
-  // Article Actions with Instant Two-Way Supabase Real-Time Broadcast
+  const syncStateKeyToServer = (key: string, value: any) => {
+    safeFetchJson('/api/admin/state-sync', {
+      method: 'POST',
+      headers: getAdminAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ key, value })
+    }).catch(() => {});
+  };
+
+  // Article Actions with Instant Two-Way Server/Supabase/Firebase Real-Time Broadcast
   const addArticle = (data: Omit<Article, 'id' | 'views' | 'publishedAt' | 'updatedAt'>): Article => {
     const now = new Date().toISOString();
-    const newArticle: Article = {
+    const isPublishing = (data.status || 'published') === 'published';
+    const newArticle: Article = sanitizeArticleRecord({
       ...data,
       id: `art-${Date.now()}`,
       views: 0,
       likesCount: 0,
+      isBreaking: isPublishing ? true : Boolean(data.isBreaking),
+      isHero: isPublishing ? true : Boolean(data.isHero),
       publishedAt: now,
       updatedAt: now
-    };
-    setArticles(prev => [newArticle, ...prev]);
+    });
 
-    // 2. Automatically publish to bulletin board / ticker immediately
-    const autoBulletin: BreakingNewsItem = {
-      id: `brk-${Date.now()}`,
-      text: newArticle.headline,
-      category: newArticle.category,
-      linkArticleId: newArticle.id,
-      priority: 1,
-      isActive: true,
-      createdAt: now
-    };
-    setBreakingNews(prev => [autoBulletin, ...prev.filter(b => b.text !== autoBulletin.text)]);
-    saveBreakingNewsToFirebase(autoBulletin);
-    const clientB = getSupabase();
-    if (clientB) {
-      Promise.resolve(
-        clientB.from('breaking_news').upsert([{
-          id: autoBulletin.id,
-          text: autoBulletin.text,
-          category_slug: autoBulletin.category,
-          link_article_id: autoBulletin.linkArticleId,
-          is_active: true,
-          priority: 1
-        }], { onConflict: 'id' })
-      ).catch(() => {});
+    setArticles(prev => {
+      const demoted = isPublishing ? prev.map(a => ({ ...a, isHero: false })) : prev;
+      return deduplicateArticlesList([newArticle, ...demoted]);
+    });
+
+    // Automatically publish at #1 on Breaking Ticker & Bulletin Board immediately
+    if (isPublishing) {
+      const autoBulletin: BreakingNewsItem = {
+        id: `brk-${newArticle.id}`,
+        text: newArticle.headline,
+        category: newArticle.category,
+        linkArticleId: newArticle.id,
+        linkUrl: `/news/${newArticle.slug}`,
+        priority: 1,
+        isActive: true,
+        createdAt: now
+      };
+      setBreakingNews(prev => [autoBulletin, ...prev.filter(b => b.text !== autoBulletin.text && b.linkArticleId !== newArticle.id)]);
+      saveBreakingNewsToFirebase(autoBulletin);
+      const clientB = getSupabase();
+      if (clientB) {
+        Promise.resolve(
+          clientB.from('breaking_news').upsert([{
+            id: autoBulletin.id,
+            text: autoBulletin.text,
+            category_slug: autoBulletin.category,
+            link_article_id: autoBulletin.linkArticleId,
+            link_url: autoBulletin.linkUrl,
+            is_active: true,
+            priority: 1
+          }], { onConflict: 'id' })
+        ).catch(() => {});
+      }
     }
 
-    // Push to Supabase Real-Time (Phase 2 & 3: Database as single source of truth)
     const client = getSupabase();
     if (client) {
       try {
@@ -1023,9 +1232,9 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           main_image: newArticle.mainImage,
           image_caption: newArticle.imageCaption,
           image_source: newArticle.imageSource,
-          reporter_name: newArticle.reporterName,
-          reporter_role: newArticle.reporterRole,
-          reporter_photo: newArticle.reporterPhoto,
+          reporter_name: '',
+          reporter_role: '',
+          reporter_photo: '',
           status: newArticle.status || 'published',
           is_breaking: Boolean(newArticle.isBreaking),
           is_hero: Boolean(newArticle.isHero),
@@ -1043,9 +1252,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .from('articles')
           .upsert([payload], { onConflict: 'id' })
           .select('id, headline, slug')
-          .then(({ data, error }) => {
-            if (!error && data && data[0]?.id) {
-              setArticles(prev => prev.map(a => a.id === newArticle.id ? { ...a, id: data[0].id } : a));
+          .then(({ data: resData, error }) => {
+            if (!error && resData && resData[0]?.id) {
               setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
             } else if (error) {
               console.warn('[Supabase Realtime] Article insert notice:', error.message);
@@ -1056,69 +1264,92 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    // Push to Firebase Realtime Database (Instant multi-device sync)
     saveArticleToFirebase(newArticle);
 
-    // Persist to Server Disk for instant multi-device live sync
     safeFetchJson('/api/articles', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminAuthHeaders(),
+      credentials: 'include',
       body: JSON.stringify(newArticle)
     }).catch(err => console.warn('[AddArticle] Server sync warning:', err));
 
+    setLastSyncTime(new Date().toLocaleTimeString('hi-IN'));
     logAction('लेख प्रकाशित', 'News Management', `नया समाचार प्रकाशित: ${data.headline}`);
     return newArticle;
   };
 
   const updateArticle = (id: string, updates: Partial<Article>) => {
-    let updatedObj: Article | null = null;
-    setArticles(prev =>
-      prev.map(art => {
+    const now = new Date().toISOString();
+    const existing = articles.find(a => a.id === id);
+    const transitioningToPublished = existing && existing.status !== 'published' && updates.status === 'published';
+    const promoteToTop = Boolean(transitioningToPublished || updates.isHero);
+
+    const cleanUpdates: Partial<Article> = {
+      ...updates,
+      reporterId: '',
+      reporterName: '',
+      reporterRole: '',
+      reporterPhoto: '',
+      ...(transitioningToPublished ? { publishedAt: now, isHero: true, isBreaking: true } : {}),
+      updatedAt: now
+    };
+
+    let updatedObj: Article | null = existing ? sanitizeArticleRecord({ ...existing, ...cleanUpdates }) : null;
+
+    setArticles(prev => {
+      const next = prev.map(art => {
         if (art.id === id) {
-          updatedObj = { ...art, ...updates, updatedAt: new Date().toISOString() };
+          updatedObj = sanitizeArticleRecord({ ...art, ...cleanUpdates });
           return updatedObj;
         }
-        return art;
-      })
-    );
+        return promoteToTop ? { ...art, isHero: false } : art;
+      });
+      next.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+      return next;
+    });
+
     if (activeArticle && activeArticle.id === id) {
-      setActiveArticle(prev => (prev ? { ...prev, ...updates } : null));
+      setActiveArticle(prev => (prev ? sanitizeArticleRecord({ ...prev, ...cleanUpdates }) : null));
     }
 
     if (updatedObj) {
       safeFetchJson('/api/articles', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedObj)
+        headers: getAdminAuthHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({ ...updatedObj, promoteToTop })
       }).catch(err => console.warn('[UpdateArticle] Server sync warning:', err));
     }
 
-    // Push to Supabase Real-Time
     const client = getSupabase();
     if (client) {
       try {
         const updatePayload: any = {
-          headline: updates.headline,
-          slug: updates.slug,
-          summary: updates.summary,
-          content: updates.content,
-          category_slug: updates.category,
-          district: updates.district,
-          tehsil: updates.tehsil,
-          village: updates.village,
-          main_image: updates.mainImage,
-          image_caption: updates.imageCaption,
-          image_source: updates.imageSource,
-          status: updates.status,
-          is_breaking: updates.isBreaking,
-          is_hero: updates.isHero,
-          is_exclusive: updates.isExclusive,
-          tags: updates.tags,
-          video_url: updates.videoUrl,
-          updated_at: new Date().toISOString()
+          headline: cleanUpdates.headline,
+          slug: cleanUpdates.slug,
+          summary: cleanUpdates.summary,
+          content: cleanUpdates.content,
+          category_slug: cleanUpdates.category,
+          district: cleanUpdates.district,
+          tehsil: cleanUpdates.tehsil,
+          village: cleanUpdates.village,
+          main_image: cleanUpdates.mainImage,
+          image_caption: cleanUpdates.imageCaption,
+          image_source: cleanUpdates.imageSource,
+          reporter_name: '',
+          reporter_role: '',
+          reporter_photo: '',
+          status: cleanUpdates.status,
+          is_breaking: cleanUpdates.isBreaking,
+          is_hero: cleanUpdates.isHero,
+          is_exclusive: cleanUpdates.isExclusive,
+          tags: cleanUpdates.tags,
+          video_url: cleanUpdates.videoUrl,
+          published_at: cleanUpdates.publishedAt,
+          updated_at: now
         };
-        if (updates.galleryImages !== undefined) {
-          updatePayload.gallery_images = updates.galleryImages;
+        if (cleanUpdates.galleryImages !== undefined) {
+          updatePayload.gallery_images = cleanUpdates.galleryImages;
         }
         client
           .from('articles')
@@ -1133,25 +1364,28 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    // Push to Firebase Realtime Database
-    updateArticleInFirebase(id, updates);
-
+    updateArticleInFirebase(id, cleanUpdates);
     logAction('लेख संशोधित', 'News Management', `समाचार आईडी ${id} अद्यतित किया गया`);
   };
 
   const deleteArticle = (id: string) => {
     const target = articles.find(a => a.id === id);
+    deletedArticleIdsRef.current.add(id);
+    safeLocalStorageSet('hunkar24_deleted_article_ids', Array.from(deletedArticleIdsRef.current).slice(-100));
+
     setArticles(prev => prev.filter(art => art.id !== id));
+    setBreakingNews(prev => prev.filter(b => b.linkArticleId !== id && b.id !== `brk-${id}`));
+
     if (activeArticle?.id === id) {
       setActiveArticle(null);
     }
 
-    // Delete on Server Disk
     safeFetchJson(`/api/articles/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAdminAuthHeaders(),
+      credentials: 'include'
     }).catch(err => console.warn('[DeleteArticle] Server sync warning:', err));
 
-    // Delete in Supabase Real-Time
     const client = getSupabase();
     if (client) {
       try {
@@ -1168,9 +1402,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    // Delete in Firebase Realtime Database
     deleteArticleFromFirebase(id);
-
     logAction('लेख विलोपित', 'News Management', `समाचार हटाया गया: ${target?.headline || id}`);
   };
 
@@ -1211,7 +1443,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Breaking News with Instant Supabase Broadcast
+  // Breaking News with Instant Server + Supabase + Firebase Broadcast
   const addBreakingNews = (text: string, linkUrl?: string, linkArticleId?: string) => {
     const item: BreakingNewsItem = {
       id: `brk-${Date.now()}`,
@@ -1224,10 +1456,17 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     setBreakingNews(prev => [item, ...prev]);
 
-    // Push to Supabase Real-Time
-    if (supabase) {
+    safeFetchJson('/api/breaking-news', {
+      method: 'POST',
+      headers: getAdminAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(item)
+    }).catch(() => {});
+
+    const client = getSupabase();
+    if (client) {
       try {
-        supabase
+        client
           .from('breaking_news')
           .upsert([{
             id: item.id,
@@ -1245,9 +1484,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    // Push to Firebase Realtime Database
     saveBreakingNewsToFirebase(item);
-
     logAction('ब्रेकिंग न्यूज़ जोड़ी गई', 'Breaking News', text);
   };
 
@@ -1265,16 +1502,22 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
     );
 
-    if (supabase) {
+    safeFetchJson(`/api/breaking-news/${id}`, {
+      method: 'PUT',
+      headers: getAdminAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ isActive: nextActiveState, ...(updatedItem || {}) })
+    }).catch(() => {});
+
+    const client = getSupabase();
+    if (client) {
       try {
-        supabase
+        client
           .from('breaking_news')
           .update({ is_active: nextActiveState })
           .eq('id', id)
           .then(() => {});
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
 
     if (updatedItem) {
@@ -1283,21 +1526,27 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteBreakingNews = (id: string) => {
+    deletedBreakingIdsRef.current.add(id);
+    safeLocalStorageSet('hunkar24_deleted_breaking_ids', Array.from(deletedBreakingIdsRef.current).slice(-100));
     setBreakingNews(prev => prev.filter(item => item.id !== id));
 
-    if (supabase) {
+    safeFetchJson(`/api/breaking-news/${id}`, {
+      method: 'DELETE',
+      headers: getAdminAuthHeaders(),
+      credentials: 'include'
+    }).catch(() => {});
+
+    const client = getSupabase();
+    if (client) {
       try {
-        supabase
+        client
           .from('breaking_news')
           .delete()
           .eq('id', id)
           .then(() => {});
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
 
-    // Delete in Firebase Realtime Database
     deleteBreakingNewsFromFirebase(id);
   };
 
@@ -1307,18 +1556,28 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...cat,
       id: `cat-${Date.now()}`
     };
-    setCategories(prev => [...prev, newCat]);
+    setCategories(prev => {
+      const next = [...prev, newCat];
+      syncStateKeyToServer('categories', next);
+      return next;
+    });
     logAction('श्रेणी जोड़ी गई', 'Categories', cat.nameHi);
   };
 
   const updateCategory = (id: string, updates: Partial<CategoryItem>) => {
-    setCategories(prev =>
-      prev.map(cat => (cat.id === id ? { ...cat, ...updates } : cat))
-    );
+    setCategories(prev => {
+      const next = prev.map(cat => (cat.id === id ? { ...cat, ...updates } : cat));
+      syncStateKeyToServer('categories', next);
+      return next;
+    });
   };
 
   const deleteCategory = (id: string) => {
-    setCategories(prev => prev.filter(cat => cat.id !== id));
+    setCategories(prev => {
+      const next = prev.filter(cat => cat.id !== id);
+      syncStateKeyToServer('categories', next);
+      return next;
+    });
   };
 
   // Citizen Submissions
@@ -1331,7 +1590,11 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status: 'pending',
       createdAt: new Date().toISOString()
     };
-    setSubmissions(prev => [newSubmission, ...prev]);
+    setSubmissions(prev => {
+      const next = [newSubmission, ...prev];
+      syncStateKeyToServer('submissions', next);
+      return next;
+    });
     logAction('नागरिक समाचार प्रस्तुत', 'Public Submissions', `${sub.submitterName} द्वारा: ${sub.headline}`);
     return trackingId;
   };
@@ -1340,50 +1603,54 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const sub = submissions.find(s => s.id === id);
     if (!sub) return;
 
-    // Convert approved submission into a published news article
-    const generatedArticle: Article = {
-      id: `art-sub-${Date.now()}`,
+    const generatedArticle = addArticle({
       headline: sub.headline,
       slug: sub.headline
         .toLowerCase()
         .replace(/[^\w\u0900-\u097F]+/g, '-')
-        .slice(0, 60),
-      summary: sub.description.slice(0, 180) + '...',
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60) || `sub-${Date.now()}`,
+      summary: sub.description.slice(0, 180) + (sub.description.length > 180 ? '...' : ''),
       content: sub.description,
       category: 'rajasthan',
       district: sub.district,
       tehsil: sub.tehsil,
       village: sub.village,
       mainImage: sub.imageUrls[0] || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
-      imageCaption: `${sub.village ? sub.village + ', ' : ''}${sub.district} से जन-रिपोर्टर द्वारा भेजी गई तस्वीर`,
-      imageSource: `हुंकार जन-रिपोर्टर (${sub.submitterName})`,
-      reporterName: `जन-रिपोर्टर: ${sub.submitterName}`,
-      reporterRole: 'नागरिक पत्रकार',
+      imageCaption: `${sub.village ? sub.village + ', ' : ''}${sub.district} से ग्राउंड रिपोर्ट`,
+      imageSource: 'हुंकार 24 ग्राउंड रिपोर्ट',
+      reporterId: '',
+      reporterName: '',
+      reporterRole: '',
+      reporterPhoto: '',
+      isBreaking: true,
+      isHero: true,
       status: 'published',
-      publishedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      views: 120,
       readingTimeMinutes: 2,
-      tags: ['जन-रिपोर्टर', sub.district, 'ग्राउंड रिपोर्ट']
-    };
+      tags: ['ग्राउंड रिपोर्ट', sub.district, 'राजस्थान']
+    });
 
-    setArticles(prev => [generatedArticle, ...prev]);
-
-    setSubmissions(prev =>
-      prev.map(s => (s.id === id ? { ...s, status: 'approved', adminNotes: notes, approvedArticleId: generatedArticle.id } : s))
-    );
+    setSubmissions(prev => {
+      const next = prev.map(s =>
+        s.id === id ? { ...s, status: 'approved' as const, adminNotes: notes, approvedArticleId: generatedArticle.id } : s
+      );
+      syncStateKeyToServer('submissions', next);
+      return next;
+    });
 
     logAction('समाचार स्वीकृत व प्रकाशित', 'Public Submissions', `आईडी ${id} को लेख ${generatedArticle.id} में बदला गया`);
   };
 
   const rejectSubmission = (id: string, reason: string) => {
-    setSubmissions(prev =>
-      prev.map(s => (s.id === id ? { ...s, status: 'rejected', adminNotes: reason } : s))
-    );
+    setSubmissions(prev => {
+      const next = prev.map(s => (s.id === id ? { ...s, status: 'rejected' as const, adminNotes: reason } : s));
+      syncStateKeyToServer('submissions', next);
+      return next;
+    });
     logAction('समाचार अस्वीकृत', 'Public Submissions', `आईडी ${id} अस्वीकृत। कारण: ${reason}`);
   };
 
-  // Advertisements
+  // Advertisements (Synced with /api/ads/manage)
   const addAdvertisement = (ad: Omit<AdvertisementCampaign, 'id' | 'impressions' | 'clicks'>) => {
     const newAd: AdvertisementCampaign = {
       ...ad,
@@ -1392,6 +1659,14 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clicks: 0
     };
     setAdvertisements(prev => [newAd, ...prev]);
+
+    safeFetchJson('/api/ads/manage', {
+      method: 'POST',
+      headers: getAdminAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ action: 'create', ad: newAd })
+    }).catch(() => {});
+
     logAction('विज्ञापन अभियान सृजित', 'Ad Management', ad.campaignTitle);
   };
 
@@ -1399,10 +1674,22 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAdvertisements(prev =>
       prev.map(ad => (ad.id === id ? { ...ad, status: ad.status === 'active' ? 'paused' : 'active' } : ad))
     );
+    safeFetchJson('/api/ads/manage', {
+      method: 'POST',
+      headers: getAdminAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ action: 'toggle', adId: id })
+    }).catch(() => {});
   };
 
   const deleteAdvertisement = (id: string) => {
     setAdvertisements(prev => prev.filter(ad => ad.id !== id));
+    safeFetchJson('/api/ads/manage', {
+      method: 'POST',
+      headers: getAdminAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ action: 'delete', adId: id })
+    }).catch(() => {});
   };
 
   const recordAdClick = (id: string) => {
@@ -1421,15 +1708,21 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       paymentStatus: 'pending',
       createdAt: new Date().toISOString()
     };
-    setPromotionRequests(prev => [newReq, ...prev]);
+    setPromotionRequests(prev => {
+      const next = [newReq, ...prev];
+      syncStateKeyToServer('promotionRequests', next);
+      return next;
+    });
     logAction('व्यापार प्रचार आवेदन', 'Promotion Requests', `${req.businessName} द्वारा`);
     return id;
   };
 
   const updatePromotionStatus = (id: string, status: 'approved' | 'rejected', paymentStatus: 'completed' | 'failed' = 'completed') => {
-    setPromotionRequests(prev =>
-      prev.map(p => (p.id === id ? { ...p, status, paymentStatus } : p))
-    );
+    setPromotionRequests(prev => {
+      const next = prev.map(p => (p.id === id ? { ...p, status, paymentStatus } : p));
+      syncStateKeyToServer('promotionRequests', next);
+      return next;
+    });
     logAction('प्रचार आवेदन समीक्षा', 'Promotion Requests', `आईडी ${id} स्थिति: ${status}`);
   };
 
@@ -1439,7 +1732,11 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...biz,
       id: `biz-${Date.now()}`
     };
-    setBusinessListings(prev => [newBiz, ...prev]);
+    setBusinessListings(prev => {
+      const next = [newBiz, ...prev];
+      syncStateKeyToServer('businessListings', next);
+      return next;
+    });
   };
 
   // Multimedia
@@ -1450,16 +1747,25 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       views: 1,
       publishedAt: new Date().toISOString()
     };
-    setVideos(prev => [newVid, ...prev]);
+    setVideos(prev => {
+      const next = [newVid, ...prev];
+      syncStateKeyToServer('videos', next);
+      return next;
+    });
   };
 
   const deleteVideo = (id: string) => {
-    setVideos(prev => prev.filter(v => v.id !== id));
+    setVideos(prev => {
+      const next = prev.filter(v => v.id !== id);
+      syncStateKeyToServer('videos', next);
+      return next;
+    });
     logAction('वीडियो विलोपित', 'Video News', `वीडियो आईडी ${id} हटाया गया`);
   };
 
   const clearAllVideos = () => {
     setVideos([]);
+    syncStateKeyToServer('videos', []);
     try {
       localStorage.removeItem('hunkar24_videos');
     } catch {
@@ -1474,7 +1780,11 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: `gal-${Date.now()}`,
       publishedAt: new Date().toISOString()
     };
-    setGalleries(prev => [newGal, ...prev]);
+    setGalleries(prev => {
+      const next = [newGal, ...prev];
+      syncStateKeyToServer('galleries', next);
+      return next;
+    });
   };
 
   // Reporters
@@ -1485,13 +1795,19 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       publishedArticleCount: 0,
       joinedDate: new Date().toISOString().slice(0, 10)
     };
-    setReporters(prev => [...prev, newRep]);
+    setReporters(prev => {
+      const next = [...prev, newRep];
+      syncStateKeyToServer('reporters', next);
+      return next;
+    });
   };
 
   const updateReporter = (id: string, updates: Partial<ReporterProfile>) => {
-    setReporters(prev =>
-      prev.map(r => (r.id === id ? { ...r, ...updates } : r))
-    );
+    setReporters(prev => {
+      const next = prev.map(r => (r.id === id ? { ...r, ...updates } : r));
+      syncStateKeyToServer('reporters', next);
+      return next;
+    });
   };
 
   // User Auth & Session Management (Neutral Labels, Zero Personal Identity)
